@@ -5,4 +5,4 @@
 ### José Eduardo Viveros Escamilla - Prueba realizada
 ### Gerardo Matinez Carbajal - Prueba realizada
 ### Laura Cintora Cendeja
-### Cristhian Viwery Maida 
+### Cristhian Viery Maida Suarez - Prueba realizada
