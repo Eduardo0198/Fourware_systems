@@ -1,0 +1,166 @@
+:root {
+  --blue-900: #0f2b5b;
+  --blue-700: #1f5fa9;
+  --blue-500: #3b8dd6;
+  --blue-100: #eaf3ff;
+  --bg: #f4f7fb;
+  --border: #cad8ea;
+  --text: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.topbar {
+  height: 76px;
+  display: grid;
+  grid-template-columns: 1fr 560px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--blue-900);
+  white-space: nowrap;
+}
+
+.timer-inline {
+  margin-left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #111827;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.timer-label {
+  font-weight: 500;
+}
+
+.topbar-center {
+  min-width: 0;
+}
+
+.search-wrap {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #c7ccd6;
+  border-radius: 0;
+  padding: 0 44px 0 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.search-icon-inside {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 22px;
+  color: #f97316;
+  line-height: 1;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-btn {
+  height: 40px;
+  border: 1px solid var(--blue-700);
+  background: #fff;
+  color: var(--blue-700);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 76px);
+}
+
+.sidebar-left {
+  border-right: 1px solid var(--border);
+  background: var(--blue-900);
+  padding: 12px;
+}
+
+.menu-item {
+  width: 100%;
+  height: 50px;
+  margin-bottom: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--blue-900);
+  font-size: 20px;
+  font-weight: 700;
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.menu-item.is-active {
+  background: var(--blue-500);
+  color: #fff;
+}
+
+.content {
+  padding: 20px;
+}
+
+@media (max-width: 1200px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 10px 12px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-left {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
