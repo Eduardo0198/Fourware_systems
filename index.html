@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Preventa PPG</title>
+  <link rel="stylesheet" href="./src/css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <img src="./assets/img/PPG_Logo.svg.png" alt="Logo PPG" class="logo-top" />
+    <p class="logo-subtitle">Sistema de Preventa</p>
+
+    <section class="login-card">
+      <h1 class="welcome">Bienvenid@</h1>
+      <p class="subtitle">Ingresa tus datos para acceder</p>
+
+      <label for="usuario" class="label">Correo</label>
+      <input id="usuario" type="email" placeholder="usuario@ejemplo.com" />
+
+      <label for="password" class="label">Contraseña</label>
+      <input id="password" type="password" placeholder="•••••••" />
+
+      <button id="loginBtn" type="button">Iniciar Sesión</button>
+      <p id="msg" class="msg"></p>
+    </section>
+  </main>
+
+  <script type="module" src="./src/js/main.js"></script>
+</body>
+</html>
