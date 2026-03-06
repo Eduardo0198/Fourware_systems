@@ -1,0 +1,93 @@
+<h2 class="mb-4">
+Reportes Consolidados
+</h2>
+<p class="text-muted">
+Análisis visual del sistema de preventa.
+</p>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card p-3 chart-container">
+            <h6 class="text-center">
+            Ventas por mes
+            </h6>
+            <canvas id="ventasChart" class="chart-small"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card p-3 chart-container">
+            <h6 class="text-center">
+            Distribución de productos
+            </h6>
+            <canvas id="productosChart" class="chart-small"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card p-3 chart-container">
+            <h6 class="text-center">
+            Relación peso / volumen
+            </h6>
+            <canvas id="scatterChart" class="chart-small"></canvas>
+        </div>
+    </div>
+</div>
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+new Chart(document.getElementById('ventasChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Enero','Febrero','Marzo','Abril'],
+        datasets: [{
+            label: 'Ventas',
+            data: [120,190,300,250],
+            backgroundColor: '#4a8ad8'
+        }]
+    }
+    }
+);
+
+new Chart(document.getElementById('productosChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Exterior','Automotriz','Industrial'],
+        datasets: [{
+            data: [30,40,30],
+            backgroundColor: [
+            '#4a8ad8',
+            '#2f5fa6',
+            '#183c6b'
+            ]
+        }]
+    }
+    }
+);
+
+new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Peso vs Volumen',
+            data: [
+            {x:5,y:10},
+            {x:8,y:15},
+            {x:12,y:20},
+            {x:15,y:30}
+            ],
+            backgroundColor:'#2f5fa6'
+        }]
+    },
+    options:{
+        scales:{
+            x:{
+                title:{display:true,text:'Peso'}
+                },
+                y:{
+                title:{display:true,text:'Volumen'}
+                }
+                }
+            }
+        }
+    );
+});
+
+</script>
