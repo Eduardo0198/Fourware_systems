@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Marketing - PPG</title>
+  <link rel="stylesheet" href="./src/css/marketing.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-box">PPG</div>
+        <h1>Panel Marketing</h1>
+      </div>
+      <div class="top-actions">
+        <div class="user-box">
+          <p>Usuario: Admin Marketing</p>
+          <p>Rol: Marketing</p>
+        </div>
+        <a class="btn btn-logout" href="./index.html">Logout</a>
+      </div>
+    </header>
+
+    <div class="content-shell">
+      <aside class="sidebar">
+        <nav class="menu" aria-label="Navegación del panel">
+          <button class="menu-link active" data-module="dashboard">Dashboard</button>
+          <button class="menu-link" data-module="ranking">Ranking de Productos</button>
+          <button class="menu-link" data-module="tendencias">Tendencias por Campaña</button>
+          <button class="menu-link" data-module="prototipos">Validación de Prototipos</button>
+          <button class="menu-link" data-module="comparativos">Comparativos</button>
+          <button class="menu-link" data-module="reportes">Reportes</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a class="btn btn-secondary" href="./index.html">Cerrar sesión</a>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section id="dashboard" class="module active">
+          <h2>Dashboard</h2>
+          <div class="divider"></div>
+
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <p>Total reservas campaña activa</p>
+              <h3>12,450</h3>
+            </article>
+            <article class="metric-card">
+              <p>Producto más solicitado</p>
+              <h3>SKU-8821</h3>
+            </article>
+            <article class="metric-card">
+              <p>Promedio de calificaciones</p>
+              <h3>4.2 <span class="star">★</span></h3>
+            </article>
+            <article class="metric-card">
+              <p>Campaña con mayor demanda</p>
+              <h3>Q1-2026</h3>
+            </article>
+          </div>
+
+          <div class="charts-grid">
+            <article class="chart-card">
+              <h3>Demanda por producto</h3>
+              <div class="divider"></div>
+              <div class="bar-chart">
+                <div class="bar-wrap"><span>SKU-8821</span><div class="bar"><i style="width: 88%"></i></div></div>
+                <div class="bar-wrap"><span>SKU-6400</span><div class="bar"><i style="width: 72%"></i></div></div>
+                <div class="bar-wrap"><span>SKU-1522</span><div class="bar"><i style="width: 54%"></i></div></div>
+                <div class="bar-wrap"><span>SKU-9104</span><div class="bar"><i style="width: 40%"></i></div></div>
+              </div>
+            </article>
+
+            <article class="chart-card">
+              <h3>Demanda por región</h3>
+              <div class="divider"></div>
+              <div class="region-grid">
+                <article><h4>Norte</h4><p>34%</p></article>
+                <article><h4>Centro</h4><p>27%</p></article>
+                <article><h4>Occidente</h4><p>21%</p></article>
+                <article><h4>Sur</h4><p>18%</p></article>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="ranking" class="module">
+          <h2>Ranking de Productos</h2>
+          <div class="divider"></div>
+          <div class="table-card">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Producto</th><th>Reservas</th><th>Crecimiento</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>SKU-8821</td><td>4,980</td><td>+18%</td></tr>
+                <tr><td>2</td><td>SKU-6400</td><td>3,420</td><td>+12%</td></tr>
+                <tr><td>3</td><td>SKU-1522</td><td>2,890</td><td>+9%</td></tr>
+                <tr><td>4</td><td>SKU-9104</td><td>1,160</td><td>+4%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="tendencias" class="module">
+          <h2>Tendencias por Campaña</h2>
+          <div class="divider"></div>
+          <div class="cards-row">
+            <article class="info-card"><h3>Campaña Verano</h3><p>Conversión: 8.4%</p></article>
+            <article class="info-card"><h3>Campaña Pintura Pro</h3><p>Conversión: 7.9%</p></article>
+            <article class="info-card"><h3>Campaña Constructor</h3><p>Conversión: 6.8%</p></article>
+          </div>
+        </section>
+
+        <section id="prototipos" class="module">
+          <h2>Validación de Prototipos</h2>
+          <div class="divider"></div>
+          <div class="cards-row">
+            <article class="info-card"><h3>Prototipo A</h3><p>Estado: Aprobado</p></article>
+            <article class="info-card"><h3>Prototipo B</h3><p>Estado: En revisión</p></article>
+            <article class="info-card"><h3>Prototipo C</h3><p>Estado: Ajustes solicitados</p></article>
+          </div>
+        </section>
+
+        <section id="comparativos" class="module">
+          <h2>Comparativos</h2>
+          <div class="divider"></div>
+          <div class="table-card">
+            <table>
+              <thead>
+                <tr><th>Métrica</th><th>Q4-2025</th><th>Q1-2026</th><th>Variación</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Reservas</td><td>9,870</td><td>12,450</td><td>+26%</td></tr>
+                <tr><td>Conversión</td><td>6.1%</td><td>7.3%</td><td>+1.2 pp</td></tr>
+                <tr><td>Productos activos</td><td>22</td><td>29</td><td>+7</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="reportes" class="module">
+          <h2>Reportes</h2>
+          <div class="divider"></div>
+          <div class="cards-row">
+            <article class="info-card">
+              <h3>Reporte semanal</h3>
+              <p>Última generación: hoy 08:00</p>
+              <button class="btn report-btn" type="button">Descargar PDF</button>
+            </article>
+            <article class="info-card">
+              <h3>Reporte mensual</h3>
+              <p>Última generación: 01/03/2026</p>
+              <button class="btn report-btn" type="button">Descargar PDF</button>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="./src/js/marketing.js"></script>
+</body>
+</html>

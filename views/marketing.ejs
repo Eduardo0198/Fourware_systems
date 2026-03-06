@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="/css/marketing.css"><title>Panel Marketing</title></head>
+<body>
+  <header class="topbar">
+    <h1>Panel Marketing</h1>
+    <a href="/logout">Logout</a>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <% modulos.forEach(m => { %>
+        <a class="<%= moduloActivo === m ? 'active' : '' %>" href="/marketing/<%= m %>"><%= m %></a>
+      <% }) %>
+      <a href="/logout">Cerrar sesión</a>
+    </aside>
+
+    <main class="main">
+      <h2><%= moduloActivo.toUpperCase() %></h2>
+      <%- include('modules/' + moduloActivo) %>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="/css/styles.css"><title>Login</title></head>
+<body>
+  <main class="page">
+    <section class="login-card">
+      <h1>Bienvenid@</h1>
+      <form action="/login" method="post">
+        <label>Correo</label>
+        <input name="usuario" type="email" />
+        <label>Contraseña</label>
+        <input name="password" type="password" />
+        <button type="submit">Iniciar sesión</button>
+      </form>
+      <p class="msg"><%= error %></p>
+    </section>
+  </main>
+</body>
+</html>
