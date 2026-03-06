@@ -1,0 +1,30 @@
+{
+  "name": "fourware_systems",
+  "version": "1.0.0",
+  "description": "Repositorio del equipon de Fourware Systems",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eduardo0198/Fourware_systems.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Eduardo0198/Fourware_systems/issues"
+  },
+  "homepage": "https://github.com/Eduardo0198/Fourware_systems#readme",
+  "dependencies": {
+    "ejs": "^5.0.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
