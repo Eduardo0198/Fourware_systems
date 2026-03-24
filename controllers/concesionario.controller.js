@@ -1,3 +1,5 @@
+const db = require('../config/db');
+
 exports.catalogo = (req, res) => {
     res.render(
         'modules/concesionarioCatalogo'
