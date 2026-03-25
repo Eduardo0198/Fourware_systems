@@ -1,0 +1,16 @@
+<h2 class="mb-4">Productos más reservados</h2>
+<div class="row">
+    <% productos.forEach(p => { %>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow p-3">
+
+                <h5><%= p.nombre %></h5>
+
+                <p class="text-muted">
+                    Reservas: <%= p.total %>
+                </p>
+
+            </div>
+        </div>
+    <% }) %>
+</div>

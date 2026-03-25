@@ -1,55 +1,77 @@
 /* ---------- RESET BASICO ---------- */
 
 *{
-box-sizing:border-box;
-margin:0;
-padding:0;
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
 }
 
 body{
-font-family:Arial, sans-serif;
-background:#f4f6f9;
+    font-family:Arial, sans-serif;
+    background: #f1f5f9;
 }
 
 /* evita que las imagenes se desborden */
 img{
-max-width:100%;
-height:auto;
-display:block;
+    max-width:100%;
+    height:auto;
+    display:block;
 }
 
 /* ---------- HEADER ---------- */
 
-.topbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px 20px;
-background:#e8edf4;
-height:60px;
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #1e2f45, #2c5aa0);
+    padding: 10px 20px;
+    color: white;
 }
 
-.logo-area{
-display:flex;
-align-items:center;
-gap:10px;
+/* LOGO */
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.brand{
-font-weight:600;
-font-size:16px;
+.logo {
+    width: 40px;
 }
 
-.logo{
-height:35px;
-width:auto;
-object-fit:contain;
+/* CENTRO */
+.campaign-area {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.actions{
-display:flex;
-align-items:center;
-gap:10px;
+.campaign-banner img {
+    height: 40px;
+    border-radius: 6px;
+}
+
+/* TIMER */
+.campaign-timer {
+    font-weight: bold;
+    background: rgba(255,255,255,0.1);
+    padding: 5px 12px;
+    border-radius: 8px;
+}
+
+/* DERECHA */
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* BADGE CARRITO */
+.badge-cart {
+    position: absolute;
+    top: -5px;
+    right: -5px;
 }
 
 /* ---------- LAYOUT PRINCIPAL ---------- */
@@ -61,32 +83,153 @@ min-height:calc(100vh - 60px);
 
 /* ---------- SIDEBAR ---------- */
 
-.sidebar{
-width:230px;
-background:#183c6b;
-padding:20px;
-flex-shrink:0;
+/* SIDEBAR BASE */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #1f2d3d;
+    color: white;
+    padding: 15px 10px;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.menu{
-display:block;
-background:#2f5fa6;
-padding:12px;
-margin-bottom:10px;
-border-radius:8px;
-color:white;
-text-decoration:none;
-font-weight:500;
+/* HEADER */
+.sidebar-header {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 
-.menu:hover{
-background:#3d6fba;
+/* SECCIONES */
+.section-title {
+    font-size: 12px;
+    margin: 15px 10px 5px;
+    color: #aaa;
 }
 
-.menu.active{
-background:#4a8ad8;
+/* MENÚ */
+.menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: white;
+    border-radius: 10px;
+    transition: 0.2s;
 }
 
+/* ICONOS */
+.menu i {
+    font-size: 18px;
+}
+
+/* HOVER */
+.menu:hover {
+    background: #2c3e50;
+}
+
+/* ACTIVO */
+.menu.active {
+    background: #2563eb;
+}
+
+/* COLAPSADO */
+.sidebar.collapsed {
+    width: 80px;
+}
+
+/* ocultar texto */
+.sidebar.collapsed span,
+.sidebar.collapsed .section-title {
+    display: none;
+}
+
+/* centrar iconos */
+.sidebar.collapsed .menu {
+    justify-content: center;
+}
+
+/*  Usuario  */
+
+.sidebar-user {
+    border-top: 1px solid #334155;
+    padding: 15px 10px;
+    position: relative;
+}
+
+/* CLICK USER */
+.user-click {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+/* AVATAR */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* NOMBRE */
+.user-name {
+    font-size: 14px;
+}
+
+/* COLAPSADO USER */
+.sidebar.collapsed .user-name {
+    display: none;
+}
+
+/* DROPDOWN */
+.user-menu {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    background: #2c3e50;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* ACTIVO */
+.user-menu.active {
+    display: block;
+}
+
+/* LOGOUT */
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    color: #ef4444;
+    text-decoration: none;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/*  RESPONSIVE */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 80px;
+    }
+    .sidebar span,
+    .sidebar .section-title {
+        display: none;
+    }
+    .sidebar .menu {
+        justify-content: center;
+    }
+}
 /* ---------- CONTENIDO ---------- */
 
 .content{
@@ -130,33 +273,53 @@ margin-bottom:10px;
 
 /* ---------- FOOTER ---------- */
 
-.footer{
-display:flex;
-justify-content:center;
-align-items:center;
-gap:20px;
-padding:15px;
-background:#183c6b;
-margin-top:auto;
-color:white;
+.footer-ppg {
+    background-color: #1f2d3d;
+    color: white;
+    padding: 15px 30px;
 }
 
-.footer a{
-color:white;
-text-decoration:none;
+/* contenedor principal */
+.footer-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.footer a:hover{
-text-decoration:underline;
+/* grupo izquierdo (logo + texto) */
+.footer-left-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    max-width: 70%;
 }
 
-.footer-logo{
-height:30px;
-width:auto;
-max-width:120px;
-object-fit:contain;
+/* logo */
+.footer-logo {
+    height: 50px;
 }
 
+/* texto */
+.footer-text {
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* derecha */
+.footer-right {
+    text-align: right;
+}
+
+.footer-right a {
+    color: white;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.footer-right a:hover {
+    text-decoration: underline;
+}
 /* ---------- MODULO CATALOGO ADMIN ---------- */
 
 .catalogo-grid{
@@ -254,6 +417,14 @@ color:#6b7280;
 text-decoration:underline;
 }
 
+.login-card {
+    transition: 0.3s;
+}
+
+.login-card:hover {
+    transform: translateY(-5px);
+}
+
 /* ---------- GRAFICAS REPORTES ---------- */
 
 .chart-container{
@@ -316,4 +487,20 @@ height:350px;
 
 .map-box{
 height:350px;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.brand {
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }

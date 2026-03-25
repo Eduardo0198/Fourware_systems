@@ -1,10 +1,28 @@
 const express = require('express');
-
 const router = express.Router();
-const adminController = require('../controllers/logistic.controller');
+const logisticController = require('../controllers/logistic.controller');
 
-router.get('/reservas-confirmadas', adminController.reservasConfirmadas);
-router.get('/metricas', adminController.metricas);
-router.get('/reporte-operativo', adminController.reporteOperativo);
+const { protegerRuta, tieneRol, tienePrivilegio } = require('../middlewares/auth.middleware');
+
+router.get('/reservas-confirmadas',
+    protegerRuta,
+    tieneRol(['Logistica']),
+    tienePrivilegio(['consultar_reservas_logistica']), 
+    logisticController.reservasConfirmadas
+);
+
+router.get('/metricas',
+    protegerRuta,
+    tieneRol(['Logistica']),
+    tienePrivilegio(['consultar_metricas_logistica']), 
+    logisticController.metricas
+);
+
+router.get('/reporte-operativo',
+    protegerRuta,
+    tieneRol(['Logistica']),
+    tienePrivilegio(['generar_reporte_logistica']), 
+    logisticController.reporteOperativo
+);
 
 module.exports = router;

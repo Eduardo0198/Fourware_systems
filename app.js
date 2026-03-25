@@ -2,7 +2,19 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const expressLayouts = require('express-ejs-layouts');
+const session = require('express-session');
 const app = express();
+
+app.use(session({
+    secret: 'secreto_super_seguro',
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use((req, res, next) => {
+    res.locals.usuario = req.session.usuario || null;
+    next();
+});
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -21,17 +33,14 @@ app.use('/', require('./routes/auth.routes'));
 app.use('/admin', require('./routes/admin.routes'));
 app.use('/logistica', require('./routes/logistic.routes'));
 app.use('/marketing', require('./routes/marketing.routes'));
-
-const concesionarioRoutes = require('./routes/concesionario.routes');
-
-app.use('/concesionario', concesionarioRoutes);
-
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:3000`);
-});
+app.use('/concesionario', require('./routes/concesionario.routes'));
+app.use('/concesionario/carrito', require('./routes/carrito.routes'));
 
 app.use((req, res) => {
-  res.status(404).send("Página no encontrada");
+    res.status(404).send("Página no encontrada");
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:3000`);
 });
