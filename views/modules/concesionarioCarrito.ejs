@@ -1,0 +1,55 @@
+<h2>Carrito de preventa</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>SKU</th>
+            <th>Nombre</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Total</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <% carrito.forEach(p => { %>
+            <tr>
+                <td><%= p.sku %></td>
+                <td><%= p.nombre %></td>
+                <td><%= p.cantidad %></td>
+                <td>$<%= p.precio %></td>
+                <td>$<%= p.precio * p.cantidad %></td>
+                <td>
+                    <a href="/carrito/eliminar/<%= p.sku %>" class="btn btn-danger">
+                        Eliminar
+                    </a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
+<h4>Total: $<%= total %></h4>
+<hr>
+<form method="POST" action="/carrito/confirmar">
+    <label>Selecciona sucursal</label>
+    <select name="sucursal" class="form-control" required>
+        <option value="">Selecciona</option>
+        <option value="1">Sucursal Querétaro</option>
+        <option value="2">Sucursal CDMX</option>
+    </select>
+    <br>
+    <button id="btnConfirmar" class="btn btn-success" disabled>
+        Confirmar reserva
+    </button>
+
+</form>
+
+<script>
+    
+const select = document.querySelector('select[name="sucursal"]');
+const btn = document.getElementById('btnConfirmar');
+
+select.addEventListener('change', () => {
+    btn.disabled = !select.value;
+});
+
+</script>

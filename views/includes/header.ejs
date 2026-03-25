@@ -1,35 +1,66 @@
 <header class="topbar">
+    <div class="logo-area">
+        <img src="/img/ppg-logo.png" class="logo">
+        <span class="brand">PPG Preventa</span>
+    </div>
+    <div class="campaign-area">
 
-<div class="logo-area">
-    <img src="/img/ppg-logo.png" class="logo" alt="PPG Logo">
-    <span class="brand">
-    PPG Preventa
-    </span>
-</div>
-<div class="campaign-timer">
-    ⏱ Cierra en: 05d : 12h : 34m : 05s
-</div>
+        <div class="campaign-banner">
+            <img src="/img/banner-campana.jpg" alt="Campaña">
+        </div>
 
-<div class="actions">
-    <button class="btn btn-light">
-    🛒
-    </button>
-<div class="dropdown">
-    <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-    👤 Cuenta
-    </button>
-    <ul class="dropdown-menu">
-        <li>
-        <a class="dropdown-item">Sucursal Monterrey</a>
-        </li>
-        <li>
-        <a class="dropdown-item">Sucursal Puebla</a>
-        </li>
-        <li>
-        <a class="dropdown-item">Sucursal CDMX</a>
-        </li>
-    </ul>
-</div>
-</div>
+        <div class="campaign-timer" id="timer">
+            ⏱ Cierra en: --:--:--
+        </div>
 
+    </div>
+    <div class="actions">
+
+        <a href="/concesionario/carrito" class="btn btn-light position-relative">
+            🛒
+            <% if (usuario && usuario.carritoCount) { %>
+                <span class="badge bg-danger badge-cart">
+                    <%= usuario.carritoCount %>
+                </span>
+            <% } %>
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
+                👤 <%= usuario?.nombre || 'Cuenta' %>
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item">Sucursal Monterrey</a></li>
+                <li><a class="dropdown-item">Sucursal Puebla</a></li>
+                <li><a class="dropdown-item">Sucursal CDMX</a></li>
+                <li><hr></li>
+                <li><a href="/logout" class="dropdown-item text-danger">Cerrar sesión</a></li>
+            </ul>
+        </div>
+    </div>
 </header>
+
+<script>
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 5);
+    function updateTimer() {
+        const now = new Date();
+        const diff = endDate - now;
+
+        if (diff <= 0) {
+            document.getElementById("timer").innerHTML = "Campaña finalizada";
+            return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+
+        document.getElementById("timer").innerHTML =
+            `⏱ Cierra en: ${d}d ${h}h ${m}m ${s}s`;
+    }
+    setInterval(updateTimer, 1000);
+    updateTimer();
+</script>
