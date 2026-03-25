@@ -1,12 +1,43 @@
-<h2>
-Carga Masiva de Productos
+<h2 class="mb-4">
+Registrar nueva campana
 </h2>
 <p class="text-muted">
-Sube un archivo CSV o Excel con múltiples productos.
+Define la ventana de vigencia de la campana. La activacion se controla despues desde el modulo de estado para asegurar que exista solo una activa a la vez.
 </p>
+
 <div class="card p-4">
-    <input type="file" class="form-control mb-3">
-    <button class="btn btn-primary">
-        Subir archivo
-    </button>
+    <form method="post" action="/admin/campanas/crear">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre de la campana</label>
+                <input type="text" name="name" class="form-control" value="<%= formData.name || '' %>">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha de inicio</label>
+                <input type="date" name="startDate" class="form-control" value="<%= formData.startDate || '' %>">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Descripcion</label>
+            <textarea name="description" class="form-control" rows="3"><%= formData.description || '' %></textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Duracion en dias</label>
+                <input type="number" name="durationDays" class="form-control" value="<%= formData.durationDays || 30 %>">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ventana de cancelacion (horas)</label>
+                <input type="number" name="cancellationWindowHours" class="form-control" value="<%= formData.cancellationWindowHours || 24 %>">
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">
+            Guardar campana
+            </button>
+            <a class="btn btn-outline-secondary" href="/admin/campanas">
+            Volver al modulo
+            </a>
+        </div>
+    </form>
 </div>

@@ -17,27 +17,34 @@
             </p>
             <div class="login-card">
                 <h2 class="text-center mb-3">
-                Bienvenid@
+                Bienvenido
                 </h2>
                 <p class="text-center text-muted mb-4">
-                Ingresa tus datos para acceder
+                Acceso administrativo mock
                 </p>
-                <input
-                type="email"
-                class="form-control mb-3"
-                placeholder="usuario@ejemplo.com">
-                <input
-                type="password"
-                class="form-control mb-4"
-                placeholder="••••••">
-                <a href="/admin/dashboard" class="btn btn-login w-100">
-                Iniciar Sesión
-                </a>
-                </div>
-                <div class="login-footer">
-                <a href="#">Términos y Condiciones</a>
+                <%- include('includes/flash', { pageMessage }) %>
+                <form method="post" action="/login">
+                    <input
+                    type="email"
+                    name="email"
+                    class="form-control mb-3"
+                    placeholder="admin@ppg.com"
+                    value="admin@ppg.com">
+                    <input
+                    type="password"
+                    name="password"
+                    class="form-control mb-4"
+                    placeholder="******"
+                    value="admin123">
+                    <button type="submit" class="btn btn-login w-100">
+                    Iniciar sesion
+                    </button>
+                </form>
+            </div>
+            <div class="login-footer">
+                <a href="#">Terminos y Condiciones</a>
                 |
-                <a href="#">Política de Privacidad</a>
+                <a href="#">Politica de Privacidad</a>
             </div>
         </div>
     </body>

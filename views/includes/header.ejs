@@ -1,35 +1,43 @@
 <header class="topbar">
+    <div class="logo-area">
+        <img src="/img/ppg-logo.png" class="logo" alt="PPG Logo">
+        <div>
+            <span class="brand">
+            PPG Preventa
+            </span>
+            <p class="brand-subtitle">
+            Modulo administrativo
+            </p>
+        </div>
+    </div>
 
-<div class="logo-area">
-    <img src="/img/ppg-logo.png" class="logo" alt="PPG Logo">
-    <span class="brand">
-    PPG Preventa
-    </span>
-</div>
-<div class="campaign-timer">
-    ⏱ Cierra en: 05d : 12h : 34m : 05s
-</div>
+    <div class="campaign-timer">
+        <% if (activeCampaign) { %>
+        <span class="timer-label">
+        Campana activa:
+        </span>
+        <strong><%= activeCampaign.name %></strong>
+        <span class="timer-value">
+        Cierra en <%= campaignTimerLabel %>
+        </span>
+        <% } else { %>
+        <span class="timer-value">
+        Sin campana activa configurada
+        </span>
+        <% } %>
+    </div>
 
-<div class="actions">
-    <button class="btn btn-light">
-    🛒
-    </button>
-<div class="dropdown">
-    <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-    👤 Cuenta
-    </button>
-    <ul class="dropdown-menu">
-        <li>
-        <a class="dropdown-item">Sucursal Monterrey</a>
-        </li>
-        <li>
-        <a class="dropdown-item">Sucursal Puebla</a>
-        </li>
-        <li>
-        <a class="dropdown-item">Sucursal CDMX</a>
-        </li>
-    </ul>
-</div>
-</div>
-
+    <div class="actions">
+        <div class="account-chip">
+            <strong><%= currentUser ? currentUser.role : 'Invitado' %></strong>
+            <span><%= currentUser ? currentUser.email : 'Sesion no iniciada' %></span>
+        </div>
+        <% if (currentUser) { %>
+        <form method="post" action="/logout">
+            <button class="btn btn-light" type="submit">
+            Cerrar sesion
+            </button>
+        </form>
+        <% } %>
+    </div>
 </header>

@@ -1,14 +1,47 @@
-<h2>
-Configurar Ventana de Cancelación
+<h2 class="mb-4">
+Configurar ventana de cancelacion
 </h2>
-<div class="card p-4">
-    <div class="mb-3">
-        <label>
-            Horas permitidas para cancelar reservas
-        </label>
-        <input type="number" class="form-control">
+<p class="text-muted">
+Cada campana puede definir cuantas horas permanecen disponibles para cancelar reservas.
+</p>
+
+<div class="card p-4 mb-4">
+    <form method="post" action="/admin/campanas/cancelacion">
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label class="form-label">Campana</label>
+                <select name="campaignId" class="form-select">
+                    <% campaigns.forEach((campaign) => { %>
+                    <option value="<%= campaign.id %>">
+                        <%= campaign.name %> | <%= campaign.statusLabel %> | <%= campaign.formattedStartDate %> - <%= campaign.formattedEndDate %>
+                    </option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Horas permitidas</label>
+                <input type="number" name="cancellationWindowHours" class="form-control" value="24">
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit">
+        Guardar configuracion
+        </button>
+    </form>
+</div>
+
+<div class="row g-4">
+    <% campaigns.forEach((campaign) => { %>
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h4 class="mb-2"><%= campaign.name %></h4>
+            <p class="text-muted mb-3">
+            Vigencia: <%= campaign.formattedStartDate %> - <%= campaign.formattedEndDate %>
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span>Ventana actual</span>
+                <strong><%= campaign.cancellationWindowHours %> horas</strong>
+            </div>
+        </div>
     </div>
-    <button class="btn btn-primary">
-        Guardar configuración
-    </button>
+    <% }) %>
 </div>

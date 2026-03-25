@@ -1,16 +1,32 @@
 <h2 class="mb-4">
-Gestión de Catálogo
+Gestion de Catalogo
 </h2>
 <p class="text-muted">
-Administración de productos disponibles en el sistema de preventa.
+Administra el alta de SKUs para campanas vigentes y prepara el flujo para la futura conexion a base de datos.
 </p>
+
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <span>Productos cargados</span>
+        <strong><%= products.length %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Campanas seleccionables</span>
+        <strong><%= campaignOptions.filter((campaign) => !campaign.disabled).length %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Modo actual</span>
+        <strong>Mock</strong>
+    </div>
+</div>
+
 <div class="catalogo-grid">
     <div class="catalogo-card">
         <h5>
         Registrar SKU
         </h5>
         <p>
-        Crear un nuevo producto dentro del catálogo.
+        Captura informacion tecnica, comercial y logistica del producto y asocialo a la campana activa.
         </p>
         <a href="/admin/catalogo/registrar"
         class="btn btn-primary">
@@ -22,23 +38,23 @@ Administración de productos disponibles en el sistema de preventa.
         Modificar SKU
         </h5>
         <p>
-        Editar información de productos existentes.
+        Espacio reservado para la edicion de productos cuando conectemos la persistencia final.
         </p>
         <a href="/admin/catalogo/modificar"
-        class="btn btn-primary">
-        Modificar producto
+        class="btn btn-outline-primary">
+        Ver modulo
         </a>
     </div>
     <div class="catalogo-card">
         <h5>
-        Carga Masiva
+        Carga masiva
         </h5>
         <p>
-        Importar múltiples productos mediante archivo CSV o Excel.
+        Placeholder listo para integrar carga por archivo cuando llegue el modelo definitivo.
         </p>
         <a href="/admin/catalogo/carga-masiva"
-        class="btn btn-primary">
-        Subir archivo
+        class="btn btn-outline-primary">
+        Ver modulo
         </a>
     </div>
 </div>

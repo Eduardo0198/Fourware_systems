@@ -1,56 +1,104 @@
 <h2 class="mb-4">
-Gestión de Campañas
+Gestion de Campanas
 </h2>
 <p class="text-muted">
-Administración de campañas de preventa.
+Controla la vigencia, activacion unica y configuracion operativa de las campanas comerciales.
 </p>
+
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <span>Total de campanas</span>
+        <strong><%= summary.totalCampaigns %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Campanas activas</span>
+        <strong><%= summary.activeCampaigns %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Campanas vigentes</span>
+        <strong><%= summary.validCampaigns %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Duracion promedio</span>
+        <strong><%= summary.averageDuration %> dias</strong>
+    </div>
+</div>
+
 <div class="catalogo-grid">
     <div class="catalogo-card">
         <h5>
-        Crear Campaña
+        Crear campana
         </h5>
         <p>
-        Registrar una nueva campaña en el sistema.
+        Define nombre, descripcion, fecha de inicio, duracion y ventana de cancelacion.
         </p>
         <a href="/admin/campanas/crear"
         class="btn btn-primary">
-        Crear campaña
+        Crear campana
         </a>
     </div>
     <div class="catalogo-card">
         <h5>
-        Editar Campaña
+        Editar campana
         </h5>
         <p>
-        Modificar información de campañas existentes.
+        Ajusta la configuracion de campanas registradas sin tocar la capa de datos real.
         </p>
         <a href="/admin/campanas/editar"
-        class="btn btn-primary">
-        Editar campaña
+        class="btn btn-outline-primary">
+        Editar campana
         </a>
     </div>
     <div class="catalogo-card">
         <h5>
-        Activar / Desactivar
+        Configurar activa
         </h5>
         <p>
-        Cambiar estado de campañas activas.
+        Asegura que exista solo una campana activa a la vez y valida su vigencia por fechas.
         </p>
         <a href="/admin/campanas/estado"
-        class="btn btn-primary">
+        class="btn btn-outline-primary">
         Gestionar estado
         </a>
     </div>
     <div class="catalogo-card">
         <h5>
-        Ventana de Cancelación
+        Ventana de cancelacion
         </h5>
         <p>
-        Configurar tiempo permitido para cancelar reservas.
+        Configura cuantas horas permanecen disponibles para cancelar reservas por campana.
         </p>
         <a href="/admin/campanas/cancelacion"
-        class="btn btn-primary">
+        class="btn btn-outline-primary">
         Configurar
         </a>
+    </div>
+</div>
+
+<div class="card p-4 mt-4">
+    <h4 class="mb-3">
+    Resumen rapido
+    </h4>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Campana</th>
+                    <th>Vigencia</th>
+                    <th>Estado</th>
+                    <th>Productos asociados</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% campaigns.forEach((campaign) => { %>
+                <tr>
+                    <td><strong><%= campaign.name %></strong></td>
+                    <td><%= campaign.formattedStartDate %> - <%= campaign.formattedEndDate %></td>
+                    <td><%= campaign.statusLabel %></td>
+                    <td><%= campaign.productCount %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
     </div>
 </div>

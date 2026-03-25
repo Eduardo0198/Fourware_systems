@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const expressLayouts = require('express-ejs-layouts');
+const { attachRequestContext } = require('./middleware/auth.middleware');
 const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -16,6 +17,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(attachRequestContext);
 
 app.use('/', require('./routes/auth.routes'));
 app.use('/admin', require('./routes/admin.routes'));

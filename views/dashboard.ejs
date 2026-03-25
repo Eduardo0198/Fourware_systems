@@ -1,36 +1,97 @@
-<div class="banner">
-    <img src="/img/banner-campania.jpg" alt="Banner campaña">
+<section class="hero-panel">
+    <div>
+        <p class="section-kicker">
+        Resumen ejecutivo
+        </p>
+        <h2 class="mb-2">
+        Panel del administrador
+        </h2>
+        <p class="text-muted mb-0">
+        Desde aqui puedes configurar la campana activa, registrar SKUs y validar el esqueleto del modulo sin depender aun de la base de datos final.
+        </p>
+    </div>
+    <% if (activeCampaign) { %>
+    <div class="hero-badge">
+        <span>Campana activa</span>
+        <strong><%= activeCampaign.name %></strong>
+        <small>Vigencia: <%= activeCampaign.formattedStartDate %> - <%= activeCampaign.formattedEndDate %></small>
+    </div>
+    <% } %>
+</section>
+
+<div class="stats-grid mt-4">
+    <div class="stat-card">
+        <span>Total de campanas</span>
+        <strong><%= metrics.totalCampaigns %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Campanas vigentes</span>
+        <strong><%= metrics.validCampaigns %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Productos registrados</span>
+        <strong><%= metrics.totalProducts %></strong>
+    </div>
+    <div class="stat-card">
+        <span>Productos inactivos</span>
+        <strong><%= metrics.inactiveProducts %></strong>
+    </div>
 </div>
-<h3 class="mt-4">
-    Productos destacados
-</h3>
-<div class="productos-grid">
-    <div class="producto">
-        <img src="/img/p1.png" alt="Producto">
-        <p>Pintura exterior premium</p>
-        <button class="btn btn-primary">
-            Ver producto
-        </button>
+
+<div class="row mt-4 g-4">
+    <div class="col-lg-7">
+        <div class="card p-4 h-100">
+            <h4 class="mb-3">
+            Estado de campanas
+            </h4>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Campana</th>
+                            <th>Vigencia</th>
+                            <th>Estado</th>
+                            <th>Productos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% campaigns.forEach((campaign) => { %>
+                        <tr>
+                            <td><strong><%= campaign.name %></strong></td>
+                            <td><%= campaign.formattedStartDate %> - <%= campaign.formattedEndDate %></td>
+                            <td>
+                                <span class="badge <%= campaign.status === 'active' ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= campaign.statusLabel %>
+                                </span>
+                            </td>
+                            <td><%= campaign.productCount %></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="producto">
-        <img src="/img/p2.png" alt="Producto">
-        <p>Pintura automotriz</p>
-        <button class="btn btn-primary">
-            Ver producto
-        </button>
-    </div>
-    <div class="producto">
-        <img src="/img/p3.png" alt="Producto">
-        <p>Pintura industrial</p>
-        <button class="btn btn-primary">
-            Ver producto
-        </button>
-    </div>
-    <div class="producto">
-        <img src="/img/p4.png" alt="Producto">
-        <p>Pintura interior profesional</p>
-        <button class="btn btn-primary">
-            Ver producto
-        </button>
+    <div class="col-lg-5">
+        <div class="card p-4 h-100">
+            <h4 class="mb-3">
+            Ultimos productos capturados
+            </h4>
+            <% if (recentProducts.length) { %>
+            <div class="list-group list-group-flush">
+                <% recentProducts.forEach((product) => { %>
+                <div class="list-group-item px-0">
+                    <strong><%= product.commercialName %></strong>
+                    <p class="mb-1 text-muted"><%= product.sku %> | <%= product.campaignName %></p>
+                    <small>Estado inicial: <%= product.status %></small>
+                </div>
+                <% }) %>
+            </div>
+            <% } else { %>
+            <p class="text-muted mb-0">
+            Aun no hay productos registrados.
+            </p>
+            <% } %>
+        </div>
     </div>
 </div>

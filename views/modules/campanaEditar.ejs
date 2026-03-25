@@ -1,29 +1,52 @@
-<h2>
-Editar Campaña
+<h2 class="mb-4">
+Editar campanas
 </h2>
-<input
-type="text"
-class="form-control mb-3"
-placeholder="Buscar campaña">
-<table class="table">
-    <thead>
-        <tr>
-            <th>Campaña</th>
-            <th>Fecha inicio</th>
-            <th>Fecha fin</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-        <tbody>
-            <tr>
-                <td>Mundial 2026</td>
-                <td>01/03/2026</td>
-                <td>30/03/2026</td>
-                <td>
-                <button class="btn btn-sm btn-primary">
-                    Editar
-                </button>
-                </td>
-            </tr>
-    </tbody>
-</table>
+<p class="text-muted">
+Actualiza la configuracion de las campanas registradas sin cambiar aun la capa de persistencia final.
+</p>
+
+<div class="campaign-edit-grid">
+    <% campaigns.forEach((campaign) => { %>
+    <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h4 class="mb-1"><%= campaign.name %></h4>
+                <p class="text-muted mb-0">
+                Estado actual: <%= campaign.statusLabel %>
+                </p>
+            </div>
+            <span class="badge <%= campaign.status === 'active' ? 'bg-success' : 'bg-secondary' %>">
+                <%= campaign.statusLabel %>
+            </span>
+        </div>
+
+        <form method="post" action="/admin/campanas/editar/<%= campaign.id %>">
+            <div class="mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="name" class="form-control" value="<%= campaign.name %>">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Descripcion</label>
+                <textarea name="description" class="form-control" rows="3"><%= campaign.description %></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de inicio</label>
+                    <input type="date" name="startDate" class="form-control" value="<%= campaign.startDate %>">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Duracion</label>
+                    <input type="number" name="durationDays" class="form-control" value="<%= campaign.durationDays %>">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cancelacion</label>
+                    <input type="number" name="cancellationWindowHours" class="form-control" value="<%= campaign.cancellationWindowHours %>">
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">
+            Guardar cambios
+            </button>
+        </form>
+    </div>
+    <% }) %>
+</div>

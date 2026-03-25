@@ -1,5 +1,5 @@
 <aside class="sidebar">
-    <a href="/admin/dashboard" class="menu">
+    <a href="/admin/dashboard" class="menu <%= currentPath.startsWith('/admin/dashboard') ? 'active' : '' %>">
     Dashboard
     </a>
 
@@ -7,35 +7,35 @@
     Administrador
     </p>
 
-    <a href="/admin/catalogo" class="menu">
-    Gestión de Catálogo
+    <a href="/admin/catalogo" class="menu <%= currentPath.startsWith('/admin/catalogo') ? 'active' : '' %>">
+    Gestion de Catalogo
     </a>
 
-    <a href="/admin/campanas" class="menu">
-    Gestión de Campañas
+    <a href="/admin/campanas" class="menu <%= currentPath.startsWith('/admin/campanas') ? 'active' : '' %>">
+    Gestion de Campanas
     </a>
 
-    <a href="/admin/reportes" class="menu">
+    <a href="/admin/reportes" class="menu <%= currentPath.startsWith('/admin/reportes') ? 'active' : '' %>">
     Reportes
     </a>
 
-    <a href="/admin/auditoria" class="menu">
-    Bitácora de Auditoría
+    <a href="/admin/auditoria" class="menu <%= currentPath.startsWith('/admin/auditoria') ? 'active' : '' %>">
+    Bitacora de Auditoria
     </a>
 
     <p class="text-white mt-4 mb-2">
-    Logística
+    Logistica
     </p>
 
-    <a href="/logistica/reservas-confirmadas" class="menu">
+    <a href="/logistica/reservas-confirmadas" class="menu <%= currentPath.startsWith('/logistica/reservas-confirmadas') ? 'active' : '' %>">
     Reservas confirmadas
     </a>
 
-    <a href="/logistica/metricas" class="menu">
-    Métricas de peso y volumen
+    <a href="/logistica/metricas" class="menu <%= currentPath.startsWith('/logistica/metricas') ? 'active' : '' %>">
+    Metricas de peso y volumen
     </a>
 
-    <a href="/logistica/reporte-operativo" class="menu">
+    <a href="/logistica/reporte-operativo" class="menu <%= currentPath.startsWith('/logistica/reporte-operativo') ? 'active' : '' %>">
     Reporte operativo
     </a>
 
@@ -43,27 +43,27 @@
     Marketing
     </p>
 
-    <a href="/marketing/metricas-comparativas" class="menu">
-    Métricas comparativas
+    <a href="/marketing/metricas-comparativas" class="menu <%= currentPath.startsWith('/marketing/metricas-comparativas') ? 'active' : '' %>">
+    Metricas comparativas
     </a>
 
-    <a href="/marketing/ranking-productos" class="menu">
+    <a href="/marketing/ranking-productos" class="menu <%= currentPath.startsWith('/marketing/ranking-productos') ? 'active' : '' %>">
     Ranking productos
     </a>
 
-    <a href="/marketing/tendencias-region" class="menu">
-    Tendencias por región
+    <a href="/marketing/tendencias-region" class="menu <%= currentPath.startsWith('/marketing/tendencias-region') ? 'active' : '' %>">
+    Tendencias por region
     </a>
 
     <p class="text-white mt-4 mb-2">
-        Concesionario
+    Concesionario
     </p>
 
-    <a href="/concesionario/catalogo" class="menu">
-        Catálogo
+    <a href="/concesionario/catalogo" class="menu <%= currentPath.startsWith('/concesionario/catalogo') ? 'active' : '' %>">
+    Catalogo
     </a>
 
-    <a href="/concesionario/reservas" class="menu">
-        Mis Reservas
+    <a href="/concesionario/reservas" class="menu <%= currentPath.startsWith('/concesionario/reservas') ? 'active' : '' %>">
+    Mis Reservas
     </a>
 </aside>

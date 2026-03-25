@@ -1,40 +1,60 @@
 <h2 class="mb-4">
-Activar / Desactivar Campañas
+Configurar campana activa
 </h2>
+<p class="text-muted">
+Solo puede existir una campana activa. Para activarla, debe estar vigente dentro de la ventana de fechas configurada.
+</p>
+
 <div class="card p-4">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Campaña</th>
-                <th>Fecha inicio</th>
-                <th>Fecha fin</th>
-                <th>Estatus</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Mundial 2026</td>
-                <td>2026-03-01</td>
-                <td>2026-06-30</td>
-                <td><span class="badge bg-success">Activa</span></td>
-                <td>
-                <button class="btn btn-outline-danger btn-sm">
-                    Desactivar
-                </button>
-                </td>
-            </tr>
-            <tr>
-                <td>Pintura Industrial</td>
-                <td>2026-07-01</td>
-                <td>2026-09-30</td>
-                <td><span class="badge bg-secondary">Inactiva</span></td>
-                <td>
-                <button class="btn btn-outline-success btn-sm">
-                    Activar
-                </button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Campana</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                    <th>Valida hoy</th>
+                    <th>Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% campaigns.forEach((campaign) => { %>
+                <tr>
+                    <td>
+                        <strong><%= campaign.name %></strong>
+                        <div class="small text-muted"><%= campaign.description %></div>
+                    </td>
+                    <td><%= campaign.formattedStartDate %></td>
+                    <td><%= campaign.formattedEndDate %></td>
+                    <td>
+                        <span class="badge <%= campaign.status === 'active' ? 'bg-success' : 'bg-secondary' %>">
+                            <%= campaign.statusLabel %>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge <%= campaign.isCurrentlyValid ? 'bg-info text-dark' : 'bg-light text-dark' %>">
+                            <%= campaign.isCurrentlyValid ? 'Si' : 'No' %>
+                        </span>
+                    </td>
+                    <td>
+                        <% if (campaign.status === 'active') { %>
+                        <form method="post" action="/admin/campanas/estado/<%= campaign.id %>/desactivar">
+                            <button class="btn btn-outline-danger btn-sm" type="submit">
+                            Desactivar
+                            </button>
+                        </form>
+                        <% } else { %>
+                        <form method="post" action="/admin/campanas/estado/<%= campaign.id %>/activar">
+                            <button class="btn btn-outline-success btn-sm" type="submit" <%= campaign.canActivate ? '' : 'disabled' %>>
+                            Activar
+                            </button>
+                        </form>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>
