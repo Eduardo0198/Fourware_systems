@@ -1,0 +1,34 @@
+<header class="topbar">
+    <div class="logo-area">
+        <img src="/img/ppg-logo.png" class="logo">
+        <span class="brand">PPG Preventa</span>
+    </div>
+    <div class="actions">
+        <a href="/carrito" class="btn btn-light position-relative">
+            🛒
+            <% if (usuario && usuario.carritoCount) { %>
+                <span class="badge bg-danger badge-cart">
+                    <%= usuario.carritoCount %>
+                </span>
+            <% } %>
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
+                👤 <%= usuario?.nombre || 'Cuenta' %>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item">Sucursal Monterrey</a></li>
+                <li><a class="dropdown-item">Sucursal Puebla</a></li>
+                <li><a class="dropdown-item">Sucursal CDMX</a></li>
+                <li><hr></li>
+                <li>
+                    <a href="/logout" class="dropdown-item text-danger">
+                        Cerrar sesión
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+</header>

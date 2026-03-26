@@ -11,9 +11,15 @@ app.use(session({
     saveUninitialized: false
 }));
 
+const campaniaModel = require('./models/campania.model');
+
 app.use((req, res, next) => {
     res.locals.usuario = req.session.usuario || null;
-    next();
+
+    campaniaModel.obtenerCampaniaActiva((err, result) => {
+        res.locals.campania = (result && result.length > 0) ? result[0] : null;
+        next();
+    });
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));

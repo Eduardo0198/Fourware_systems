@@ -1,66 +1,17 @@
-<header class="topbar">
-    <div class="logo-area">
-        <img src="/img/ppg-logo.png" class="logo">
-        <span class="brand">PPG Preventa</span>
-    </div>
-    <div class="campaign-area">
+<% if (usuario && usuario.roles.includes('Administrador')) { %>
 
-        <div class="campaign-banner">
-            <img src="/img/banner-campana.jpg" alt="Campaña">
-        </div>
+    <%- include('headers/headerAdmin') %>
 
-        <div class="campaign-timer" id="timer">
-            ⏱ Cierra en: --:--:--
-        </div>
+<% } else if (usuario && usuario.roles.includes('Logistica')) { %>
 
-    </div>
-    <div class="actions">
+    <%- include('headers/headerLogistica') %>
 
-        <a href="/concesionario/carrito" class="btn btn-light position-relative">
-            🛒
-            <% if (usuario && usuario.carritoCount) { %>
-                <span class="badge bg-danger badge-cart">
-                    <%= usuario.carritoCount %>
-                </span>
-            <% } %>
-        </a>
+<% } else if (usuario && usuario.roles.includes('Marketing')) { %>
 
-        <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                👤 <%= usuario?.nombre || 'Cuenta' %>
-            </button>
+    <%- include('headers/headerMarketing') %>
 
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item">Sucursal Monterrey</a></li>
-                <li><a class="dropdown-item">Sucursal Puebla</a></li>
-                <li><a class="dropdown-item">Sucursal CDMX</a></li>
-                <li><hr></li>
-                <li><a href="/logout" class="dropdown-item text-danger">Cerrar sesión</a></li>
-            </ul>
-        </div>
-    </div>
-</header>
+<% } else if (usuario && usuario.roles.includes('Concesionario')) { %>
 
-<script>
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 5);
-    function updateTimer() {
-        const now = new Date();
-        const diff = endDate - now;
+    <%- include('headers/headerConcesionario') %>
 
-        if (diff <= 0) {
-            document.getElementById("timer").innerHTML = "Campaña finalizada";
-            return;
-        }
-
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        const s = Math.floor((diff / 1000) % 60);
-
-        document.getElementById("timer").innerHTML =
-            `⏱ Cierra en: ${d}d ${h}h ${m}m ${s}s`;
-    }
-    setInterval(updateTimer, 1000);
-    updateTimer();
-</script>
+<% } %>
