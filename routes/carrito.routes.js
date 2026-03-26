@@ -22,6 +22,12 @@ router.get('/eliminar/:sku',
     carritoController.eliminarProducto
 );
 
+router.post('/actualizar-cantidad',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    carritoController.actualizarCantidad
+);
+
 router.post('/confirmar',
     protegerRuta,
     tieneRol(['Concesionario']),
