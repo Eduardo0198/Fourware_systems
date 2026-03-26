@@ -1,155 +1,153 @@
-<h2>Catálogo de Productos</h2>
+<h2 class="mb-3">Catálogo de Productos</h2>
 <hr>
-
-<!-- Buscador y botón de filtros con espacio mínimo -->
 <div class="d-flex align-items-center mb-3 gap-2">
     <div class="flex-grow-1">
-        <form id="searchForm" method="GET" action="/concesionario/catalogo">
-            <div class="input-group">
-                <span class="input-group-text" id="search-icon">
+        <form method="GET" action="/concesionario/catalogo">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text">
                     <i class="bi bi-search"></i>
                 </span>
-                <input type="text" class="form-control" name="q" placeholder="Buscar producto..." 
-                       value="<%= query || '' %>" aria-label="Buscar" aria-describedby="search-icon">
-                <button class="btn btn-primary" type="submit" style="display: none;">Buscar</button>
+                <input type="text"
+                       class="form-control"
+                       name="q"
+                       placeholder="Buscar producto..."
+                       value="<%= typeof query !== 'undefined' ? query : '' %>">
             </div>
         </form>
     </div>
-    <div>
-        <button type="button" id="toggleFiltersBtn" class="btn btn-outline-secondary">
-            <i class="bi bi-funnel"></i> Mostrar filtros
-        </button>
-    </div>
+    <button id="toggleFiltersBtn" class="btn btn-outline-primary">
+        <i class="bi bi-funnel"></i> Filtros
+    </button>
 </div>
 
-<!-- Contenedor de filtros (inicialmente oculto si no hay filtros activos) -->
-<div id="filtersContainer" style="display: none;">
-    <div class="row mb-4">
-        <div class="col-12">
-            <form id="filtersForm" method="GET" action="/concesionario/catalogo" class="d-flex justify-content-end gap-3 align-items-center flex-wrap">
-                <input type="hidden" name="q" value="<%= query || '' %>">
-                
-                <div class="d-flex align-items-center">
-                    <label for="precio_min" class="me-1">Precio min:</label>
-                    <input type="number" id="precio_min" name="precio_min" class="form-control" style="width: 100px;" 
-                           value="<%= (typeof precio_min === 'number') ? precio_min : 0 %>" step="10" min="0">
-                </div>
-                
-                <div class="d-flex align-items-center">
-                    <label for="precio_max" class="me-1">Precio max:</label>
-                    <input type="number" id="precio_max" name="precio_max" class="form-control" style="width: 100px;" 
-                           value="<%= (typeof precio_max === 'number') ? precio_max : 10000 %>" step="10" min="0">
-                </div>
-                
-                <div class="d-flex align-items-center">
-                    <label for="unidad_venta" class="me-1">Unidad de venta:</label>
-                    <select id="unidad_venta" name="unidad_venta" class="form-select" style="width: auto;">
-                        <option value="">Todas</option>
-                        <% if (Array.isArray(unidadesVenta)) { %>
-                            <% unidadesVenta.forEach(unidadObj => { %>
-                                <% const unidadTexto = unidadObj.unidad_venta || unidadObj; %>
-                                <option value="<%= unidadTexto %>" <%= (unidad_venta_seleccionada === unidadTexto) ? 'selected' : '' %>>
-                                    <%= unidadTexto %>
-                                </option>
-                            <% }); %>
-                        <% } %>
-                    </select>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="/concesionario/catalogo" class="btn btn-secondary">Limpiar filtros</a>
-            </form>
+<div id="filtersContainer" style="display:none;">
+    <form method="GET" action="/concesionario/catalogo"
+          class="row g-3 align-items-end mb-4">
+        <input type="hidden" name="q"
+               value="<%= typeof query !== 'undefined' ? query : '' %>">
+        <div class="col-md-2">
+            <label class="form-label">Precio min</label>
+            <input type="number"
+                   name="precio_min"
+                   class="form-control"
+                   value="<%= typeof precio_min !== 'undefined' ? precio_min : 0 %>">
         </div>
-    </div>
-</div>
-
-<!-- Grid de productos -->
-<div class="productos-grid">
-    <% productos.forEach(producto => { %>
-        <div class="producto">
-            <img src="<%= (producto.imagen === 'producto.png' ? '/img/ppg-logo.png' : producto.imagen || '/img/ppg-logo.png') %>" alt="<%= producto.nombre %>">
-            <p class="producto-nombre"><%= producto.nombre %></p>
-            <p class="producto-precio">$<%= producto.precio_unitario %></p>
-            <a href="/concesionario/producto/<%= producto.SKU %>" class="btn btn-primary w-100">Ver detalle</a>
+        <div class="col-md-2">
+            <label class="form-label">Precio max</label>
+            <input type="number"
+                   name="precio_max"
+                   class="form-control"
+                   value="<%= typeof precio_max !== 'undefined' ? precio_max : 10000 %>">
         </div>
-    <% }); %>
+        <div class="col-md-3">
+            <label class="form-label">Unidad</label>
+            <select name="unidad_venta" class="form-select">
+                <option value="">Todas</option>
+                <% if (Array.isArray(unidadesVenta)) { %>
+                    <% unidadesVenta.forEach(u => { %>
+                        <option value="<%= u %>"
+                            <%= (unidad_venta_seleccionada === u) ? 'selected' : '' %>>
+                            <%= u %>
+                        </option>
+                    <% }) %>
+                <% } %>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary">Filtrar</button>
+            <a href="/concesionario/catalogo" class="btn btn-secondary">Limpiar</a>
+        </div>
+    </form>
 </div>
 
-<!-- Paginación con construcción segura de parámetros -->
+<div class="row">
+    <% if (productos.length === 0) { %>
+        <div class="col-12 text-center mt-5">
+            <h5>No se encontraron productos</h5>
+        </div>
+
+    <% } %>
+    <% productos.forEach(p => { %>
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm h-100">
+                <img 
+                    src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>" 
+                    class="card-img-top"
+                    onerror="this.src='/img/ppg-logo.png'">
+                     class="card-img-top"
+                     style="height:200px; object-fit:cover;">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title"><%= p.nombre %></h6>
+                    <p class="fw-bold text-primary">
+                        $<%= p.precio_unitario %>
+                    </p>
+                    <div class="mt-auto">
+                        <a href="/concesionario/producto/<%= p.SKU %>"
+                           class="btn btn-outline-primary w-100 mb-2">
+                            Ver detalle
+                        </a>
+                        <form method="POST" action="/carrito/agregar">
+                            <input type="hidden" name="sku" value="<%= p.SKU %>">
+                            <input type="hidden" name="nombre" value="<%= p.nombre %>">
+                            <input type="hidden" name="precio" value="<%= p.precio_unitario %>">
+                            <button class="btn btn-primary w-100">
+                                Agregar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
 <%
-    function buildQueryParams(page) {
-        let params = '?page=' + page;
-        if (query && typeof query === 'string' && query.trim() !== '') {
-            params += '&q=' + encodeURIComponent(query);
-        }
-        if (typeof precio_min === 'number') {
-            params += '&precio_min=' + precio_min;
-        }
-        if (typeof precio_max === 'number') {
-            params += '&precio_max=' + precio_max;
-        }
-        if (unidad_venta_seleccionada && typeof unidad_venta_seleccionada === 'string' && unidad_venta_seleccionada.trim() !== '') {
-            params += '&unidad_venta=' + encodeURIComponent(unidad_venta_seleccionada);
-        }
-        return params;
-    }
-%>
+function buildQuery(page) {
+    let url = '?page=' + page;
 
-<nav aria-label="Paginación de productos">
+    if (query) url += '&q=' + encodeURIComponent(query);
+    if (precio_min) url += '&precio_min=' + precio_min;
+    if (precio_max) url += '&precio_max=' + precio_max;
+    if (unidad_venta_seleccionada)
+        url += '&unidad_venta=' + encodeURIComponent(unidad_venta_seleccionada);
+    return url;
+}
+%>
+<nav>
     <ul class="pagination justify-content-center mt-4">
         <% if (paginacion.paginaActual > 1) { %>
             <li class="page-item">
-                <a class="page-link" href="<%= buildQueryParams(paginacion.paginaActual - 1) %>">Anterior</a>
+                <a class="page-link"
+                   href="<%= buildQuery(paginacion.paginaActual - 1) %>">
+                    Anterior
+                </a>
             </li>
-        <% } else { %>
-            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
         <% } %>
 
         <% for (let i = 1; i <= paginacion.totalPaginas; i++) { %>
-            <li class="page-item <%= (i === paginacion.paginaActual) ? 'active' : '' %>">
-                <a class="page-link" href="<%= buildQueryParams(i) %>"><%= i %></a>
+            <li class="page-item <%= i === paginacion.paginaActual ? 'active' : '' %>">
+                <a class="page-link" href="<%= buildQuery(i) %>"><%= i %></a>
             </li>
         <% } %>
 
         <% if (paginacion.paginaActual < paginacion.totalPaginas) { %>
             <li class="page-item">
-                <a class="page-link" href="<%= buildQueryParams(paginacion.paginaActual + 1) %>">Siguiente</a>
+                <a class="page-link"
+                   href="<%= buildQuery(paginacion.paginaActual + 1) %>">
+                    Siguiente
+                </a>
             </li>
-        <% } else { %>
-            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
         <% } %>
+
     </ul>
 </nav>
 
 <script>
-    const toggleBtn = document.getElementById('toggleFiltersBtn');
-    const filtersContainer = document.getElementById('filtersContainer');
-    let filtersVisible = false;
+const btn = document.getElementById('toggleFiltersBtn');
+const filters = document.getElementById('filtersContainer');
 
-    function toggleFilters() {
-        if (filtersVisible) {
-            filtersContainer.style.display = 'none';
-            toggleBtn.innerHTML = '<i class="bi bi-funnel"></i> Mostrar filtros';
-        } else {
-            filtersContainer.style.display = 'block';
-            toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Ocultar filtros';
-        }
-        filtersVisible = !filtersVisible;
-    }
-
-    // Detectar si hay algún filtro activo para mostrar los filtros por defecto
-    const hasActiveFilters = (
-        <%= (typeof query === 'string' && query.trim() !== '') ? 'true' : 'false' %> ||
-        <%= (typeof precio_min === 'number' && precio_min !== 0) ? 'true' : 'false' %> ||
-        <%= (typeof precio_max === 'number' && precio_max !== 10000) ? 'true' : 'false' %> ||
-        <%= (typeof unidad_venta_seleccionada === 'string' && unidad_venta_seleccionada !== '') ? 'true' : 'false' %>
-    );
-
-    if (hasActiveFilters) {
-        filtersVisible = true;
-        filtersContainer.style.display = 'block';
-        toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Ocultar filtros';
-    }
-
-    toggleBtn.addEventListener('click', toggleFilters);
+btn.addEventListener('click', () => {
+    filters.style.display =
+        filters.style.display === 'none' ? 'block' : 'none';
+});
 </script>
