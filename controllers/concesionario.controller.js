@@ -27,11 +27,47 @@ exports.home = (req, res) => {
 };
 
 exports.catalogo = (req, res) => {
-    res.render(
-        'modules/concesionarioCatalogo'
+    const page = parseInt(req.query.page) || 1;
+    const limit = 12;
+    const searchTerm = req.query.q || '';
+    const precioMin = req.query.precio_min ? parseFloat(req.query.precio_min) : 0;
+    const precioMax = req.query.precio_max ? parseFloat(req.query.precio_max) : 10000;
+    const unidadVenta = req.query.unidad_venta || '';
+    concesionarioModel.obtenerProductosPaginados(
+        page,
+        limit,
+        searchTerm,
+        precioMin,
+        precioMax,
+        unidadVenta,
+        (err, result) => {
+            if (err) {
+                console.log(err);
+                return res.send("Error al obtener catálogo");
+            }
+            const { productos, total } = result;
+            const totalPaginas = Math.ceil(total / limit);
+            concesionarioModel.obtenerUnidadesVenta((err2, unidadesVenta) => {
+                if (err2) {
+                    console.log(err2);
+                    unidadesVenta = [];
+                }
+                res.render('modules/concesionarioCatalogo', {
+                    productos: productos,
+                    query: searchTerm,
+                    precio_min: precioMin,
+                    precio_max: precioMax,
+                    unidad_venta_seleccionada: unidadVenta,
+                    unidadesVenta: unidadesVenta,
+                    paginacion: {
+                        paginaActual: page,
+                        totalPaginas: totalPaginas
+                    }
+                });
+            });
+        }
     );
 };
-
 
 exports.producto = (req, res) => {
     res.render(
