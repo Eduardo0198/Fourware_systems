@@ -1,4 +1,18 @@
 <h2>Carrito de preventa</h2>
+
+<!-- ===== INICIO caso 4 lau ===== -->
+<!-- codigo agregado: mensajes para validaciones y confirmacion del CU-04 -->
+<% if (error) { %>
+    <!-- caso 4 lau: mensaje para validaciones del CU-04 -->
+    <div class="alert alert-danger"><%= error %></div>
+<% } %>
+
+<% if (mensaje) { %>
+    <!-- caso 4 lau: mensaje de confirmacion al actualizar cantidades -->
+    <div class="alert alert-success"><%= mensaje %></div>
+<% } %>
+<!-- ===== FIN caso 4 lau ===== -->
+
 <table class="table">
     <thead>
         <tr>
@@ -15,11 +29,34 @@
             <tr>
                 <td><%= p.sku %></td>
                 <td><%= p.nombre %></td>
-                <td><%= p.cantidad %></td>
+                <!-- ===== INICIO caso 4 lau ===== -->
+                <!-- codigo original: <td><%= p.cantidad %></td> -->
+                <!-- codigo agregado: campo editable para modificar cantidad -->
+                <td>
+                    <!-- caso 4 lau: campo editable para modificar la cantidad antes de confirmar -->
+                    <form method="POST" action="/concesionario/carrito/actualizar/<%= p.sku %>" class="d-flex gap-2 align-items-center">
+                        <input
+                            type="number"
+                            name="cantidad"
+                            value="<%= p.cantidad %>"
+                            min="1"
+                            step="1"
+                            class="form-control"
+                            style="max-width: 90px;"
+                            required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Actualizar
+                        </button>
+                    </form>
+                </td>
+                <!-- ===== FIN caso 4 lau ===== -->
                 <td>$<%= p.precio %></td>
                 <td>$<%= p.precio * p.cantidad %></td>
                 <td>
-                    <a href="/carrito/eliminar/<%= p.sku %>" class="btn btn-danger">
+                    <!-- ===== INICIO caso 4 lau ===== -->
+                    <!-- codigo original: href="/carrito/eliminar/<%= p.sku %>" -->
+                    <a href="/concesionario/carrito/eliminar/<%= p.sku %>" class="btn btn-danger">
+                    <!-- ===== FIN caso 4 lau ===== -->
                         Eliminar
                     </a>
                 </td>
@@ -27,9 +64,21 @@
         <% }) %>
     </tbody>
 </table>
-<h4>Total: $<%= total %></h4>
+<!-- ===== INICIO caso 4 lau ===== -->
+<!-- codigo original: <h4>Total: $<%= total %></h4> -->
+<!-- codigo agregado: desglose de subtotal, iva y total -->
+<!-- caso 4 lau: resumen economico recalculado despues de cada modificacion -->
+<div class="mb-3">
+    <h5>Subtotal: $<%= subtotal %></h5>
+    <h5>IVA: $<%= iva %></h5>
+    <h4>Total: $<%= total %></h4>
+</div>
+<!-- ===== FIN caso 4 lau ===== -->
 <hr>
-<form method="POST" action="/carrito/confirmar">
+<!-- ===== INICIO caso 4 lau ===== -->
+<!-- codigo original: <form method="POST" action="/carrito/confirmar"> -->
+<form method="POST" action="/concesionario/carrito/confirmar">
+<!-- ===== FIN caso 4 lau ===== -->
     <label>Selecciona sucursal</label>
     <select name="sucursal" class="form-control" required>
         <option value="">Selecciona</option>

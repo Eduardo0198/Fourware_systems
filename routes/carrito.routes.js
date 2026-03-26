@@ -22,6 +22,16 @@ router.get('/eliminar/:sku',
     carritoController.eliminarProducto
 );
 
+// caso 4 lau: ruta para modificar la cantidad de un producto existente en el carrito
+
+router.post('/actualizar/:sku',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    carritoController.actualizarCantidad
+);
+
+//fin caso 4 lau 
+
 router.post('/confirmar',
     protegerRuta,
     tieneRol(['Concesionario']),
