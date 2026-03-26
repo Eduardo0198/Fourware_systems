@@ -1,4 +1,6 @@
 <header class="topbar">
+    <% const cuentaActiva = usuario?.cuentaActiva || null; %>
+    <% const cuentas = Array.isArray(usuario?.cuentas) ? usuario.cuentas : []; %>
     <div class="left-section">
         <button id="toggleSidebar" class="btn btn-light">
             <i class="bi bi-list"></i>
@@ -10,13 +12,52 @@
     </div>
     <div class="actions">
         <a href="/concesionario/carrito" class="btn btn-light position-relative">
-            🛒
+            <i class="bi bi-cart3"></i>
         </a>
 
         <div class="dropdown">
             <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                👤 <%= usuario?.nombre %>
+                <i class="bi bi-person-circle"></i> <%= usuario?.nombre %>
             </button>
+            <ul class="dropdown-menu dropdown-menu-end account-dropdown">
+                <li>
+                    <span class="dropdown-item-text small text-muted">
+                        Cuenta activa actual
+                    </span>
+                </li>
+                <li>
+                    <span class="dropdown-item-text current-account-label">
+                        <%= cuentaActiva ? cuentaActiva.nombre : 'Sin cuenta activa' %>
+                    </span>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <span class="dropdown-item-text small text-muted">
+                        Cuentas asociadas
+                    </span>
+                </li>
+                <% cuentas.forEach(cuenta => { %>
+                    <li>
+                        <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
+                            <input type="hidden" name="id_cuenta" value="<%= cuenta.id_cuenta %>">
+                            <button
+                                type="submit"
+                                class="dropdown-item account-option <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? 'active-account' : '' %> <%= !cuenta.activo ? 'inactive-account' : '' %>"
+                                <%= !cuenta.activo ? 'disabled' : '' %>
+                            >
+                                <span class="account-option-title">
+                                    <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? '✓ ' : '' %><%= cuenta.nombre %>
+                                </span>
+                                <small class="text-muted d-block">
+                                    <%= cuenta.codigo %> - <%= cuenta.estatus %>
+                                </small>
+                            </button>
+                        </form>
+                    </li>
+                <% }) %>
+                <li><hr class="dropdown-divider"></li>
+                <li><a href="/logout" class="dropdown-item text-danger">Cerrar sesión</a></li>
+            </ul>
         </div>
     </div>
 </header>

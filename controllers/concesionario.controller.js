@@ -1,6 +1,8 @@
 const db = require('../config/db');
 const concesionarioModel = require('../models/concesionario.model');
 const campaniaModel = require('../models/campania.model');
+const cuentaModel = require('../models/cuenta.model');
+const bitacora = require('../models/bitacora.model');
 
 exports.home = (req, res) => {
     concesionarioModel.obtenerTopProductos((err, productos) => {
@@ -24,6 +26,75 @@ exports.home = (req, res) => {
 
     });
 
+};
+
+exports.seleccionarCuentaActiva = (req, res) => {
+    const usuario = req.session.usuario;
+    const idCuenta = parseInt(req.body.id_cuenta, 10);
+    const destino = req.get('referer') || '/concesionario/home';
+
+    if (!usuario || !usuario.correo || Number.isNaN(idCuenta)) {
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'No fue posible actualizar la cuenta activa.'
+        };
+        return res.redirect(destino);
+    }
+
+    cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, idCuenta, (err, cuenta) => {
+        if (err) {
+            console.error(err);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible actualizar la cuenta activa.'
+            };
+            return res.redirect(destino);
+        }
+
+        if (!cuenta) {
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'La cuenta seleccionada no esta asociada a tu usuario.'
+            };
+            return res.redirect(destino);
+        }
+
+        if (!cuenta.activo) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La cuenta seleccionada se encuentra inactiva y no puede utilizarse.'
+            };
+            return res.redirect(destino);
+        }
+
+        cuentaModel.obtenerCuentasPorCorreo(usuario.correo, (errCuentas, cuentas) => {
+            if (errCuentas) {
+                console.error(errCuentas);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible actualizar la cuenta activa.'
+                };
+                return res.redirect(destino);
+            }
+
+            req.session.usuario.cuentas = cuentas;
+            req.session.usuario.cuentaActiva =
+                cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
+
+            bitacora.registrar(
+                usuario.correo,
+                `Selecciono la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,
+                req.ip
+            );
+
+            req.session.mensaje = {
+                tipo: 'success',
+                texto: `Ahora estas operando con la cuenta ${cuenta.nombre}.`
+            };
+
+            return res.redirect(destino);
+        });
+    });
 };
 
 exports.catalogo = (req, res) => {
