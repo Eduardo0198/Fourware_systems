@@ -27,13 +27,19 @@ exports.home = (req, res) => {
 };
 
 exports.catalogo = (req, res) => {
-    res.render('modules/concesionarioCatalogo');
+    res.render(
+        'modules/concesionarioCatalogo'
+    );
 };
 
+
 exports.producto = (req, res) => {
-    res.render('modules/concesionarioProducto', {
-        sku: req.params.sku
-    });
+    res.render(
+        'modules/concesionarioProducto',
+        {
+            sku: req.params.sku
+        }
+    );
 };
 
 
