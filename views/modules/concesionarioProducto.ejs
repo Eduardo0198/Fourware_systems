@@ -1,33 +1,81 @@
-<h2>
-    Detalle del Producto
-</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Detalle del Producto</h2>
+    <a href="/concesionario/catalogo" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al catálogo
+    </a>
+</div>
 <hr>
-<div class="row">
-    <div class="col-md-5">
-        <img src="/img/p1.png" class="img-fluid"  alt="Producto">
+
+<div class="producto-detalle">
+    <!-- Contenedor de imágenes en carrusel -->
+    <div class="detalle-imagenes">
+        <% 
+            // Función para obtener la URL de imagen corregida
+            function getImgUrl(url) {
+                if (!url || url === 'producto.png') {
+                    return '/img/ppg-logo.png';
+                }
+                return url;
+            }
+        %>
+        <% if (producto.imagenes && producto.imagenes.length > 1) { %>
+            <div id="productoCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <% producto.imagenes.forEach((img, index) => { %>
+                        <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+                            <img src="<%= getImgUrl(img) %>" class="d-block w-100" alt="<%= producto.nombre %>">
+                        </div>
+                    <% }); %>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#productoCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#productoCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+        <% } else { 
+            let singleImg = (producto.imagenes && producto.imagenes[0]) || producto.imagen;
+        %>
+            <img src="<%= getImgUrl(singleImg) %>" alt="<%= producto.nombre %>" class="img-fluid">
+        <% } %>
     </div>
-    <div class="col-md-7">
-        <h4>
-            Producto SKU:
-            <%= sku %>
-        </h4>
-        <p>
-            Descripción técnica del producto.
-        </p>
-        <p>
-            Precio unitario:
-            $---
-        </p>
-        <p>
-            Peso unitario:
-            ---
-        </p>
-        <p>
-            Volumen unitario:
-            ---
-        </p>
-        <a href="/concesionario/confirmar-reserva" class="btn btn-success">
-            Agregar a reserva
-        </a>
+
+    <!-- Contenedor de información del producto -->
+    <div class="detalle-info">
+        <h3><%= producto.nombre %></h3>
+        <div class="product-attributes">
+            <div class="attribute-row">
+                <span class="attribute-label">Descripción:</span>
+                <span class="attribute-value"><%= producto.descripcion || 'Sin descripción' %></span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">Precio unitario:</span>
+                <span class="attribute-value">$<%= producto.precio_unitario %></span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">Unidad de venta:</span>
+                <span class="attribute-value"><%= producto.unidad_venta || 'No especificada' %></span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">Peso unitario:</span>
+                <span class="attribute-value"><%= producto.peso_unitario %> kg</span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">Volumen unitario:</span>
+                <span class="attribute-value"><%= producto.volumen_unitario %> m³</span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">Medida primaria:</span>
+                <span class="attribute-value"><%= producto.medida_primaria %></span>
+            </div>
+            <div class="attribute-row">
+                <span class="attribute-label">SKU:</span>
+                <span class="attribute-value"><%= producto.SKU %></span>
+            </div>
+        </div>
+        <button class="btn btn-secondary w-100" disabled>Agregar al carrito</button>
     </div>
 </div>
