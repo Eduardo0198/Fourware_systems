@@ -1,5 +1,16 @@
+const bitacora = require('../models/bitacora.model');
+
 exports.protegerRuta = (req, res, next) => {
     if (!req.session.usuario) {
+        bitacora.registrar(
+            null,
+            `Intento de acceso sin sesión a ${req.originalUrl}`,
+            req.ip
+        );
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'Tu sesión no está vigente. Inicia sesión nuevamente.'
+        };
         return res.redirect('/');
     }
     next();

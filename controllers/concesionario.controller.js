@@ -70,12 +70,19 @@ exports.catalogo = (req, res) => {
 };
 
 exports.producto = (req, res) => {
-    res.render(
-        'modules/concesionarioProducto',
-        {
-            sku: req.params.sku
+    const sku = req.params.sku;
+    concesionarioModel.obtenerProductoPorSku(sku, (err, producto) => {
+        if (err) {
+            console.log(err);
+            return res.send("Error al obtener producto");
         }
-    );
+        if (!producto) {
+            return res.send("Producto no encontrado");
+        }
+        res.render('modules/concesionarioProducto', {
+            producto: producto
+        });
+    });
 };
 
 

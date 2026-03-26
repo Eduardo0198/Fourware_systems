@@ -91,37 +91,32 @@
             <% } %>
 
         <% } %>
-
     </div>
-
     <% if (usuario) { %>
-
     <div class="sidebar-user">
-
-        <div class="user-click" onclick="toggleUserMenu()">
+        <div class="user-click" id="userToggle">
             <img src="/img/user.png" class="user-avatar" alt="Usuario">
-
             <span class="user-name">
                 <%= usuario.nombre %> ▼
             </span>
         </div>
-
-        <div id="user-menu" class="user-menu">
+        <div id="userMenu" class="user-menu">
             <a href="/logout" class="logout-btn">
                 <i class="bi bi-box-arrow-right"></i>
                 Cerrar sesión
             </a>
         </div>
-
     </div>
-
     <% } %>
-
 </aside>
-
 <script>
-function toggleUserMenu() {
-    const menu = document.getElementById('user-menu');
-    menu.classList.toggle('active');
-}
+    document.addEventListener("DOMContentLoaded", () => {
+        const userBtn = document.getElementById("userToggle");
+        const menu = document.getElementById("userMenu");
+        if (userBtn && menu) {
+            userBtn.addEventListener("click", () => {
+                menu.classList.toggle("active");
+            });
+        }
+    });
 </script>

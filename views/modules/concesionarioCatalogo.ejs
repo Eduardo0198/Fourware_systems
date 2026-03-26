@@ -1,4 +1,9 @@
 <h2 class="mb-3">Catálogo de Productos</h2>
+<% if (mensaje) { %>
+    <div class="alert alert-<%= mensaje.tipo %> mb-3" role="alert">
+        <%= mensaje.texto %>
+    </div>
+<% } %>
 <hr>
 <div class="d-flex align-items-center mb-3 gap-2">
     <div class="flex-grow-1">
@@ -19,7 +24,6 @@
         <i class="bi bi-funnel"></i> Filtros
     </button>
 </div>
-
 <div id="filtersContainer" style="display:none;">
     <form method="GET" action="/concesionario/catalogo"
           class="row g-3 align-items-end mb-4">
@@ -27,15 +31,13 @@
                value="<%= typeof query !== 'undefined' ? query : '' %>">
         <div class="col-md-2">
             <label class="form-label">Precio min</label>
-            <input type="number"
-                   name="precio_min"
+            <input type="number" name="precio_min"
                    class="form-control"
                    value="<%= typeof precio_min !== 'undefined' ? precio_min : 0 %>">
         </div>
         <div class="col-md-2">
             <label class="form-label">Precio max</label>
-            <input type="number"
-                   name="precio_max"
+            <input type="number" name="precio_max"
                    class="form-control"
                    value="<%= typeof precio_max !== 'undefined' ? precio_max : 10000 %>">
         </div>
@@ -46,7 +48,7 @@
                 <% if (Array.isArray(unidadesVenta)) { %>
                     <% unidadesVenta.forEach(u => { %>
                         <option value="<%= u %>"
-                            <%= (unidad_venta_seleccionada === u) ? 'selected' : '' %>>
+                        <%= (unidad_venta_seleccionada === u) ? 'selected' : '' %>>
                             <%= u %>
                         </option>
                     <% }) %>
@@ -57,50 +59,43 @@
             <button class="btn btn-primary">Filtrar</button>
             <a href="/concesionario/catalogo" class="btn btn-secondary">Limpiar</a>
         </div>
+
     </form>
 </div>
-
-<div class="row">
-    <% if (productos.length === 0) { %>
-        <div class="col-12 text-center mt-5">
-            <h5>No se encontraron productos</h5>
-        </div>
-
-    <% } %>
-    <% productos.forEach(p => { %>
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm h-100">
-                <img 
-                    src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>" 
-                    class="card-img-top"
-                    onerror="this.src='/img/ppg-logo.png'">
-                     class="card-img-top"
-                     style="height:200px; object-fit:cover;">
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-title"><%= p.nombre %></h6>
-                    <p class="fw-bold text-primary">
-                        $<%= p.precio_unitario %>
-                    </p>
-                    <div class="mt-auto">
-                        <a href="/concesionario/producto/<%= p.SKU %>"
-                           class="btn btn-outline-primary w-100 mb-2">
-                            Ver detalle
-                        </a>
-                        <form method="POST" action="/carrito/agregar">
-                            <input type="hidden" name="sku" value="<%= p.SKU %>">
-                            <input type="hidden" name="nombre" value="<%= p.nombre %>">
-                            <input type="hidden" name="precio" value="<%= p.precio_unitario %>">
-                            <button class="btn btn-primary w-100">
-                                Agregar
-                            </button>
-                        </form>
+<div class="container-fluid">
+    <div class="row g-3">
+        <% if (productos.length === 0) { %>
+            <div class="col-12 text-center mt-5">
+                <h5>No se encontraron productos</h5>
+            </div>
+        <% } %>
+        <% productos.forEach(p => { %>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card shadow-sm h-100">
+                    <img src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>"
+                         class="card-img-top"
+                         style="height:180px; object-fit:contain;"
+                         onerror="this.src='/img/ppg-logo.png'">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title"><%= p.nombre %></h6>
+                        <p class="fw-bold text-primary">
+                            $<%= p.precio_unitario %>
+                        </p>
+                        <div class="mt-auto">
+                            <a href="/concesionario/producto/<%= p.SKU %>"
+                               class="btn btn-primary w-100 mb-2">
+                                Seleccionar producto
+                            </a>
+                            <p class="text-muted small mb-0">
+                                Ingresa a detalle para capturar la cantidad y agregarlo al carrito.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    <% }) %>
+        <% }) %>
+    </div>
 </div>
-
 <%
 function buildQuery(page) {
     let url = '?page=' + page;
@@ -114,7 +109,7 @@ function buildQuery(page) {
 }
 %>
 <nav>
-    <ul class="pagination justify-content-center mt-4">
+    <ul class="pagination justify-content-center mt-4 flex-wrap">
         <% if (paginacion.paginaActual > 1) { %>
             <li class="page-item">
                 <a class="page-link"
@@ -123,13 +118,11 @@ function buildQuery(page) {
                 </a>
             </li>
         <% } %>
-
         <% for (let i = 1; i <= paginacion.totalPaginas; i++) { %>
             <li class="page-item <%= i === paginacion.paginaActual ? 'active' : '' %>">
                 <a class="page-link" href="<%= buildQuery(i) %>"><%= i %></a>
             </li>
         <% } %>
-
         <% if (paginacion.paginaActual < paginacion.totalPaginas) { %>
             <li class="page-item">
                 <a class="page-link"
@@ -138,16 +131,19 @@ function buildQuery(page) {
                 </a>
             </li>
         <% } %>
-
     </ul>
 </nav>
 
 <script>
-const btn = document.getElementById('toggleFiltersBtn');
-const filters = document.getElementById('filtersContainer');
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("toggleFiltersBtn");
+    const filters = document.getElementById("filtersContainer");
+    if (btn && filters) {
+        btn.addEventListener("click", () => {
+            filters.style.display =
+                filters.style.display === "none" ? "block" : "none";
+        });
+    }
 
-btn.addEventListener('click', () => {
-    filters.style.display =
-        filters.style.display === 'none' ? 'block' : 'none';
 });
 </script>

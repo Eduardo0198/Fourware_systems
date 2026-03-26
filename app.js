@@ -15,6 +15,8 @@ const campaniaModel = require('./models/campania.model');
 
 app.use((req, res, next) => {
     res.locals.usuario = req.session.usuario || null;
+    res.locals.mensaje = req.session.mensaje || null;
+    delete req.session.mensaje;
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
         res.locals.campania = (result && result.length > 0) ? result[0] : null;

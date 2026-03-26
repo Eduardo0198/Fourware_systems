@@ -24,6 +24,11 @@
             <p class="text-center text-muted mb-4">
                 Ingresa tus datos para acceder
             </p>
+            <% if (mensaje) { %>
+                <div class="alert alert-<%= mensaje.tipo %> text-center">
+                    <%= mensaje.texto %>
+                </div>
+            <% } %>
             <% if (error) { %>
                 <div class="alert alert-danger text-center">
                     <%= error %>

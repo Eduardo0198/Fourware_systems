@@ -16,7 +16,7 @@ exports.obtenerTopProductos = (callback) => {
 exports.obtenerProductosPaginados = (page, limit, searchTerm, precioMin, precioMax, unidadVenta, callback) => {
     const offset = (page - 1) * limit;
     let query = `
-        SELECT SKU, nombre_comercial AS nombre, precio_unitario, peso_unitario, medida_primaria, imagen
+        SELECT SKU, nombre_comercial AS nombre, precio_unitario, peso_unitario, volumen_unitario, medida_primaria, imagen
         FROM Producto
         WHERE 1=1
     `;

@@ -1,55 +1,140 @@
-<h2>Carrito de preventa</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>SKU</th>
-            <th>Nombre</th>
-            <th>Cantidad</th>
-            <th>Precio</th>
-            <th>Total</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        <% carrito.forEach(p => { %>
-            <tr>
-                <td><%= p.sku %></td>
-                <td><%= p.nombre %></td>
-                <td><%= p.cantidad %></td>
-                <td>$<%= p.precio %></td>
-                <td>$<%= p.precio * p.cantidad %></td>
-                <td>
-                    <a href="/carrito/eliminar/<%= p.sku %>" class="btn btn-danger">
-                        Eliminar
-                    </a>
-                </td>
-            </tr>
-        <% }) %>
-    </tbody>
-</table>
-<h4>Total: $<%= total %></h4>
-<hr>
-<form method="POST" action="/carrito/confirmar">
-    <label>Selecciona sucursal</label>
-    <select name="sucursal" class="form-control" required>
-        <option value="">Selecciona</option>
-        <option value="1">Sucursal Querétaro</option>
-        <option value="2">Sucursal CDMX</option>
-    </select>
-    <br>
-    <button id="btnConfirmar" class="btn btn-success" disabled>
-        Confirmar reserva
-    </button>
+<section class="cart-page">
+    <% if (mensaje) { %>
+        <div class="alert alert-<%= mensaje.tipo %> mb-0" role="alert">
+            <%= mensaje.texto %>
+        </div>
+    <% } %>
 
-</form>
+    <div class="cart-header">
+        <div>
+            <p class="cart-eyebrow">Preventa</p>
+            <h2>Carrito</h2>
+        </div>
+        <span class="cart-count"><%= carrito.length %> producto(s)</span>
+    </div>
+
+    <div class="cart-layout">
+        <div class="cart-items-column">
+            <% if (carrito.length === 0) { %>
+                <div class="cart-empty-state">
+                    <h4>Tu carrito está vacío</h4>
+                    <p>Agrega productos desde el catálogo para ver el resumen aquí.</p>
+                    <a href="/concesionario/catalogo" class="btn btn-primary">
+                        Ir al catálogo
+                    </a>
+                </div>
+            <% } %>
+
+            <% carrito.forEach(p => { %>
+                <article class="cart-item-card">
+                    <div class="cart-item-media">
+                        <img src="<%= p.imagen || '/img/ppg-logo.png' %>"
+                             alt="<%= p.nombre %>"
+                             onerror="this.src='/img/ppg-logo.png'">
+                    </div>
+
+                    <div class="cart-item-main">
+                        <div class="cart-item-top">
+                            <div>
+                                <h3><%= p.nombre %></h3>
+                                <p class="cart-sku">SKU: <%= p.sku %></p>
+                            </div>
+                            <div class="cart-price-block">
+                                <span class="cart-price">$<%= p.precio.toFixed(2) %></span>
+                                <span class="cart-line-total">
+                                    Total: $<%= (p.precio * p.cantidad).toFixed(2) %>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="cart-item-meta">
+                            <form method="POST"
+                                  action="/concesionario/carrito/actualizar-cantidad"
+                                  class="cart-quantity-form">
+                                <input type="hidden" name="sku" value="<%= p.sku %>">
+
+                                <button type="submit"
+                                        name="accion"
+                                        value="decrementar"
+                                        class="cart-qty-btn"
+                                        <%= p.cantidad <= 1 ? 'disabled' : '' %>>
+                                    -
+                                </button>
+
+                                <span class="cart-qty-value"><%= p.cantidad %></span>
+
+                                <button type="submit"
+                                        name="accion"
+                                        value="incrementar"
+                                        class="cart-qty-btn">
+                                    +
+                                </button>
+                            </form>
+                            <a href="/concesionario/carrito/eliminar/<%= p.sku %>"
+                               class="cart-remove-link">
+                                Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            <% }) %>
+        </div>
+
+        <aside class="cart-summary-card">
+            <div class="cart-summary-header">
+                <p class="cart-eyebrow">Resumen</p>
+                <h3>Order summary</h3>
+            </div>
+
+            <div class="cart-summary-lines">
+                <div class="cart-summary-row">
+                    <span>Subtotal</span>
+                    <strong>$<%= subtotal.toFixed(2) %></strong>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Peso total</span>
+                    <strong><%= totalPeso.toFixed(2) %> kg</strong>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Volumen total</span>
+                    <strong><%= totalVolumen.toFixed(2) %> m³</strong>
+                </div>
+                <div class="cart-summary-row">
+                    <span>IVA (16%)</span>
+                    <strong>$<%= iva.toFixed(2) %></strong>
+                </div>
+                <div class="cart-summary-row cart-summary-total">
+                    <span>Total</span>
+                    <strong>$<%= total.toFixed(2) %></strong>
+                </div>
+            </div>
+
+            <form method="POST" action="/concesionario/carrito/confirmar" class="cart-summary-form">
+                <label for="sucursal" class="form-label">Sucursal</label>
+                <select name="sucursal" id="sucursal" class="form-select" <%= carrito.length === 0 ? 'disabled' : 'required' %>>
+                    <option value="">Selecciona una sucursal</option>
+                    <option value="1">Sucursal Querétaro</option>
+                    <option value="2">Sucursal CDMX</option>
+                </select>
+
+                <button id="btnConfirmar"
+                        class="btn btn-primary cart-checkout-btn"
+                        <%= carrito.length === 0 ? 'disabled' : '' %>>
+                    Confirmar reserva
+                </button>
+            </form>
+        </aside>
+    </div>
+</section>
 
 <script>
-    
 const select = document.querySelector('select[name="sucursal"]');
 const btn = document.getElementById('btnConfirmar');
 
-select.addEventListener('change', () => {
+if (select && btn && !select.disabled) {
     btn.disabled = !select.value;
-});
-
+    select.addEventListener('change', () => {
+        btn.disabled = !select.value;
+    });
+}
 </script>

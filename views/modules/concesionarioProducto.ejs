@@ -1,23 +1,26 @@
+<% function getImgUrl(url) {
+    if (!url || url === 'producto.png') {
+        return '/img/ppg-logo.png';
+    }
+    return url;
+} %>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Detalle del Producto</h2>
     <a href="/concesionario/catalogo" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver al catálogo
     </a>
 </div>
+
+<% if (mensaje) { %>
+    <div class="alert alert-<%= mensaje.tipo %> mb-3" role="alert">
+        <%= mensaje.texto %>
+    </div>
+<% } %>
 <hr>
 
 <div class="producto-detalle">
-    <!-- Contenedor de imágenes en carrusel -->
     <div class="detalle-imagenes">
-        <% 
-            // Función para obtener la URL de imagen corregida
-            function getImgUrl(url) {
-                if (!url || url === 'producto.png') {
-                    return '/img/ppg-logo.png';
-                }
-                return url;
-            }
-        %>
         <% if (producto.imagenes && producto.imagenes.length > 1) { %>
             <div id="productoCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
@@ -43,7 +46,6 @@
         <% } %>
     </div>
 
-    <!-- Contenedor de información del producto -->
     <div class="detalle-info">
         <h3><%= producto.nombre %></h3>
         <div class="product-attributes">
@@ -76,6 +78,28 @@
                 <span class="attribute-value"><%= producto.SKU %></span>
             </div>
         </div>
-        <button class="btn btn-secondary w-100" disabled>Agregar al carrito</button>
+
+        <form method="POST" action="/concesionario/carrito/agregar" class="mt-4">
+            <input type="hidden" name="sku" value="<%= producto.SKU %>">
+            <input type="hidden" name="nombre" value="<%= producto.nombre %>">
+            <input type="hidden" name="precio" value="<%= producto.precio_unitario %>">
+            <input type="hidden" name="imagen" value="<%= getImgUrl((producto.imagenes && producto.imagenes[0]) || producto.imagen) %>">
+            <input type="hidden" name="peso_unitario" value="<%= producto.peso_unitario || 0 %>">
+            <input type="hidden" name="volumen_unitario" value="<%= producto.volumen_unitario || 0 %>">
+
+            <div class="mb-3">
+                <label for="cantidad" class="form-label fw-semibold">Cantidad</label>
+                <input type="number"
+                       id="cantidad"
+                       name="cantidad"
+                       class="form-control"
+                       min="1"
+                       step="1"
+                       value="1"
+                       required>
+            </div>
+
+            <button class="btn btn-primary w-100">Agregar al carrito</button>
+        </form>
     </div>
 </div>
