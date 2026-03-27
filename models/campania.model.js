@@ -43,7 +43,7 @@ exports.obtenerSeleccionablesParaCatalogo = (callback) => {
     const query = `
         SELECT *
         FROM Campania
-        WHERE fecha_fin >= CURDATE()
+        WHERE estatus = 1 AND fecha_fin >= CURDATE()
         ORDER BY estatus DESC, fecha_inicio DESC, id_campania DESC
     `;
 

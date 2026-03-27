@@ -391,7 +391,9 @@ exports.registrarSKUPost = (req, res) => {
             }
 
             const campaniaInvalida =
-                !campania || new Date(campania.fecha_fin) < new Date(new Date().toDateString());
+                !campania ||
+                Number(campania.estatus) !== 1 ||
+                new Date(campania.fecha_fin) < new Date(new Date().toDateString());
 
             if (campaniaInvalida) {
                 return renderCatalogoRegistro(res, {
