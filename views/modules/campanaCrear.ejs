@@ -1,12 +1,75 @@
-<h2>
-Carga Masiva de Productos
+<h2 class="mb-4">
+Configurar Campaña
 </h2>
 <p class="text-muted">
-Sube un archivo CSV o Excel con múltiples productos.
+CU-07. El administrador configura campañas con nombre, fechas y banner. La activación exclusiva se gestiona en el módulo de estado.
 </p>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <form method="post" action="/admin/campanas/crear">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre de la campaña</label>
+                <input type="text" name="nombre" class="form-control" value="<%= formData.nombre || '' %>" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Fecha de inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Fecha de fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Banner de la campaña</label>
+            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="banner_ppg.png" required>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">
+                Guardar campaña
+            </button>
+            <a href="/admin/campanas" class="btn btn-outline-secondary">
+                Volver a campañas
+            </a>
+        </div>
+    </form>
+</div>
+
 <div class="card p-4">
-    <input type="file" class="form-control mb-3">
-    <button class="btn btn-primary">
-        Subir archivo
-    </button>
+    <h4 class="mb-3">
+    Campañas existentes
+    </h4>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Campaña</th>
+                    <th>Vigencia</th>
+                    <th>Banner</th>
+                    <th>Estatus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% campanias.forEach((campania) => { %>
+                    <tr>
+                        <td><strong><%= campania.nombre %></strong></td>
+                        <td><%= campania.fecha_inicio_texto %> - <%= campania.fecha_fin_texto %></td>
+                        <td><small><%= campania.banner %></small></td>
+                        <td>
+                            <span class="badge <%= campania.estatus ? 'bg-success' : 'bg-secondary' %>">
+                                <%= campania.estatusTexto %>
+                            </span>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>

@@ -1,44 +1,73 @@
-<h2 class="mb-4">
-Gestión de Catálogo
-</h2>
-<p class="text-muted">
-Administración de productos disponibles en el sistema de preventa.
-</p>
-<div class="catalogo-grid">
-    <div class="catalogo-card">
-        <h5>
-        Registrar SKU
-        </h5>
-        <p>
-        Crear un nuevo producto dentro del catálogo.
-        </p>
-        <a href="/admin/catalogo/registrar"
-        class="btn btn-primary">
-        Registrar producto
-        </a>
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-catalog">
+        <div>
+            <span class="admin-eyebrow">Administrador · CU-06</span>
+            <h2 class="admin-title">Gestión de Catálogo</h2>
+            <p class="admin-subtitle">
+                Centraliza el alta, mantenimiento y carga operativa de SKUs para mantener el catálogo listo para preventa.
+            </p>
+        </div>
+        <div class="admin-hero-note">
+            <span>Estado del módulo</span>
+            <strong>Catálogo operativo</strong>
+            <small>Administra productos y vínculos con campañas vigentes.</small>
+        </div>
     </div>
-    <div class="catalogo-card">
-        <h5>
-        Modificar SKU
-        </h5>
-        <p>
-        Editar información de productos existentes.
-        </p>
-        <a href="/admin/catalogo/modificar"
-        class="btn btn-primary">
-        Modificar producto
-        </a>
+
+    <div class="admin-stats-grid">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Productos registrados</span>
+            <strong><%= totalProductos || 0 %></strong>
+            <p>Inventario lógico disponible dentro del sistema.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Campañas vigentes seleccionables</span>
+            <strong><%= totalCampaniasVigentes || 0 %></strong>
+            <p>Campañas activas o vigentes para asociar nuevos productos.</p>
+        </article>
     </div>
-    <div class="catalogo-card">
-        <h5>
-        Carga Masiva
-        </h5>
-        <p>
-        Importar múltiples productos mediante archivo CSV o Excel.
-        </p>
-        <a href="/admin/catalogo/carga-masiva"
-        class="btn btn-primary">
-        Subir archivo
-        </a>
+
+    <div class="admin-action-grid">
+        <article class="admin-action-card">
+            <div class="admin-action-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Alta individual</span>
+                <h3>Registrar SKU</h3>
+                <p>Crea un producto nuevo, captura sus atributos base y asígnalo a una campaña válida.</p>
+            </div>
+            <a href="/admin/catalogo/registrar" class="btn admin-action-btn">
+                Registrar producto
+            </a>
+        </article>
+
+        <article class="admin-action-card">
+            <div class="admin-action-icon admin-action-icon-alt">
+                <i class="bi bi-pencil-square"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Mantenimiento</span>
+                <h3>Modificar SKU</h3>
+                <p>Actualiza información de productos ya registrados sin salir del flujo administrativo.</p>
+            </div>
+            <a href="/admin/catalogo/modificar" class="btn admin-action-btn">
+                Modificar producto
+            </a>
+        </article>
+
+        <article class="admin-action-card">
+            <div class="admin-action-icon admin-action-icon-soft">
+                <i class="bi bi-cloud-arrow-up"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Operación masiva</span>
+                <h3>Carga masiva</h3>
+                <p>Importa múltiples productos desde un archivo estructurado para acelerar la actualización del catálogo.</p>
+            </div>
+            <a href="/admin/catalogo/carga-masiva" class="btn admin-action-btn">
+                Subir archivo
+            </a>
+        </article>
     </div>
-</div>
+</section>

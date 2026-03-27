@@ -79,5 +79,21 @@ exports.obtenerCuentaActivaPorDefecto = (cuentas) => {
         return null;
     }
 
-    return cuentas.find(cuenta => cuenta.activo) || cuentas[0];
+    return cuentas.find(cuenta => cuenta.activo) || null;
+};
+
+exports.obtenerSucursalesActivasPorCuenta = (idCuenta, callback) => {
+    const query = `
+        SELECT
+            id_sucursal,
+            nombre,
+            direccion,
+            municipio,
+            estado
+        FROM Sucursal
+        WHERE id_cuenta = ? AND activo = 1
+        ORDER BY nombre ASC, id_sucursal ASC
+    `;
+
+    db.query(query, [idCuenta], callback);
 };
