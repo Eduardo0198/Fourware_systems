@@ -3,6 +3,8 @@ const campaniaModel = require('../models/campania.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
+const bitacora = require('../models/bitacora.model');
+const { registrarEvento } = require('../utils/auditoria.helper');
 
 function generarFolioReserva() {
     const ahora = new Date();
