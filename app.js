@@ -3,15 +3,22 @@ const path = require('path');
 const helmet = require('helmet');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
+require('dotenv').config();
 const app = express();
 
+const isProduction = process.env.NODE_ENV === 'production';
+const sessionSecret = process.env.SESSION_SECRET || 'dev-only-change-me';
+
 app.use(session({
-    secret: 'secreto_super_seguro',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     rolling: true,
     cookie: {
-        maxAge: 15 * 60 * 1000
+        maxAge: 15 * 60 * 1000,
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProduction
     }
 }));
 
