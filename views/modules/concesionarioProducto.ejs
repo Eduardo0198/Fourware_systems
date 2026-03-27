@@ -81,11 +81,6 @@
 
         <form method="POST" action="/concesionario/carrito/agregar" class="mt-4">
             <input type="hidden" name="sku" value="<%= producto.SKU %>">
-            <input type="hidden" name="nombre" value="<%= producto.nombre %>">
-            <input type="hidden" name="precio" value="<%= producto.precio_unitario %>">
-            <input type="hidden" name="imagen" value="<%= getImgUrl((producto.imagenes && producto.imagenes[0]) || producto.imagen) %>">
-            <input type="hidden" name="peso_unitario" value="<%= producto.peso_unitario || 0 %>">
-            <input type="hidden" name="volumen_unitario" value="<%= producto.volumen_unitario || 0 %>">
 
             <div class="mb-3">
                 <label for="cantidad" class="form-label fw-semibold">Cantidad</label>
