@@ -104,6 +104,7 @@ exports.existeConflictoPeriodo = (fechaInicio, fechaFin, idCampaniaExcluir, call
         SELECT COUNT(*) AS total
         FROM Campania
         WHERE id_campania <> ?
+          AND estatus = 1
           AND fecha_inicio <= ?
           AND fecha_fin >= ?
     `;

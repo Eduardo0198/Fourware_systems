@@ -8,7 +8,11 @@ const app = express();
 app.use(session({
     secret: 'secreto_super_seguro',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+        maxAge: 15 * 60 * 1000
+    }
 }));
 
 const campaniaModel = require('./models/campania.model');

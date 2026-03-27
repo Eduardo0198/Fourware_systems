@@ -1,25 +1,48 @@
-<h2 class="mb-4">
-Bitácora de Auditoría
-</h2>
-<p class="text-muted">
-Consulta de acciones realizadas por los usuarios del sistema.
-</p>
 <% const filtrosVista = typeof filtros !== 'undefined' ? filtros : {}; %>
 <% const registrosVista = Array.isArray(registros) ? registros : []; %>
 <% const totalVista = typeof totalRegistros !== 'undefined' ? totalRegistros : 0; %>
+<%
+    function formatearIp(ip) {
+        if (!ip) return 'N/D';
+        const valor = String(ip).trim();
+        return valor === '::1' ? '127.0.0.1 (localhost)' : valor;
+    }
+%>
 
-<% if (mensaje) { %>
-    <div class="alert alert-<%= mensaje.tipo %> mb-4" role="alert">
-        <%= mensaje.texto %>
+<section class="audit-shell">
+    <div class="audit-hero">
+        <div>
+            <span class="audit-eyebrow">Administrador · CU-08</span>
+            <h2 class="audit-title">Bitácora de Auditoría</h2>
+            <p class="audit-subtitle">
+                Consulta acciones del sistema, filtra eventos clave y revisa el origen de cada operación.
+            </p>
+        </div>
+        <div class="audit-total-card">
+            <span class="audit-total-label">Registros visibles</span>
+            <strong><%= totalVista %></strong>
+            <small><%= registrosVista.length > 0 ? 'Orden descendente por fecha' : 'Sin resultados cargados' %></small>
+        </div>
     </div>
-<% } %>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <form method="GET" action="/admin/auditoria" class="row g-3 align-items-end">
+    <% if (mensaje) { %>
+        <div class="alert alert-<%= mensaje.tipo %> audit-message" role="alert">
+            <%= mensaje.texto %>
+        </div>
+    <% } %>
+
+    <div class="audit-filters-card">
+        <div class="audit-card-head">
+            <div>
+                <h5>Filtros de consulta</h5>
+                <p>Refina la búsqueda por usuario o rango de fechas.</p>
+            </div>
+            <span class="audit-chip">Vista profesional</span>
+        </div>
+        <form method="GET" action="/admin/auditoria" class="audit-filters-grid">
             <input type="hidden" name="consultar" value="1">
-            <div class="col-md-4">
-                <label for="usuario" class="form-label">Usuario</label>
+            <label class="audit-field">
+                <span>Usuario</span>
                 <input
                     type="text"
                     id="usuario"
@@ -28,9 +51,9 @@ Consulta de acciones realizadas por los usuarios del sistema.
                     placeholder="correo@ppg.com"
                     value="<%= filtrosVista.correo || '' %>"
                 >
-            </div>
-            <div class="col-md-3">
-                <label for="fecha_inicio" class="form-label">Fecha de inicio</label>
+            </label>
+            <label class="audit-field">
+                <span>Fecha de inicio</span>
                 <input
                     type="date"
                     id="fecha_inicio"
@@ -38,9 +61,9 @@ Consulta de acciones realizadas por los usuarios del sistema.
                     class="form-control"
                     value="<%= filtrosVista.fechaInicio || '' %>"
                 >
-            </div>
-            <div class="col-md-3">
-                <label for="fecha_fin" class="form-label">Fecha de fin</label>
+            </label>
+            <label class="audit-field">
+                <span>Fecha de fin</span>
                 <input
                     type="date"
                     id="fecha_fin"
@@ -48,67 +71,71 @@ Consulta de acciones realizadas por los usuarios del sistema.
                     class="form-control"
                     value="<%= filtrosVista.fechaFin || '' %>"
                 >
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-fill">
+            </label>
+            <div class="audit-actions">
+                <button type="submit" class="btn btn-primary audit-primary-btn">
+                    <i class="bi bi-search"></i>
                     Consultar
                 </button>
-                <a href="/admin/auditoria" class="btn btn-outline-secondary">
+                <a href="/admin/auditoria" class="btn btn-outline-secondary audit-secondary-btn">
                     Limpiar
                 </a>
             </div>
         </form>
     </div>
-</div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="audit-results-card">
+        <div class="audit-card-head">
             <div>
-                <h5 class="mb-1">Resultados de la consulta</h5>
-                <p class="text-muted mb-0">
-                    Registros ordenados cronológicamente de forma descendente.
-                </p>
+                <h5>Resultados de la consulta</h5>
+                <p>Eventos ordenados del más reciente al más antiguo.</p>
             </div>
-            <span class="badge text-bg-primary fs-6">
-                Total: <%= totalVista %>
-            </span>
+            <span class="audit-total-pill">Total: <%= totalVista %></span>
         </div>
 
         <% if (registrosVista.length > 0) { %>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle mb-0">
+            <div class="audit-table-wrap">
+                <table class="table audit-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>ID Log</th>
+                            <th>ID</th>
                             <th>Fecha</th>
-                            <th>Correo del usuario</th>
-                            <th>Acción realizada</th>
-                            <th>Dirección IP de origen</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>IP de origen</th>
                         </tr>
                     </thead>
                     <tbody>
                         <% registrosVista.forEach((registro) => { %>
                             <tr>
-                                <td><%= registro.id_log %></td>
-                                <td><%= registro.fecha %></td>
-                                <td><%= registro.correo || 'N/D' %></td>
-                                <td><%= registro.accion %></td>
-                                <td><%= registro.ip_origen || 'N/D' %></td>
+                                <td>
+                                    <span class="audit-log-id">#<%= registro.id_log %></span>
+                                </td>
+                                <td class="audit-date-cell"><%= registro.fecha %></td>
+                                <td>
+                                    <span class="audit-user-pill"><%= registro.correo || 'N/D' %></span>
+                                </td>
+                                <td class="audit-action-cell"><%= registro.accion %></td>
+                                <td>
+                                    <span class="audit-ip-pill"><%= formatearIp(registro.ip_origen) %></span>
+                                </td>
                             </tr>
                         <% }) %>
                     </tbody>
                 </table>
             </div>
         <% } else { %>
-            <div class="text-center py-4">
-                <i class="bi bi-journal-text fs-1 text-muted"></i>
-                <p class="text-muted mb-0 mt-2">
+            <div class="audit-empty-state">
+                <div class="audit-empty-icon">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <h4>Sin registros para mostrar</h4>
+                <p>
                     <%= estadoConsulta === 'sin-resultados'
-                        ? 'No hay registros para los filtros seleccionados. Puedes ajustarlos y volver a consultar.'
-                        : 'Ajusta los filtros y consulta la bitácora para visualizar registros.' %>
+                        ? 'No hay registros para los filtros seleccionados. Ajusta los criterios y vuelve a consultar.'
+                        : 'Todavía no se han cargado eventos para esta vista.' %>
                 </p>
             </div>
         <% } %>
     </div>
-</div>
+</section>

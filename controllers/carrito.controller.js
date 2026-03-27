@@ -1,6 +1,7 @@
 const reservaModel = require('../models/reserva.model');
 const bitacora = require('../models/bitacora.model');
 const campaniaModel = require('../models/campania.model');
+const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
 
@@ -17,18 +18,37 @@ function generarFolioReserva() {
     return `R${yy}${mm}${dd}${hh}${mi}${ss}${random}`;
 }
 
-function calcularFechaLimiteCancelacion() {
+function calcularFechaLimiteCancelacion(horas = 24) {
     const fecha = new Date();
-    fecha.setHours(fecha.getHours() + 24);
+    fecha.setHours(fecha.getHours() + horas);
     return fecha;
 }
 
+function construirItemCarrito(producto, cantidad) {
+    return {
+        sku: producto.SKU,
+        nombre: producto.nombre,
+        imagen: producto.imagen || '/img/ppg-logo.png',
+        precio: Number(producto.precio_unitario) || 0,
+        cantidad,
+        peso_unitario: Number(producto.peso_unitario) || 0,
+        volumen_unitario: Number(producto.volumen_unitario) || 0
+    };
+}
+
+function sincronizarCarritoConProducto(itemActual, producto) {
+    return {
+        ...itemActual,
+        ...construirItemCarrito(producto, itemActual.cantidad)
+    };
+}
+
 exports.agregarProducto = (req, res) => {
-    const { sku, nombre, precio, cantidad, imagen, peso_unitario, volumen_unitario } = req.body;
-    const cantidadNumerica = parseInt(cantidad, 10);
+    const sku = String(req.body.sku || '').trim();
+    const cantidadNumerica = parseInt(req.body.cantidad, 10);
     const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
 
-    if (!cantidadNumerica || cantidadNumerica <= 0) {
+    if (!sku || !Number.isInteger(cantidadNumerica) || cantidadNumerica <= 0) {
         req.session.mensaje = {
             tipo: 'danger',
             texto: 'La cantidad ingresada no es válida. Ingrese un valor mayor a cero.'
@@ -73,39 +93,61 @@ exports.agregarProducto = (req, res) => {
 
         req.session.carritoCuentaId = cuentaActivaId;
 
-        let carrito = req.session.carrito;
-        const index = carrito.findIndex(p => p.sku === sku);
+        concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
+            if (productoErr) {
+                console.error(productoErr);
+                bitacora.registrar(
+                    req.session.usuario?.correo || null,
+                    `Error al consultar producto ${sku} para agregar al carrito`,
+                    req.ip
+                );
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
+                };
+                return res.redirect('back');
+            }
 
-        if (index !== -1) {
-            carrito[index].cantidad += cantidadNumerica;
-        } else {
-            carrito.push({
-                sku,
-                nombre,
-                imagen: imagen || '/img/ppg-logo.png',
-                precio: parseFloat(precio),
-                cantidad: cantidadNumerica,
-                peso_unitario: parseFloat(peso_unitario) || 0,
-                volumen_unitario: parseFloat(volumen_unitario) || 0
-            });
-        }
+            if (!producto) {
+                bitacora.registrar(
+                    req.session.usuario?.correo || null,
+                    `Intento de agregar producto inexistente ${sku} al carrito`,
+                    req.ip
+                );
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'El producto seleccionado ya no se encuentra disponible.'
+                };
+                return res.redirect('/concesionario/catalogo');
+            }
 
-        req.session.carrito = carrito;
+            const carrito = req.session.carrito;
+            const index = carrito.findIndex(p => p.sku === sku);
 
-        const correo = req.session.usuario?.correo
-                 || req.session.usuario?.usuario?.correo;
-        bitacora.registrar(
-            correo,
-            `Agregó producto ${sku} al carrito`,
-            req.ip
-        );
+            if (index !== -1) {
+                carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
+                carrito[index].cantidad += cantidadNumerica;
+            } else {
+                carrito.push(construirItemCarrito(producto, cantidadNumerica));
+            }
 
-        req.session.mensaje = {
-            tipo: 'success',
-            texto: 'Producto agregado correctamente al carrito.'
-        };
+            req.session.carrito = carrito;
 
-        res.redirect('/concesionario/carrito');
+            const correo = req.session.usuario?.correo
+                     || req.session.usuario?.usuario?.correo;
+            bitacora.registrar(
+                correo,
+                `Agregó producto ${sku} al carrito`,
+                req.ip
+            );
+
+            req.session.mensaje = {
+                tipo: 'success',
+                texto: 'Producto agregado correctamente al carrito.'
+            };
+
+            return res.redirect('/concesionario/carrito');
+        });
     });
 };
 
@@ -260,6 +302,7 @@ exports.actualizarCantidad = (req, res) => {
                 return res.redirect('/concesionario/carrito');
             }
 
+            carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
             carrito[index].cantidad = nuevaCantidad;
             req.session.carrito = carrito;
 
@@ -360,6 +403,7 @@ exports.confirmarReserva = (req, res) => {
                 return res.redirect('/concesionario/carrito');
             }
 
+            const productosValidados = [];
             let pendientes = carrito.length;
             let errorDisponibilidad = false;
 
@@ -394,6 +438,11 @@ exports.confirmarReserva = (req, res) => {
 
                     if (!producto || Number(producto.activo) !== 1) {
                         errorDisponibilidad = true;
+                        bitacora.registrar(
+                            usuario.correo,
+                            `Producto ${item.sku} no disponible durante confirmación de reserva`,
+                            req.ip
+                        );
                         req.session.mensaje = {
                             tipo: 'warning',
                             texto: 'Uno o más productos del carrito ya no se encuentran disponibles.'
@@ -402,30 +451,22 @@ exports.confirmarReserva = (req, res) => {
                     }
 
                     pendientes -= 1;
+                    productosValidados.push(construirItemCarrito(producto, item.cantidad));
 
                     if (pendientes === 0) {
-                        const subtotal = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+                        req.session.carrito = productosValidados;
+
+                        const subtotal = productosValidados.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
                         const iva = subtotal * 0.16;
                         const total = subtotal + iva;
                         const folio = generarFolioReserva();
-                        const fechaLimiteCancelacion = calcularFechaLimiteCancelacion();
 
-                        reservaModel.crearReservaConProductos({
-                            folio,
-                            estatus: 1,
-                            subtotal,
-                            iva,
-                            total,
-                            fecha_cancelacion_reserva: fechaLimiteCancelacion,
-                            correo: usuario.correo,
-                            id_cuenta: cuentaActivaId,
-                            id_sucursal: sucursal
-                        }, carrito, (reservaErr) => {
-                            if (reservaErr) {
-                                console.error(reservaErr);
+                        cancelacionModel.obtener((configErr, configuracion) => {
+                            if (configErr) {
+                                console.error(configErr);
                                 bitacora.registrar(
                                     usuario.correo,
-                                    `Error al registrar la reserva ${folio}`,
+                                    'Error al obtener la ventana de cancelación configurada',
                                     req.ip
                                 );
                                 req.session.mensaje = {
@@ -435,20 +476,49 @@ exports.confirmarReserva = (req, res) => {
                                 return res.redirect('/concesionario/carrito');
                             }
 
-                            bitacora.registrar(
-                                usuario.correo,
-                                `Confirmó reserva ${folio}`,
-                                req.ip
-                            );
+                            const horasCancelacion = configuracion?.horas_cancelacion || 24;
+                            const fechaLimiteCancelacion = calcularFechaLimiteCancelacion(horasCancelacion);
 
-                            req.session.carrito = [];
-                            req.session.carritoCuentaId = cuentaActivaId;
-                            req.session.mensaje = {
-                                tipo: 'success',
-                                texto: `Reserva confirmada exitosamente. Folio: ${folio}`
-                            };
+                            reservaModel.crearReservaConProductos({
+                                folio,
+                                estatus: 1,
+                                subtotal,
+                                iva,
+                                total,
+                                fecha_cancelacion_reserva: fechaLimiteCancelacion,
+                                correo: usuario.correo,
+                                id_cuenta: cuentaActivaId,
+                                id_sucursal: sucursal
+                            }, productosValidados, (reservaErr) => {
+                                if (reservaErr) {
+                                    console.error(reservaErr);
+                                    bitacora.registrar(
+                                        usuario.correo,
+                                        `Error al registrar la reserva ${folio}`,
+                                        req.ip
+                                    );
+                                    req.session.mensaje = {
+                                        tipo: 'danger',
+                                        texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
+                                    };
+                                    return res.redirect('/concesionario/carrito');
+                                }
 
-                            return res.redirect('/concesionario/carrito');
+                                bitacora.registrar(
+                                    usuario.correo,
+                                    `Confirmó reserva ${folio}`,
+                                    req.ip
+                                );
+
+                                req.session.carrito = [];
+                                req.session.carritoCuentaId = cuentaActivaId;
+                                req.session.mensaje = {
+                                    tipo: 'success',
+                                    texto: `Reserva confirmada exitosamente. Folio: ${folio}`
+                                };
+
+                                return res.redirect('/concesionario/carrito');
+                            });
                         });
                     }
                 });

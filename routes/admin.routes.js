@@ -85,6 +85,13 @@ router.get('/campanas/cancelacion',
     adminController.cancelacionCampana
 );
 
+router.post('/campanas/cancelacion',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_ventana_cancelacion']),
+    adminController.cancelacionCampanaPost
+);
+
 router.get('/campanas/estado',
     protegerRuta,
     tieneRol(['Administrador']),
