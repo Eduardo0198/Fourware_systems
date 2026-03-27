@@ -1,38 +1,114 @@
 <h2 class="mb-4">
 Registrar Producto
 </h2>
-<div class="card p-4">
-    <form>
+<p class="text-muted">
+CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida y el sistema lo deja inicialmente inactivo.
+</p>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <form method="post" action="/admin/catalogo/registrar">
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label>SKU</label>
-                <input type="text" class="form-control">
+                <label class="form-label">SKU</label>
+                <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" required>
             </div>
             <div class="col-md-6 mb-3">
-                <label>Nombre Comercial</label>
-                <input type="text" class="form-control">
+                <label class="form-label">Nombre comercial</label>
+                <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" required>
             </div>
         </div>
         <div class="mb-3">
-            <label>Descripción</label>
-            <textarea class="form-control"></textarea>
+            <label class="form-label">Descripción</label>
+            <textarea name="descripcion" class="form-control" rows="3" required><%= formData.descripcion || '' %></textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Unidad de venta</label>
+                <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Unidad de medida primaria</label>
+                <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" required>
+            </div>
         </div>
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label>Precio</label>
-                <input type="number" class="form-control">
+                <label class="form-label">Precio unitario</label>
+                <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label>Peso</label>
-                <input type="number" class="form-control">
+                <label class="form-label">Peso unitario</label>
+                <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label>Volumen</label>
-                <input type="number" class="form-control">
+                <label class="form-label">Volumen unitario</label>
+                <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" required>
             </div>
         </div>
-        <button class="btn btn-primary">
-            Registrar producto
-        </button>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ruta de imagen</label>
+                <input type="text" name="imagen" class="form-control" value="<%= formData.imagen || '' %>" placeholder="/img/productos/nuevo-producto.png" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Campaña asociada</label>
+                <select name="id_campania" class="form-select" required>
+                    <option value="">Selecciona una campaña</option>
+                    <% campanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(formData.id_campania || '') === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %> | <%= campania.estatusTexto %> | <%= campania.fecha_inicio_texto %> - <%= campania.fecha_fin_texto %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                Registrar producto
+            </button>
+            <a href="/admin/catalogo" class="btn btn-outline-secondary">
+                Volver al catálogo
+            </a>
+        </div>
     </form>
+</div>
+
+<div class="card p-4">
+    <h4 class="mb-3">
+    Productos registrados
+    </h4>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Campaña</th>
+                    <th>Estatus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% productos.forEach((producto) => { %>
+                    <tr>
+                        <td><strong><%= producto.SKU %></strong></td>
+                        <td><%= producto.nombre_comercial %></td>
+                        <td><%= producto.nombre_campania || 'Sin campaña' %></td>
+                        <td>
+                            <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
+                                <%= producto.estatusTexto %>
+                            </span>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>

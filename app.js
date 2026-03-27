@@ -3,6 +3,7 @@ const path = require('path');
 const helmet = require('helmet');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
+require('dotenv').config()
 const app = express();
 
 app.use(session({
@@ -48,7 +49,7 @@ app.use((req, res) => {
     res.status(404).send("Página no encontrada");
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:3000`);
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

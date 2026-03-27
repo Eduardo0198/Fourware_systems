@@ -35,6 +35,11 @@
                 </div>
             <% } %>
             <main class="content">
+                <% if (mensaje) { %>
+                    <div class="alert alert-<%= mensaje.tipo %> mb-4">
+                        <%= mensaje.texto %>
+                    </div>
+                <% } %>
                 <%- body %>
             </main>
             <%- include('../includes/footer') %>

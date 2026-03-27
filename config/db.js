@@ -1,9 +1,12 @@
+require('dotenv').config();
 const mysql = require('mysql2');
+
 const conexion = mysql.createConnection({
-    host: '127.0.0.1',
-    user: 'root',
-    password: 'VIery2006@',
-    database: 'ppg_preventa'
+    host: process.env.DB_HOST || '127.0.0.1',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'ppg_preventa',
+    port: Number(process.env.DB_PORT || 3306)
 });
 
 conexion.connect((err) => {

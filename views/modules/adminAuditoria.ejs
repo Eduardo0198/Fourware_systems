@@ -5,28 +5,26 @@ Bitácora de Auditoría
 Consulta de acciones realizadas por los usuarios del sistema.
 </p>
 <div class="card p-4">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-            <th>Fecha</th>
-            <th>Usuario</th>
-            <th>Acción</th>
-            <th>IP de origen</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>2026-03-01 10:30</td>
-                <td>admin@ppg.com</td>
-                <td>Registro de producto</td>
-                <td>192.168.1.12</td>
-            </tr>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
                 <tr>
-                <td>2026-03-01 12:45</td>
-                <td>marketing@ppg.com</td>
-                <td>Consulta de métricas</td>
-                <td>192.168.1.18</td>
-            </tr>
-        </tbody>
-    </table>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>IP de origen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% logs.forEach((log) => { %>
+                    <tr>
+                        <td><%= new Date(log.fecha).toLocaleString('es-MX') %></td>
+                        <td><%= log.correo || 'Sistema' %></td>
+                        <td><%= log.accion %></td>
+                        <td><%= log.ip_origen || '-' %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>

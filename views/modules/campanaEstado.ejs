@@ -1,40 +1,52 @@
 <h2 class="mb-4">
 Activar / Desactivar Campañas
 </h2>
+<p class="text-muted">
+Las futuras activaciones se guardan con política de campaña única: al activar una campaña, el sistema desactiva las demás.
+</p>
 <div class="card p-4">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Campaña</th>
-                <th>Fecha inicio</th>
-                <th>Fecha fin</th>
-                <th>Estatus</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Mundial 2026</td>
-                <td>2026-03-01</td>
-                <td>2026-06-30</td>
-                <td><span class="badge bg-success">Activa</span></td>
-                <td>
-                <button class="btn btn-outline-danger btn-sm">
-                    Desactivar
-                </button>
-                </td>
-            </tr>
-            <tr>
-                <td>Pintura Industrial</td>
-                <td>2026-07-01</td>
-                <td>2026-09-30</td>
-                <td><span class="badge bg-secondary">Inactiva</span></td>
-                <td>
-                <button class="btn btn-outline-success btn-sm">
-                    Activar
-                </button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Campaña</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Banner</th>
+                    <th>Estatus</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% campanias.forEach((campania) => { %>
+                    <tr>
+                        <td><strong><%= campania.nombre %></strong></td>
+                        <td><%= campania.fecha_inicio_texto %></td>
+                        <td><%= campania.fecha_fin_texto %></td>
+                        <td><small><%= campania.banner %></small></td>
+                        <td>
+                            <span class="badge <%= campania.estatus ? 'bg-success' : 'bg-secondary' %>">
+                                <%= campania.estatusTexto %>
+                            </span>
+                        </td>
+                        <td>
+                            <% if (campania.estatus) { %>
+                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/desactivar">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">
+                                        Desactivar
+                                    </button>
+                                </form>
+                            <% } else { %>
+                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar">
+                                    <button class="btn btn-outline-success btn-sm" type="submit">
+                                        Activar como única
+                                    </button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>
