@@ -64,38 +64,156 @@ html, body {
 }
 
 .account-dropdown{
-    min-width:320px;
+    min-width:360px;
+    padding:10px 0 8px;
+    border:none;
+    border-radius:24px;
+    box-shadow:0 22px 44px rgba(15, 23, 42, 0.18);
 }
 
-.current-account-label {
-    font-weight: 600;
-    color: #1e2f45;
+.account-trigger{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:260px;
+    padding:8px 14px;
+    border-radius:18px;
+}
+
+.account-trigger::after{
+    margin-left:auto;
+}
+
+.account-trigger-avatar,
+.account-avatar{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    color:#ffffff;
+    background:linear-gradient(135deg, #0f766e, #14b8a6);
+    flex-shrink:0;
+}
+
+.account-trigger-text{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    min-width:0;
+}
+
+.account-trigger-text strong,
+.account-current-copy strong,
+.account-option-title{
+    color:#0f172a;
+}
+
+.account-trigger-text small,
+.account-current-copy small,
+.account-option-subtitle{
+    color:#64748b;
+}
+
+.account-dropdown-header{
+    padding:0 14px 8px;
+}
+
+.account-current-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px;
+    border-radius:18px;
+    background:linear-gradient(180deg, #f8fafc, #eef2ff);
+}
+
+.account-avatar-current{
+    width:54px;
+    height:54px;
+    background:linear-gradient(135deg, #1d4ed8, #38bdf8);
+}
+
+.account-current-copy{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+}
+
+.account-helper-text{
+    padding:0 18px 8px;
 }
 
 .dropdown-account-form {
-    margin: 0;
+    margin:0;
 }
 
 .account-option {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    text-align: left;
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    border:0;
+    background:transparent;
+    text-align:left;
+    padding:12px 18px;
 }
 
 .account-option.active-account {
-    background: #e9f2ff;
-    color: #1e2f45;
-    font-weight: 600;
+    background:#eef6ff;
 }
 
 .account-option.inactive-account {
-    opacity: 0.55;
-    cursor: not-allowed;
+    opacity:0.82;
 }
 
 .account-option-title {
-    display: block;
+    display:block;
+    font-weight:700;
+}
+
+.account-option-copy{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+}
+
+.account-option-subtitle{
+    display:block;
+    font-size:12px;
+}
+
+.account-avatar-selected{
+    background:linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.account-check{
+    margin-left:auto;
+    color:#2563eb;
+    font-size:18px;
+}
+
+.account-inactive-pill{
+    margin-left:auto;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#fee2e2;
+    color:#b91c1c;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+}
+
+.logout-account-link{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 18px;
+    color:#dc2626;
+    font-weight:700;
 }
 
 /* ================= LAYOUT ================= */

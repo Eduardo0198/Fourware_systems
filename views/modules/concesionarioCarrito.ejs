@@ -111,15 +111,27 @@
 
             <form method="POST" action="/concesionario/carrito/confirmar" class="cart-summary-form">
                 <label for="sucursal" class="form-label">Sucursal</label>
-                <select name="sucursal" id="sucursal" class="form-select" <%= carrito.length === 0 ? 'disabled' : 'required' %>>
+                <select name="sucursal"
+                        id="sucursal"
+                        class="form-select"
+                        <%= carrito.length === 0 || !sucursales || sucursales.length === 0 ? 'disabled' : 'required' %>>
                     <option value="">Selecciona una sucursal</option>
-                    <option value="1">Sucursal Querétaro</option>
-                    <option value="2">Sucursal CDMX</option>
+                    <% (sucursales || []).forEach(sucursal => { %>
+                        <option value="<%= sucursal.id_sucursal %>">
+                            <%= sucursal.nombre %><%= sucursal.municipio ? ' - ' + sucursal.municipio : '' %>
+                        </option>
+                    <% }) %>
                 </select>
+
+                <% if (!sucursales || sucursales.length === 0) { %>
+                    <small class="text-danger">
+                        No hay sucursales activas disponibles para la cuenta seleccionada.
+                    </small>
+                <% } %>
 
                 <button id="btnConfirmar"
                         class="btn btn-primary cart-checkout-btn"
-                        <%= carrito.length === 0 ? 'disabled' : '' %>>
+                        <%= carrito.length === 0 || !sucursales || sucursales.length === 0 ? 'disabled' : '' %>>
                     Confirmar reserva
                 </button>
             </form>

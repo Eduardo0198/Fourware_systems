@@ -98,7 +98,7 @@ exports.obtenerUnidadesVenta = (callback) => {
 exports.obtenerProductoPorSku = (sku, callback) => {
     const query = `
         SELECT SKU, nombre_comercial AS nombre, precio_unitario, peso_unitario, 
-               medida_primaria, imagen, descripcion, unidad_venta, volumen_unitario
+               medida_primaria, imagen, descripcion, unidad_venta, volumen_unitario, activo, id_campania
         FROM Producto
         WHERE SKU = ?
     `;

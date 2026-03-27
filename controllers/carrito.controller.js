@@ -2,10 +2,31 @@ const reservaModel = require('../models/reserva.model');
 const bitacora = require('../models/bitacora.model');
 const campaniaModel = require('../models/campania.model');
 const concesionarioModel = require('../models/concesionario.model');
+const cuentaModel = require('../models/cuenta.model');
+
+function generarFolioReserva() {
+    const ahora = new Date();
+    const yy = String(ahora.getFullYear()).slice(-2);
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dd = String(ahora.getDate()).padStart(2, '0');
+    const hh = String(ahora.getHours()).padStart(2, '0');
+    const mi = String(ahora.getMinutes()).padStart(2, '0');
+    const ss = String(ahora.getSeconds()).padStart(2, '0');
+    const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+    return `R${yy}${mm}${dd}${hh}${mi}${ss}${random}`;
+}
+
+function calcularFechaLimiteCancelacion() {
+    const fecha = new Date();
+    fecha.setHours(fecha.getHours() + 24);
+    return fecha;
+}
 
 exports.agregarProducto = (req, res) => {
     const { sku, nombre, precio, cantidad, imagen, peso_unitario, volumen_unitario } = req.body;
     const cantidadNumerica = parseInt(cantidad, 10);
+    const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
 
     if (!cantidadNumerica || cantidadNumerica <= 0) {
         req.session.mensaje = {
@@ -46,6 +67,12 @@ exports.agregarProducto = (req, res) => {
             req.session.carrito = [];
         }
 
+        if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
+            req.session.carrito = [];
+        }
+
+        req.session.carritoCuentaId = cuentaActivaId;
+
         let carrito = req.session.carrito;
         const index = carrito.findIndex(p => p.sku === sku);
 
@@ -83,6 +110,13 @@ exports.agregarProducto = (req, res) => {
 };
 
 exports.verCarrito = (req, res) => {
+    const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+
+    if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
+        req.session.carrito = [];
+        req.session.carritoCuentaId = cuentaActivaId;
+    }
+
     const carrito = req.session.carrito || [];
     const subtotal = carrito.reduce((acc, p) => {
         return acc + (p.precio * p.cantidad);
@@ -95,14 +129,31 @@ exports.verCarrito = (req, res) => {
     }, 0);
     const iva = subtotal * 0.16;
     const total = subtotal + iva;
-
-    res.render('modules/concesionarioCarrito', {
+    const renderCarrito = (sucursales = []) => res.render('modules/concesionarioCarrito', {
         carrito,
         subtotal,
         totalPeso,
         totalVolumen,
         iva,
-        total
+        total,
+        sucursales
+    });
+
+    if (!cuentaActivaId) {
+        return renderCarrito([]);
+    }
+
+    cuentaModel.obtenerSucursalesActivasPorCuenta(cuentaActivaId, (err, sucursales) => {
+        if (err) {
+            console.error(err);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible cargar las sucursales disponibles.'
+            };
+            return renderCarrito([]);
+        }
+
+        return renderCarrito(sucursales || []);
     });
 };
 
@@ -116,6 +167,18 @@ exports.eliminarProducto = (req, res) => {
 
 exports.actualizarCantidad = (req, res) => {
     const { sku, accion } = req.body;
+    const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+
+    if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
+        req.session.carrito = [];
+        req.session.carritoCuentaId = cuentaActivaId;
+        req.session.mensaje = {
+            tipo: 'warning',
+            texto: 'El carrito fue reiniciado porque cambió la cuenta activa.'
+        };
+        return res.redirect('/concesionario/carrito');
+    }
+
     const carrito = req.session.carrito || [];
     const index = carrito.findIndex(p => p.sku === sku);
 
@@ -213,47 +276,183 @@ exports.actualizarCantidad = (req, res) => {
 
 exports.confirmarReserva = (req, res) => {
     const usuario = req.session.usuario;
-    const carrito = req.session.carrito;
-    const sucursal = req.body.sucursal;
+    const carrito = req.session.carrito || [];
+    const sucursal = parseInt(req.body.sucursal, 10);
+    const cuentaActivaId = usuario?.cuentaActiva?.id_cuenta || null;
 
     if (!usuario) {
         return res.redirect('/');
     }
 
     if (!carrito || carrito.length === 0) {
-        return res.send("El carrito está vacío");
+        bitacora.registrar(
+            usuario.correo,
+            'Intentó confirmar una reserva con el carrito vacío',
+            req.ip
+        );
+        req.session.mensaje = {
+            tipo: 'warning',
+            texto: 'El carrito de preventa se encuentra vacío.'
+        };
+        return res.redirect('/concesionario/carrito');
     }
 
     if (!sucursal) {
-        return res.send("Debe seleccionar una sucursal");
+        req.session.mensaje = {
+            tipo: 'warning',
+            texto: 'Debe seleccionar una sucursal para continuar.'
+        };
+        return res.redirect('/concesionario/carrito');
     }
 
-    let subtotal = carrito.reduce((acc, p) => {
-        return acc + (p.precio * p.cantidad);
-    }, 0);
-
-    let iva = subtotal * 0.16;
-    let total = subtotal + iva;
-    const folio = "RES-" + Date.now();
-    reservaModel.crearReserva({
-        folio,
-        subtotal,
-        iva,
-        total,
-        correo: usuario.correo,
-        id_sucursal: sucursal
-    }, (err) => {
-        if (err) {
-            console.log(err);
-            return res.send("Error al registrar la reserva");
+    campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
+        if (campaniaErr) {
+            console.error(campaniaErr);
+            bitacora.registrar(
+                usuario.correo,
+                'Error al validar campaña durante confirmación de reserva',
+                req.ip
+            );
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
+            };
+            return res.redirect('/concesionario/carrito');
         }
-        reservaModel.insertarProductos(carrito, folio);
-        bitacora.registrar(
-            usuario.correo,
-            `Confirmó reserva ${folio}`,
-            req.ip
-        );
-        req.session.carrito = [];
-        res.send(`Reserva confirmada. Folio: ${folio}`);
+
+        const campaniaActiva = campanias && campanias[0];
+
+        if (!campaniaActiva) {
+            bitacora.registrar(
+                usuario.correo,
+                'Intentó confirmar una reserva sin campaña activa',
+                req.ip
+            );
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La campaña de preventa no se encuentra disponible.'
+            };
+            return res.redirect('/concesionario/carrito');
+        }
+
+        cuentaModel.obtenerSucursalesActivasPorCuenta(cuentaActivaId, (sucursalesErr, sucursales) => {
+            if (sucursalesErr) {
+                console.error(sucursalesErr);
+                bitacora.registrar(
+                    usuario.correo,
+                    'Error al validar sucursal durante confirmación de reserva',
+                    req.ip
+                );
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
+                };
+                return res.redirect('/concesionario/carrito');
+            }
+
+            const sucursalValida = Array.isArray(sucursales) && sucursales.some(item => item.id_sucursal === sucursal);
+
+            if (!sucursalValida) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'Debe seleccionar una sucursal para continuar.'
+                };
+                return res.redirect('/concesionario/carrito');
+            }
+
+            let pendientes = carrito.length;
+            let errorDisponibilidad = false;
+
+            if (pendientes === 0) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'El carrito de preventa se encuentra vacío.'
+                };
+                return res.redirect('/concesionario/carrito');
+            }
+
+            carrito.forEach((item) => {
+                concesionarioModel.obtenerProductoPorSku(item.sku, (productoErr, producto) => {
+                    if (errorDisponibilidad) {
+                        return;
+                    }
+
+                    if (productoErr) {
+                        errorDisponibilidad = true;
+                        console.error(productoErr);
+                        bitacora.registrar(
+                            usuario.correo,
+                            `Error al validar disponibilidad del producto ${item.sku}`,
+                            req.ip
+                        );
+                        req.session.mensaje = {
+                            tipo: 'danger',
+                            texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
+                        };
+                        return res.redirect('/concesionario/carrito');
+                    }
+
+                    if (!producto || Number(producto.activo) !== 1) {
+                        errorDisponibilidad = true;
+                        req.session.mensaje = {
+                            tipo: 'warning',
+                            texto: 'Uno o más productos del carrito ya no se encuentran disponibles.'
+                        };
+                        return res.redirect('/concesionario/carrito');
+                    }
+
+                    pendientes -= 1;
+
+                    if (pendientes === 0) {
+                        const subtotal = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+                        const iva = subtotal * 0.16;
+                        const total = subtotal + iva;
+                        const folio = generarFolioReserva();
+                        const fechaLimiteCancelacion = calcularFechaLimiteCancelacion();
+
+                        reservaModel.crearReservaConProductos({
+                            folio,
+                            estatus: 1,
+                            subtotal,
+                            iva,
+                            total,
+                            fecha_cancelacion_reserva: fechaLimiteCancelacion,
+                            correo: usuario.correo,
+                            id_cuenta: cuentaActivaId,
+                            id_sucursal: sucursal
+                        }, carrito, (reservaErr) => {
+                            if (reservaErr) {
+                                console.error(reservaErr);
+                                bitacora.registrar(
+                                    usuario.correo,
+                                    `Error al registrar la reserva ${folio}`,
+                                    req.ip
+                                );
+                                req.session.mensaje = {
+                                    tipo: 'danger',
+                                    texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
+                                };
+                                return res.redirect('/concesionario/carrito');
+                            }
+
+                            bitacora.registrar(
+                                usuario.correo,
+                                `Confirmó reserva ${folio}`,
+                                req.ip
+                            );
+
+                            req.session.carrito = [];
+                            req.session.carritoCuentaId = cuentaActivaId;
+                            req.session.mensaje = {
+                                tipo: 'success',
+                                texto: `Reserva confirmada exitosamente. Folio: ${folio}`
+                            };
+
+                            return res.redirect('/concesionario/carrito');
+                        });
+                    }
+                });
+            });
+        });
     });
 };

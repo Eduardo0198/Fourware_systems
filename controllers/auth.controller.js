@@ -70,6 +70,7 @@ exports.doLogin = (req, res) => {
                     usuarioSesion.cuentas = cuentas;
                     usuarioSesion.cuentaActiva = cuentaModel.obtenerCuentaActivaPorDefecto(cuentas);
                     req.session.usuario = usuarioSesion;
+                    req.session.carritoCuentaId = usuarioSesion.cuentaActiva?.id_cuenta || null;
                     return redirigirSegunRol(roles, res);
                 });
             });
