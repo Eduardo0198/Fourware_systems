@@ -5,7 +5,8 @@ function normalizarIp(ip) {
         return null;
     }
 
-    return String(ip).replace('::ffff:', '');
+    const valor = String(ip).replace('::ffff:', '').trim();
+    return valor === '::1' ? '127.0.0.1 (localhost)' : valor;
 }
 
 function registrarEvento(req, accion, correo = null) {

@@ -1,14 +1,54 @@
-<h2>
-Configurar Ventana de Cancelación
-</h2>
-<div class="card p-4">
-    <div class="mb-3">
-        <label>
-            Horas permitidas para cancelar reservas
-        </label>
-        <input type="number" class="form-control">
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-campaigns">
+        <div>
+            <span class="admin-eyebrow">Administrador · CU-07</span>
+            <h2 class="admin-title">Ventana de Cancelación</h2>
+            <p class="admin-subtitle">
+                Define el temporizador operativo que controla cuántas horas tiene una reserva para cancelarse.
+            </p>
+        </div>
+        <div class="admin-hero-note">
+            <span>Configuración actual</span>
+            <strong><%= horasCancelacion || 24 %> horas</strong>
+            <small>Este valor se aplica al cálculo de la fecha límite de cancelación.</small>
+        </div>
     </div>
-    <button class="btn btn-primary">
-        Guardar configuración
-    </button>
-</div>
+
+    <% if (pageMessage) { %>
+        <div class="alert alert-<%= pageMessage.tipo %>" role="alert">
+            <%= pageMessage.texto %>
+        </div>
+    <% } %>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Configurar temporizador</h4>
+                <p>Indica cuántas horas estarán disponibles para cancelar una reserva después de su confirmación.</p>
+            </div>
+            <span class="admin-table-pill">Operación vigente</span>
+        </div>
+
+        <form method="post" action="/admin/campanas/cancelacion" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Horas permitidas para cancelar reservas</label>
+                <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    name="horas_cancelacion"
+                    class="form-control"
+                    value="<%= horasCancelacion || 24 %>"
+                    required>
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <button class="btn admin-action-btn" type="submit">
+                    Guardar configuración
+                </button>
+                <a href="/admin/campanas" class="btn btn-outline-secondary">
+                    Volver a campañas
+                </a>
+            </div>
+        </form>
+    </div>
+</section>

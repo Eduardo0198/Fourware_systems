@@ -1,5 +1,6 @@
 const bitacoraModel = require('../models/bitacora.model');
 const campaniaModel = require('../models/campania.model');
+const cancelacionModel = require('../models/cancelacion.model');
 const productoModel = require('../models/producto.model');
 const { registrarEvento, normalizarIp } = require('../utils/auditoria.helper');
 
@@ -61,7 +62,7 @@ function renderCatalogoRegistro(res, options = {}) {
             }
 
             res.render('modules/catalogoRegistrar', {
-                pageMessage: options.pageMessage || null,
+                pageMessage: options.pageMessage || res.locals.mensaje || null,
                 formData: options.formData || {},
                 campanias: campanias.map(normalizarCampania),
                 productos: productos.map(normalizarProducto)
@@ -78,7 +79,7 @@ function renderCampaniaCrear(res, options = {}) {
         }
 
         res.render('modules/campanaCrear', {
-            pageMessage: options.pageMessage || null,
+            pageMessage: options.pageMessage || res.locals.mensaje || null,
             formData: options.formData || {},
             campanias: campanias.map(normalizarCampania)
         });
@@ -99,7 +100,7 @@ function renderCampaniaEditar(req, res, options = {}) {
         ) || campaniasNormalizadas[0] || null;
 
         res.render('modules/campanaEditar', {
-            pageMessage: options.pageMessage || null,
+            pageMessage: options.pageMessage || res.locals.mensaje || null,
             campanias: campaniasNormalizadas,
             campaniaSeleccionada,
             formData: options.formData || campaniaSeleccionada || null
@@ -279,7 +280,40 @@ exports.auditoria = (req, res) => {
     };
 
     if (!consultaSolicitada) {
-        return renderAuditoria();
+        return bitacoraModel.listarRecientes((err, registros) => {
+            if (err) {
+                registrarEvento(
+                    req,
+                    'Error al consultar bitácora de auditoría',
+                    usuario ? usuario.correo : null
+                );
+
+                return renderAuditoria({
+                    estadoConsulta: 'error-consulta',
+                    mensaje: {
+                        tipo: 'danger',
+                        texto: 'No fue posible cargar la bitácora de auditoría. Intente nuevamente.'
+                    }
+                });
+            }
+
+            registrarEvento(req, 'Consulta de bitácora de auditoría', usuario ? usuario.correo : null);
+
+            return renderAuditoria({
+                registros,
+                totalRegistros: registros.length,
+                estadoConsulta: registros.length > 0 ? 'con-resultados' : 'sin-resultados',
+                mensaje: registros.length > 0
+                    ? {
+                        tipo: 'info',
+                        texto: 'Se muestran los registros más recientes de la bitácora.'
+                    }
+                    : {
+                        tipo: 'info',
+                        texto: 'No hay registros disponibles en la bitácora.'
+                    }
+            });
+        });
     }
 
     if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
@@ -648,16 +682,57 @@ exports.editarCampanaPost = (req, res) => {
 };
 
 exports.cancelacionCampana = (req, res) => {
-    campaniaModel.obtenerTodas((err, campanias) => {
+    cancelacionModel.obtener((err, configuracion) => {
         if (err) {
             console.error(err);
-            return res.status(500).send('No fue posible cargar las campañas.');
+            return res.status(500).send('No fue posible cargar la configuración de cancelación.');
         }
 
         registrarEvento(req, 'Consulta de configuración de cancelación de reservas');
         res.render('modules/campanaCancelacion', {
-            campanias: campanias.map(normalizarCampania)
+            pageMessage: res.locals.mensaje || null,
+            horasCancelacion: configuracion.horas_cancelacion
         });
+    });
+};
+
+exports.cancelacionCampanaPost = (req, res) => {
+    const horas = parseInt(req.body.horas_cancelacion, 10);
+
+    if (Number.isNaN(horas) || horas <= 0) {
+        return res.render('modules/campanaCancelacion', {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'Debes capturar una cantidad válida de horas para cancelar reservas.'
+            },
+            horasCancelacion: req.body.horas_cancelacion
+        });
+    }
+
+    cancelacionModel.actualizar(horas, (err, configuracion) => {
+        if (err) {
+            console.error(err);
+            registrarBitacora(req, 'Error al configurar la ventana de cancelación de reservas');
+            return res.render('modules/campanaCancelacion', {
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'No fue posible guardar la ventana de cancelación. Intente nuevamente.'
+                },
+                horasCancelacion: req.body.horas_cancelacion
+            });
+        }
+
+        registrarBitacora(
+            req,
+            `Configuración de ventana de cancelación a ${configuracion.horas_cancelacion} horas`
+        );
+
+        req.session.mensaje = {
+            tipo: 'success',
+            texto: 'Ventana de cancelación configurada correctamente.'
+        };
+
+        res.redirect('/admin/campanas/cancelacion');
     });
 };
 
