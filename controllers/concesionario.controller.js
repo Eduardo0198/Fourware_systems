@@ -2,13 +2,16 @@ const db = require('../config/db');
 const concesionarioModel = require('../models/concesionario.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
-const bitacora = require('../models/bitacora.model');
+const { registrarEvento } = require('../utils/auditoria.helper');
 
 exports.home = (req, res) => {
     concesionarioModel.obtenerTopProductos((err, productos) => {
 
         if (err) {
             console.log(err);
+            // inicio caso 8 lau
+            registrarEvento(req, 'Error al consultar inicio de concesionario');
+            // fin caso 8 lau
             return res.send("Error al obtener productos");
         }
         campaniaModel.obtenerCampaniaActiva((err2, result) => {
@@ -17,6 +20,9 @@ exports.home = (req, res) => {
                 console.log(err2);
             }
             const campania = (result && result.length > 0) ? result[0] : null;
+            // inicio caso 8 lau
+            registrarEvento(req, 'Consulta de inicio de concesionario');
+            // fin caso 8 lau
             res.render('modules/concesionarioHome', {
                 productos: productos,
                 campania: campania
@@ -81,11 +87,9 @@ exports.seleccionarCuentaActiva = (req, res) => {
             req.session.usuario.cuentaActiva =
                 cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
 
-            bitacora.registrar(
-                usuario.correo,
-                `Selecciono la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,
-                req.ip
-            );
+            // inicio caso 8 lau
+            registrarEvento(req, 'Selección de cuenta activa', usuario.correo);
+            // fin caso 8 lau
 
             req.session.mensaje = {
                 tipo: 'success',
@@ -114,6 +118,9 @@ exports.catalogo = (req, res) => {
         (err, result) => {
             if (err) {
                 console.log(err);
+                // inicio caso 8 lau
+                registrarEvento(req, 'Error al consultar catálogo de productos');
+                // fin caso 8 lau
                 return res.send("Error al obtener catálogo");
             }
             const { productos, total } = result;
@@ -123,6 +130,12 @@ exports.catalogo = (req, res) => {
                     console.log(err2);
                     unidadesVenta = [];
                 }
+                // inicio caso 8 lau
+                const accionCatalogo = searchTerm
+                    ? 'Búsqueda de productos en catálogo'
+                    : 'Consulta de catálogo de productos';
+                registrarEvento(req, accionCatalogo);
+                // fin caso 8 lau
                 res.render('modules/concesionarioCatalogo', {
                     productos: productos,
                     query: searchTerm,
@@ -145,11 +158,20 @@ exports.producto = (req, res) => {
     concesionarioModel.obtenerProductoPorSku(sku, (err, producto) => {
         if (err) {
             console.log(err);
+            // inicio caso 8 lau
+            registrarEvento(req, 'Error al consultar detalle de producto');
+            // fin caso 8 lau
             return res.send("Error al obtener producto");
         }
         if (!producto) {
+            // inicio caso 8 lau
+            registrarEvento(req, 'Intento de consulta de producto inexistente');
+            // fin caso 8 lau
             return res.send("Producto no encontrado");
         }
+        // inicio caso 8 lau
+        registrarEvento(req, 'Consulta de detalle de producto');
+        // fin caso 8 lau
         res.render('modules/concesionarioProducto', {
             producto: producto
         });
@@ -158,19 +180,31 @@ exports.producto = (req, res) => {
 
 
 exports.confirmarReserva = (req, res) => {
+    // inicio caso 8 lau
+    registrarEvento(req, 'Consulta de confirmación de reserva');
+    // fin caso 8 lau
     res.render('modules/concesionarioConfirmarReserva');
 };
 
 exports.reservas = (req, res) => {
+    // inicio caso 8 lau
+    registrarEvento(req, 'Consulta de historial de reservas');
+    // fin caso 8 lau
     res.render('modules/concesionarioReservas');
 };
 
 exports.detalleReserva = (req, res) => {
+    // inicio caso 8 lau
+    registrarEvento(req, 'Consulta de detalle de reserva');
+    // fin caso 8 lau
     res.render('modules/concesionarioDetalleReserva', {
         folio: req.params.folio
     });
 };
 
 exports.cancelarReserva = (req, res) => {
+    // inicio caso 8 lau
+    registrarEvento(req, 'Consulta de cancelación de reserva');
+    // fin caso 8 lau
     res.render('modules/concesionarioCancelarReserva');
 };
