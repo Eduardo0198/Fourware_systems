@@ -4,6 +4,20 @@ Gestión de Catálogo
 <p class="text-muted">
 Administración de productos disponibles en el sistema de preventa.
 </p>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <small class="text-muted">Productos registrados</small>
+            <strong class="fs-4"><%= totalProductos || 0 %></strong>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <small class="text-muted">Campañas vigentes seleccionables</small>
+            <strong class="fs-4"><%= totalCampaniasVigentes || 0 %></strong>
+        </div>
+    </div>
+</div>
 <div class="catalogo-grid">
     <div class="catalogo-card">
         <h5>

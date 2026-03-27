@@ -1,29 +1,119 @@
-<h2>
+<h2 class="mb-4">
 Editar Campaña
 </h2>
-<input
-type="text"
-class="form-control mb-3"
-placeholder="Buscar campaña">
-<table class="table">
-    <thead>
-        <tr>
-            <th>Campaña</th>
-            <th>Fecha inicio</th>
-            <th>Fecha fin</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-        <tbody>
-            <tr>
-                <td>Mundial 2026</td>
-                <td>01/03/2026</td>
-                <td>30/03/2026</td>
-                <td>
-                <button class="btn btn-sm btn-primary">
-                    Editar
-                </button>
-                </td>
-            </tr>
-    </tbody>
-</table>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Campaña</th>
+                    <th class="text-center" style="width: 70px;"></th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estatus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% campanias.forEach((campania) => { %>
+                    <tr>
+                        <td><strong><%= campania.nombre %></strong></td>
+                        <td class="text-center">
+                            <a
+                                href="/admin/campanas/editar?id=<%= campania.id_campania %>"
+                                class="btn btn-sm btn-outline-primary"
+                                title="Editar campaña">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                        <td><%= campania.fecha_inicio_texto %></td>
+                        <td><%= campania.fecha_fin_texto %></td>
+                        <td>
+                            <% if (campania.estatus) { %>
+                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/desactivar" class="m-0 d-flex align-items-center gap-2">
+                                    <div class="form-check form-switch m-0">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            role="switch"
+                                            checked
+                                            onchange="this.form.submit()">
+                                    </div>
+                                    <span class="badge bg-success">Activa</span>
+                                </form>
+                            <% } else { %>
+                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar" class="m-0 d-flex align-items-center gap-2">
+                                    <div class="form-check form-switch m-0">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            role="switch"
+                                            onchange="this.form.submit()">
+                                    </div>
+                                    <span class="badge bg-secondary">Inactiva</span>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<% if (campaniaSeleccionada) { %>
+    <div class="card p-4">
+        <h4 class="mb-3">
+        Editando: <%= campaniaSeleccionada.nombre %>
+        </h4>
+        <form method="post" action="/admin/campanas/editar/<%= campaniaSeleccionada.id_campania %>">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre de la campaña</label>
+                    <input
+                        type="text"
+                        name="nombre"
+                        class="form-control"
+                        value="<%= formData && formData.nombre ? formData.nombre : campaniaSeleccionada.nombre %>"
+                        required>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Fecha de inicio</label>
+                    <input
+                        type="date"
+                        name="fecha_inicio"
+                        class="form-control"
+                        value="<%= formData && formData.fecha_inicio ? formData.fecha_inicio : campaniaSeleccionada.fecha_inicio_input %>"
+                        required>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Fecha de fin</label>
+                    <input
+                        type="date"
+                        name="fecha_fin"
+                        class="form-control"
+                        value="<%= formData && formData.fecha_fin ? formData.fecha_fin : campaniaSeleccionada.fecha_fin_input %>"
+                        required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Banner</label>
+                <input
+                    type="text"
+                    name="banner"
+                    class="form-control"
+                    value="<%= formData && formData.banner ? formData.banner : campaniaSeleccionada.banner %>"
+                    required>
+            </div>
+            <button class="btn btn-primary" type="submit">
+                Guardar cambios
+            </button>
+        </form>
+    </div>
+<% } %>
