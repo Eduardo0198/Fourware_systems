@@ -1,6 +1,7 @@
 const bitacoraModel = require('../models/bitacora.model');
 const campaniaModel = require('../models/campania.model');
 const productoModel = require('../models/producto.model');
+const { registrarEvento, normalizarIp } = require('../utils/auditoria.helper');
 
 function aNumeroDecimal(valor) {
     const numero = parseFloat(valor);
@@ -9,6 +10,14 @@ function aNumeroDecimal(valor) {
 
 function esFechaValida(valor) {
     return Boolean(valor) && !Number.isNaN(new Date(valor).getTime());
+}
+
+function registrarBitacora(req, accion, correo) {
+    bitacoraModel.registrar(
+        correo || req.session?.usuario?.correo || null,
+        accion,
+        normalizarIp(req.ip)
+    );
 }
 
 function normalizarCampania(campania) {
@@ -83,11 +92,7 @@ function renderCampaniaEditar(req, res, options = {}) {
             return res.status(500).send('No fue posible cargar las campañas.');
         }
 
-        const idSeleccionado = parseInt(
-            options.idSeleccionado || req.query.id,
-            10
-        );
-
+        const idSeleccionado = parseInt(options.idSeleccionado || req.query.id, 10);
         const campaniasNormalizadas = campanias.map(normalizarCampania);
         const campaniaSeleccionada = campaniasNormalizadas.find(
             (item) => item.id_campania === idSeleccionado
@@ -96,7 +101,7 @@ function renderCampaniaEditar(req, res, options = {}) {
         res.render('modules/campanaEditar', {
             pageMessage: options.pageMessage || null,
             campanias: campaniasNormalizadas,
-            campaniaSeleccionada: campaniaSeleccionada,
+            campaniaSeleccionada,
             formData: options.formData || campaniaSeleccionada || null
         });
     });
@@ -116,7 +121,7 @@ function validarProducto(input) {
         id_campania: String(input.id_campania || '').trim()
     };
 
-    if (Object.values(formData).some(valor => !valor)) {
+    if (Object.values(formData).some((valor) => !valor)) {
         return {
             valido: false,
             mensaje: 'Debes capturar todos los campos del producto.',
@@ -129,7 +134,7 @@ function validarProducto(input) {
     const volumen = aNumeroDecimal(formData.volumen_unitario);
     const idCampania = parseInt(formData.id_campania, 10);
 
-    if ([precio, peso, volumen].some(valor => Number.isNaN(valor) || valor <= 0)) {
+    if ([precio, peso, volumen].some((valor) => Number.isNaN(valor) || valor <= 0)) {
         return {
             valido: false,
             mensaje: 'Precio, peso y volumen deben ser números mayores a cero.',
@@ -172,7 +177,7 @@ function validarCampania(input) {
         banner: String(input.banner || '').trim()
     };
 
-    if (Object.values(formData).some(valor => !valor)) {
+    if (Object.values(formData).some((valor) => !valor)) {
         return {
             valido: false,
             mensaje: 'Debes completar nombre, fechas y banner de la campaña.',
@@ -203,6 +208,7 @@ function validarCampania(input) {
 }
 
 exports.dashboard = (req, res) => {
+    registrarEvento(req, 'Consulta de dashboard administrativo');
     res.render('dashboard');
 };
 
@@ -219,6 +225,7 @@ exports.catalogo = (req, res) => {
                 return res.status(500).send('No fue posible cargar el catálogo.');
             }
 
+            registrarEvento(req, 'Consulta de catálogo administrativo');
             res.render('modules/adminCatalogo', {
                 totalProductos: productos.length,
                 totalCampaniasVigentes: campanias.length
@@ -235,32 +242,104 @@ exports.campanas = (req, res) => {
         }
 
         const campaniasNormalizadas = campanias.map(normalizarCampania);
+        registrarEvento(req, 'Consulta de configuración de campañas');
         res.render('modules/adminCampanas', {
             campanias: campaniasNormalizadas,
             totalCampanias: campaniasNormalizadas.length,
-            totalActivas: campaniasNormalizadas.filter(item => item.estatus === 1).length
+            totalActivas: campaniasNormalizadas.filter((item) => item.estatus === 1).length
         });
     });
 };
 
 exports.reportes = (req, res) => {
+    registrarEvento(req, 'Consulta de reportes administrativos');
     res.render('modules/adminReportes');
 };
 
 exports.auditoria = (req, res) => {
-    bitacoraModel.listarRecientes((err, logs) => {
+    const usuario = req.session.usuario;
+    const consultaSolicitada = req.query.consultar === '1';
+    const correo = String(req.query.usuario || '').trim();
+    const fechaInicio = String(req.query.fecha_inicio || '').trim();
+    const fechaFin = String(req.query.fecha_fin || '').trim();
+    const filtros = {
+        correo,
+        fechaInicio,
+        fechaFin
+    };
+
+    const renderAuditoria = (datosExtra = {}) => {
+        res.render('modules/adminAuditoria', {
+            filtros,
+            registros: [],
+            totalRegistros: 0,
+            estadoConsulta: 'inicial',
+            ...datosExtra
+        });
+    };
+
+    if (!consultaSolicitada) {
+        return renderAuditoria();
+    }
+
+    if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+        return renderAuditoria({
+            estadoConsulta: 'error-validacion',
+            mensaje: {
+                tipo: 'warning',
+                texto: 'El rango de fechas ingresado no es válido.'
+            }
+        });
+    }
+
+    bitacoraModel.obtenerRegistrosFiltrados(filtros, (err, registros) => {
         if (err) {
-            console.error(err);
-            return res.status(500).send('No fue posible cargar la bitácora.');
+            registrarEvento(
+                req,
+                'Error al consultar bitácora de auditoría',
+                usuario ? usuario.correo : null
+            );
+
+            return renderAuditoria({
+                estadoConsulta: 'error-consulta',
+                mensaje: {
+                    tipo: 'danger',
+                    texto: 'No fue posible consultar la bitácora de auditoría. Intente nuevamente.'
+                }
+            });
         }
 
-        res.render('modules/adminAuditoria', {
-            logs: logs
+        const totalRegistros = registros.length;
+        const accionConsulta = totalRegistros > 0
+            ? 'Consulta de bitácora de auditoría'
+            : 'Consulta de bitácora de auditoría sin resultados';
+
+        registrarEvento(req, accionConsulta, usuario ? usuario.correo : null);
+
+        if (totalRegistros === 0) {
+            return renderAuditoria({
+                estadoConsulta: 'sin-resultados',
+                mensaje: {
+                    tipo: 'info',
+                    texto: 'No se encontraron registros con los criterios seleccionados.'
+                }
+            });
+        }
+
+        return renderAuditoria({
+            registros,
+            totalRegistros,
+            estadoConsulta: 'con-resultados',
+            mensaje: {
+                tipo: 'success',
+                texto: `Se encontraron ${totalRegistros} registro(s) para los criterios seleccionados.`
+            }
         });
     });
 };
 
 exports.registrarSKU = (req, res) => {
+    registrarEvento(req, 'Consulta de registro de producto de catálogo');
     renderCatalogoRegistro(res);
 };
 
@@ -327,10 +406,9 @@ exports.registrarSKUPost = (req, res) => {
             productoModel.registrar(validacion.producto, (errRegistro) => {
                 if (errRegistro) {
                     console.error(errRegistro);
-                    bitacoraModel.registrar(
-                        req.session.usuario.correo,
-                        `Error al registrar el producto ${validacion.producto.sku}`,
-                        req.ip
+                    registrarBitacora(
+                        req,
+                        `Error al registrar el producto ${validacion.producto.sku}`
                     );
                     return renderCatalogoRegistro(res, {
                         pageMessage: {
@@ -341,10 +419,9 @@ exports.registrarSKUPost = (req, res) => {
                     });
                 }
 
-                bitacoraModel.registrar(
-                    req.session.usuario.correo,
-                    `Registro de producto ${validacion.producto.sku} en catálogo para campaña ${campania.id_campania}`,
-                    req.ip
+                registrarBitacora(
+                    req,
+                    `Registro de producto ${validacion.producto.sku} en catálogo para campaña ${campania.id_campania}`
                 );
 
                 req.session.mensaje = {
@@ -365,6 +442,7 @@ exports.modificarSKU = (req, res) => {
             return res.status(500).send('No fue posible cargar los productos.');
         }
 
+        registrarEvento(req, 'Consulta de modificación de producto de catálogo');
         res.render('modules/catalogoModificar', {
             productos: productos.map(normalizarProducto)
         });
@@ -372,10 +450,12 @@ exports.modificarSKU = (req, res) => {
 };
 
 exports.cargaMasiva = (req, res) => {
+    registrarEvento(req, 'Consulta de carga masiva de productos');
     res.render('modules/catalogoCargaMasiva');
 };
 
 exports.crearCampana = (req, res) => {
+    registrarEvento(req, 'Consulta de creación de campaña');
     renderCampaniaCrear(res);
 };
 
@@ -398,10 +478,9 @@ exports.crearCampanaPost = (req, res) => {
     }, (err) => {
         if (err) {
             console.error(err);
-            bitacoraModel.registrar(
-                req.session.usuario.correo,
-                `Error al configurar la campaña ${validacion.formData.nombre}`,
-                req.ip
+            registrarBitacora(
+                req,
+                `Error al configurar la campaña ${validacion.formData.nombre}`
             );
             return renderCampaniaCrear(res, {
                 pageMessage: {
@@ -412,11 +491,7 @@ exports.crearCampanaPost = (req, res) => {
             });
         }
 
-        bitacoraModel.registrar(
-            req.session.usuario.correo,
-            `Registro de campaña ${validacion.formData.nombre}`,
-            req.ip
-        );
+        registrarBitacora(req, `Registro de campaña ${validacion.formData.nombre}`);
 
         req.session.mensaje = {
             tipo: 'success',
@@ -428,6 +503,7 @@ exports.crearCampanaPost = (req, res) => {
 };
 
 exports.editarCampana = (req, res) => {
+    registrarEvento(req, 'Consulta de edición de campaña');
     renderCampaniaEditar(req, res);
 };
 
@@ -467,18 +543,16 @@ exports.editarCampanaPost = (req, res) => {
             return res.redirect('/admin/campanas/editar');
         }
 
-        const guardarCambios = () => {
-            campaniaModel.actualizar(idCampania, {
+        campaniaModel.actualizar(
+            idCampania,
+            {
                 ...validacion.formData,
                 estatus: Number(campaniaActual.estatus) === 1 ? 1 : 0
-            }, (err, result) => {
+            },
+            (err, result) => {
                 if (err || !result.affectedRows) {
                     console.error(err);
-                    bitacoraModel.registrar(
-                        req.session.usuario.correo,
-                        `Error al editar la campaña ${idCampania}`,
-                        req.ip
-                    );
+                    registrarBitacora(req, `Error al editar la campaña ${idCampania}`);
                     return renderCampaniaEditar(req, res, {
                         idSeleccionado: idCampania,
                         pageMessage: {
@@ -492,11 +566,7 @@ exports.editarCampanaPost = (req, res) => {
                     });
                 }
 
-                bitacoraModel.registrar(
-                    req.session.usuario.correo,
-                    `Edición de campaña ${idCampania}`,
-                    req.ip
-                );
+                registrarBitacora(req, `Edición de campaña ${idCampania}`);
 
                 req.session.mensaje = {
                     tipo: 'success',
@@ -504,9 +574,8 @@ exports.editarCampanaPost = (req, res) => {
                 };
 
                 res.redirect(`/admin/campanas/editar?id=${idCampania}`);
-            });
-        };
-        return guardarCambios();
+            }
+        );
     });
 };
 
@@ -517,6 +586,7 @@ exports.cancelacionCampana = (req, res) => {
             return res.status(500).send('No fue posible cargar las campañas.');
         }
 
+        registrarEvento(req, 'Consulta de configuración de cancelación de reservas');
         res.render('modules/campanaCancelacion', {
             campanias: campanias.map(normalizarCampania)
         });
@@ -524,6 +594,7 @@ exports.cancelacionCampana = (req, res) => {
 };
 
 exports.estadoCampana = (req, res) => {
+    registrarEvento(req, 'Consulta de estado de campaña');
     res.redirect('/admin/campanas/editar');
 };
 
@@ -566,35 +637,35 @@ exports.activarCampana = (req, res) => {
                 return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
             }
 
-            campaniaModel.actualizar(idCampania, {
-                nombre: campania.nombre,
-                fecha_inicio: new Date(campania.fecha_inicio).toISOString().slice(0, 10),
-                fecha_fin: new Date(campania.fecha_fin).toISOString().slice(0, 10),
-                banner: campania.banner,
-                estatus: 1
-            }, (errActualizar) => {
-                if (errActualizar) {
-                    console.error(errActualizar);
+            campaniaModel.actualizar(
+                idCampania,
+                {
+                    nombre: campania.nombre,
+                    fecha_inicio: new Date(campania.fecha_inicio).toISOString().slice(0, 10),
+                    fecha_fin: new Date(campania.fecha_fin).toISOString().slice(0, 10),
+                    banner: campania.banner,
+                    estatus: 1
+                },
+                (errActualizar) => {
+                    if (errActualizar) {
+                        console.error(errActualizar);
+                        req.session.mensaje = {
+                            tipo: 'danger',
+                            texto: 'No fue posible activar la campaña. Intente nuevamente.'
+                        };
+                        return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+                    }
+
+                    registrarBitacora(req, `Activación de campaña ${campania.nombre}`);
+
                     req.session.mensaje = {
-                        tipo: 'danger',
-                        texto: 'No fue posible activar la campaña. Intente nuevamente.'
+                        tipo: 'success',
+                        texto: 'Campaña activada correctamente.'
                     };
-                    return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+
+                    res.redirect(`/admin/campanas/editar?id=${idCampania}`);
                 }
-
-                bitacoraModel.registrar(
-                    req.session.usuario.correo,
-                    `Activación de campaña ${campania.nombre}`,
-                    req.ip
-                );
-
-                req.session.mensaje = {
-                    tipo: 'success',
-                    texto: 'Campaña activada correctamente.'
-                };
-
-                res.redirect(`/admin/campanas/editar?id=${idCampania}`);
-            });
+            );
         });
     });
 };
@@ -623,11 +694,7 @@ exports.desactivarCampana = (req, res) => {
         campaniaModel.desactivar(idCampania, (errDesactivar) => {
             if (errDesactivar) {
                 console.error(errDesactivar);
-                bitacoraModel.registrar(
-                    req.session.usuario.correo,
-                    `Error al desactivar la campaña ${idCampania}`,
-                    req.ip
-                );
+                registrarBitacora(req, `Error al desactivar la campaña ${idCampania}`);
                 req.session.mensaje = {
                     tipo: 'danger',
                     texto: 'No fue posible desactivar la campaña. Intente nuevamente.'
@@ -635,11 +702,7 @@ exports.desactivarCampana = (req, res) => {
                 return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
             }
 
-            bitacoraModel.registrar(
-                req.session.usuario.correo,
-                `Desactivación de campaña ${campania.nombre}`,
-                req.ip
-            );
+            registrarBitacora(req, `Desactivación de campaña ${campania.nombre}`);
 
             req.session.mensaje = {
                 tipo: 'success',
