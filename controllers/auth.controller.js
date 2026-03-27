@@ -1,7 +1,11 @@
 const usuarioModel = require('../models/usuario.model');
 const cuentaModel = require('../models/cuenta.model');
-const bitacora = require('../models/bitacora.model');
 const bcrypt = require('bcryptjs');
+const {
+    registrarEvento,
+    incrementarIntento,
+    reiniciarIntento
+} = require('../utils/auditoria.helper');
 
 function redirigirSegunRol(roles, res) {
     if (roles.includes('Administrador')) {
@@ -27,6 +31,14 @@ exports.doLogin = (req, res) => {
     const password = req.body.password;
     usuarioModel.obtenerUsuarioConRoles(email, (err, rows) => {
         if (err || rows.length === 0) {
+            // inicio caso 8 lau
+            const numeroIntento = incrementarIntento(req, 'login_fallido');
+            registrarEvento(
+                req,
+                `Intento fallido de inicio de sesión numero ${numeroIntento}`,
+                email
+            );
+            // fin caso 8 lau
             return res.render('login', {
                 layout: false,
                 error: 'Usuario o contraseña incorrectos'
@@ -36,6 +48,14 @@ exports.doLogin = (req, res) => {
             const hash = result2[0].contrasenia;
             const match = await bcrypt.compare(password, hash);
             if (!match) {
+                // inicio caso 8 lau
+                const numeroIntento = incrementarIntento(req, 'login_fallido');
+                registrarEvento(
+                    req,
+                    `Intento fallido de inicio de sesión numero ${numeroIntento}`,
+                    email
+                );
+                // fin caso 8 lau
                 return res.render('login', { 
                     layout: false,
                     error: 'Usuario o contraseña incorrectos'
@@ -57,6 +77,10 @@ exports.doLogin = (req, res) => {
 
                 if (!roles.includes('Concesionario')) {
                     req.session.usuario = usuarioSesion;
+                    // inicio caso 8 lau
+                    reiniciarIntento(req, 'login_fallido');
+                    registrarEvento(req, 'Inicio de sesión exitoso', usuarioSesion.correo);
+                    // fin caso 8 lau
                     return redirigirSegunRol(roles, res);
                 }
 
@@ -70,6 +94,10 @@ exports.doLogin = (req, res) => {
                     usuarioSesion.cuentas = cuentas;
                     usuarioSesion.cuentaActiva = cuentaModel.obtenerCuentaActivaPorDefecto(cuentas);
                     req.session.usuario = usuarioSesion;
+                    // inicio caso 8 lau
+                    reiniciarIntento(req, 'login_fallido');
+                    registrarEvento(req, 'Inicio de sesión exitoso', usuarioSesion.correo);
+                    // fin caso 8 lau
                     return redirigirSegunRol(roles, res);
                 });
             });
@@ -78,6 +106,9 @@ exports.doLogin = (req, res) => {
 };
 
 exports.logout = (req, res) => {
+    // inicio caso 8 lau
+    registrarEvento(req, 'Cierre de sesión');
+    // fin caso 8 lau
     req.session.destroy(() => {
         res.redirect('/');
     });
