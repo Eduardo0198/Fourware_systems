@@ -1,3 +1,17 @@
+const bitacoraModel = require('../models/bitacora.model');
+
+function normalizarIp(ip) {
+    if (!ip) {
+        return null;
+    }
+
+    const valor = String(ip).replace('::ffff:', '').trim();
+    return valor === '::1' ? '127.0.0.1 (localhost)' : valor;
+}
+
+function registrarEvento(req, accion, correo = null) {
+    bitacoraModel.registrar(
+        correo || req.session?.usuario?.correo || null,
 const bitacora = require('../models/bitacora.model');
 
 // inicio caso 8 lau
@@ -29,6 +43,9 @@ function registrarEvento(req, accion, correo) {
     );
 }
 
+module.exports = {
+    normalizarIp,
+    registrarEvento
 function incrementarIntento(req, clave) {
     if (!req.session) {
         return 1;

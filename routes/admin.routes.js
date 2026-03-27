@@ -23,6 +23,13 @@ router.get('/catalogo/registrar',
     adminController.registrarSKU
 );
 
+router.post('/catalogo/registrar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['registrar_producto_catalogo']),
+    adminController.registrarSKUPost
+);
+
 router.get('/catalogo/modificar',
     protegerRuta,
     tieneRol(['Administrador']),
@@ -50,11 +57,25 @@ router.get('/campanas/crear',
     adminController.crearCampana
 );
 
+router.post('/campanas/crear',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_campania']),
+    adminController.crearCampanaPost
+);
+
 router.get('/campanas/editar',
     protegerRuta,
     tieneRol(['Administrador']),
     tienePrivilegio(['configurar_campania']), 
     adminController.editarCampana
+);
+
+router.post('/campanas/editar/:id',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_campania']),
+    adminController.editarCampanaPost
 );
 
 router.get('/campanas/cancelacion',
@@ -64,10 +85,31 @@ router.get('/campanas/cancelacion',
     adminController.cancelacionCampana
 );
 
+router.post('/campanas/cancelacion',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_ventana_cancelacion']),
+    adminController.cancelacionCampanaPost
+);
+
 router.get('/campanas/estado',
     protegerRuta,
     tieneRol(['Administrador']),
     adminController.estadoCampana
+);
+
+router.post('/campanas/estado/:id/activar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_campania']),
+    adminController.activarCampana
+);
+
+router.post('/campanas/estado/:id/desactivar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['configurar_campania']),
+    adminController.desactivarCampana
 );
 
 router.get('/reportes',

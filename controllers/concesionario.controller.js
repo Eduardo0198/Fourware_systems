@@ -38,6 +38,7 @@ exports.seleccionarCuentaActiva = (req, res) => {
     const usuario = req.session.usuario;
     const idCuenta = parseInt(req.body.id_cuenta, 10);
     const destino = req.get('referer') || '/concesionario/home';
+    const cuentaAnteriorId = usuario?.cuentaActiva?.id_cuenta || null;
 
     if (!usuario || !usuario.correo || Number.isNaN(idCuenta)) {
         req.session.mensaje = {
@@ -66,9 +67,14 @@ exports.seleccionarCuentaActiva = (req, res) => {
         }
 
         if (!cuenta.activo) {
+            bitacora.registrar(
+                usuario.correo,
+                `Intento de seleccionar cuenta inactiva ${cuenta.id_cuenta} - ${cuenta.nombre}`,
+                req.ip
+            );
             req.session.mensaje = {
                 tipo: 'warning',
-                texto: 'La cuenta seleccionada se encuentra inactiva y no puede utilizarse.'
+                texto: 'Esta cuenta está inactiva.'
             };
             return res.redirect(destino);
         }
@@ -86,14 +92,21 @@ exports.seleccionarCuentaActiva = (req, res) => {
             req.session.usuario.cuentas = cuentas;
             req.session.usuario.cuentaActiva =
                 cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
+            req.session.carritoCuentaId = cuenta.id_cuenta;
 
-            // inicio caso 8 lau
-            registrarEvento(req, 'Selección de cuenta activa', usuario.correo);
-            // fin caso 8 lau
+            if (cuentaAnteriorId && cuentaAnteriorId !== cuenta.id_cuenta) {
+                req.session.carrito = [];
+            }
+
+            bitacora.registrar(
+                usuario.correo,
+                `Seleccionó la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,
+                req.ip
+            );
 
             req.session.mensaje = {
                 tipo: 'success',
-                texto: `Ahora estas operando con la cuenta ${cuenta.nombre}.`
+                texto: `Ahora estás operando con la cuenta ${cuenta.nombre}.`
             };
 
             return res.redirect(destino);

@@ -27,8 +27,16 @@ exports.login = (req, res) => {
 };
 
 exports.doLogin = (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+
+    if (!email || !password) {
+        return res.render('login', {
+            layout: false,
+            error: 'Usuario o contraseña incorrectos'
+        });
+    }
+
     usuarioModel.obtenerUsuarioConRoles(email, (err, rows) => {
         if (err || rows.length === 0) {
             // inicio caso 8 lau
@@ -45,6 +53,13 @@ exports.doLogin = (req, res) => {
             });
         }
         usuarioModel.obtenerPassword(email, async (err2, result2) => {
+            if (err2 || !Array.isArray(result2) || result2.length === 0 || !result2[0].contrasenia) {
+                return res.render('login', {
+                    layout: false,
+                    error: 'Usuario o contraseña incorrectos'
+                });
+            }
+
             const hash = result2[0].contrasenia;
             const match = await bcrypt.compare(password, hash);
             if (!match) {
@@ -62,9 +77,15 @@ exports.doLogin = (req, res) => {
                 });
             }
             const roles = rows.map(r => r.nombre_rol);
-            console.log("ROLES DEL USUARIO:", roles);
 
             usuarioModel.obtenerPrivilegios(email, (err3, privRows) => {
+                if (err3 || !Array.isArray(privRows)) {
+                    return res.render('login', {
+                        layout: false,
+                        error: 'No fue posible iniciar sesión. Intente nuevamente.'
+                    });
+                }
+
                 const privilegios = privRows.map(p => p.nombre_privilegio);
                 const usuarioSesion = {
                     correo: rows[0].correo,
@@ -94,6 +115,7 @@ exports.doLogin = (req, res) => {
                     usuarioSesion.cuentas = cuentas;
                     usuarioSesion.cuentaActiva = cuentaModel.obtenerCuentaActivaPorDefecto(cuentas);
                     req.session.usuario = usuarioSesion;
+                    req.session.carritoCuentaId = usuarioSesion.cuentaActiva?.id_cuenta || null;
                     // inicio caso 8 lau
                     reiniciarIntento(req, 'login_fallido');
                     registrarEvento(req, 'Inicio de sesión exitoso', usuarioSesion.correo);

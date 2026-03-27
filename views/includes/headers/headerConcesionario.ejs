@@ -1,6 +1,16 @@
 <header class="topbar">
     <% const cuentaActiva = usuario?.cuentaActiva || null; %>
     <% const cuentas = Array.isArray(usuario?.cuentas) ? usuario.cuentas : []; %>
+    <% const cuentasActivas = cuentas.filter(cuenta => cuenta.activo); %>
+    <% function getInitials(nombre) {
+        if (!nombre) return 'C';
+        return nombre
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(parte => parte.charAt(0).toUpperCase())
+            .join('');
+    } %>
     <div class="left-section">
         <button id="toggleSidebar" class="btn btn-light">
             <i class="bi bi-list"></i>
@@ -16,26 +26,35 @@
         </a>
 
         <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle"></i> <%= usuario?.nombre %>
+            <button class="btn btn-light account-trigger" data-bs-toggle="dropdown">
+                <span class="account-trigger-avatar"><%= getInitials(cuentaActiva?.nombre || usuario?.nombre) %></span>
+                <span class="account-trigger-text">
+                    <strong><%= usuario?.nombre %></strong>
+                    <small><%= cuentaActiva ? cuentaActiva.nombre : 'Sin cuenta activa' %></small>
+                </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end account-dropdown">
-                <li>
-                    <span class="dropdown-item-text small text-muted">
-                        Cuenta activa actual
-                    </span>
-                </li>
-                <li>
-                    <span class="dropdown-item-text current-account-label">
-                        <%= cuentaActiva ? cuentaActiva.nombre : 'Sin cuenta activa' %>
-                    </span>
+                <li class="account-dropdown-header">
+                    <div class="account-current-card">
+                        <span class="account-avatar account-avatar-current">
+                            <%= getInitials(cuentaActiva?.nombre || usuario?.nombre) %>
+                        </span>
+                        <div class="account-current-copy">
+                            <strong><%= cuentaActiva ? cuentaActiva.nombre : 'Sin cuenta activa' %></strong>
+                            <small><%= cuentaActiva ? cuentaActiva.estatus : 'Selecciona una cuenta para continuar' %></small>
+                        </div>
+                    </div>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <li>
-                    <span class="dropdown-item-text small text-muted">
-                        Cuentas asociadas
-                    </span>
-                </li>
+
+                <% if (cuentasActivas.length <= 1 && cuentaActiva) { %>
+                    <li class="account-helper-text">
+                        <span class="dropdown-item-text small text-muted">
+                            Tu cuenta activa fue asignada automáticamente.
+                        </span>
+                    </li>
+                <% } %>
+
                 <% cuentas.forEach(cuenta => { %>
                     <li>
                         <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
@@ -43,20 +62,37 @@
                             <button
                                 type="submit"
                                 class="dropdown-item account-option <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? 'active-account' : '' %> <%= !cuenta.activo ? 'inactive-account' : '' %>"
-                                <%= !cuenta.activo ? 'disabled' : '' %>
                             >
-                                <span class="account-option-title">
-                                    <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? '✓ ' : '' %><%= cuenta.nombre %>
+                                <span class="account-avatar <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? 'account-avatar-selected' : '' %>">
+                                    <%= getInitials(cuenta.nombre) %>
                                 </span>
-                                <small class="text-muted d-block">
-                                    <%= cuenta.codigo %> - <%= cuenta.estatus %>
-                                </small>
+                                <span class="account-option-copy">
+                                    <span class="account-option-title">
+                                        <%= cuenta.nombre %>
+                                    </span>
+                                    <small class="account-option-subtitle">
+                                        <%= cuenta.codigo %> · <%= cuenta.estatus %>
+                                    </small>
+                                </span>
+                                <% if (cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta) { %>
+                                    <span class="account-check">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                <% } %>
+                                <% if (!cuenta.activo) { %>
+                                    <span class="account-inactive-pill">Inactiva</span>
+                                <% } %>
                             </button>
                         </form>
                     </li>
                 <% }) %>
                 <li><hr class="dropdown-divider"></li>
-                <li><a href="/logout" class="dropdown-item text-danger">Cerrar sesión</a></li>
+                <li>
+                    <a href="/logout" class="dropdown-item logout-account-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Cerrar sesión</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

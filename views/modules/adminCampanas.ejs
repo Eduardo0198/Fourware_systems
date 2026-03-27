@@ -1,56 +1,111 @@
-<h2 class="mb-4">
-Gestión de Campañas
-</h2>
-<p class="text-muted">
-Administración de campañas de preventa.
-</p>
-<div class="catalogo-grid">
-    <div class="catalogo-card">
-        <h5>
-        Crear Campaña
-        </h5>
-        <p>
-        Registrar una nueva campaña en el sistema.
-        </p>
-        <a href="/admin/campanas/crear"
-        class="btn btn-primary">
-        Crear campaña
-        </a>
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-campaigns">
+        <div>
+            <span class="admin-eyebrow">Administrador · CU-07</span>
+            <h2 class="admin-title">Gestión de Campañas</h2>
+            <p class="admin-subtitle">
+                Supervisa la vigencia comercial del sistema, controla activaciones y mantén una sola campaña activa por temporada.
+            </p>
+        </div>
+        <div class="admin-hero-note">
+            <span>Política activa</span>
+            <strong>Una campaña activa a la vez</strong>
+            <small>Cualquier activación adicional requiere desactivar la vigente.</small>
+        </div>
     </div>
-    <div class="catalogo-card">
-        <h5>
-        Editar Campaña
-        </h5>
-        <p>
-        Modificar información de campañas existentes.
-        </p>
-        <a href="/admin/campanas/editar"
-        class="btn btn-primary">
-        Editar campaña
-        </a>
+
+    <div class="admin-stats-grid">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Total de campañas</span>
+            <strong><%= totalCampanias || 0 %></strong>
+            <p>Histórico registrado en el sistema de preventa.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Campañas activas hoy</span>
+            <strong><%= totalActivas || 0 %></strong>
+            <p>Debe mantenerse en uno o cero según la temporada vigente.</p>
+        </article>
     </div>
-    <div class="catalogo-card">
-        <h5>
-        Activar / Desactivar
-        </h5>
-        <p>
-        Cambiar estado de campañas activas.
-        </p>
-        <a href="/admin/campanas/estado"
-        class="btn btn-primary">
-        Gestionar estado
-        </a>
+
+    <div class="admin-action-grid">
+        <article class="admin-action-card">
+            <div class="admin-action-icon">
+                <i class="bi bi-megaphone"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Configuración</span>
+                <h3>Crear campaña</h3>
+                <p>Registra nuevas campañas con nombre, vigencia y banner dentro del flujo administrativo.</p>
+            </div>
+            <a href="/admin/campanas/crear" class="btn admin-action-btn">
+                Crear campaña
+            </a>
+        </article>
+
+        <article class="admin-action-card">
+            <div class="admin-action-icon admin-action-icon-alt">
+                <i class="bi bi-sliders"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Control operativo</span>
+                <h3>Editar campaña</h3>
+                <p>Modifica vigencia, banner y estatus, respetando la regla de una campaña activa por vez.</p>
+            </div>
+            <a href="/admin/campanas/editar" class="btn admin-action-btn">
+                Editar campaña
+            </a>
+        </article>
+
+        <article class="admin-action-card">
+            <div class="admin-action-icon admin-action-icon-soft">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="admin-action-copy">
+                <span class="admin-action-tag">Política de negocio</span>
+                <h3>Ventana de cancelación</h3>
+                <p>Consulta o configura la regla de tiempo permitida para cancelar reservas según la operación.</p>
+            </div>
+            <a href="/admin/campanas/cancelacion" class="btn admin-action-btn">
+                Configurar
+            </a>
+        </article>
     </div>
-    <div class="catalogo-card">
-        <h5>
-        Ventana de Cancelación
-        </h5>
-        <p>
-        Configurar tiempo permitido para cancelar reservas.
-        </p>
-        <a href="/admin/campanas/cancelacion"
-        class="btn btn-primary">
-        Configurar
-        </a>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Campañas registradas</h4>
+                <p>Resumen visual de vigencia, banner y estatus actual.</p>
+            </div>
+            <span class="admin-table-pill">Total: <%= totalCampanias || 0 %></span>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="table admin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Campaña</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Banner</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% campanias.forEach((campania) => { %>
+                        <tr>
+                            <td><strong><%= campania.nombre %></strong></td>
+                            <td><%= campania.fecha_inicio_texto %></td>
+                            <td><%= campania.fecha_fin_texto %></td>
+                            <td><span class="admin-banner-chip"><%= campania.banner %></span></td>
+                            <td>
+                                <span class="admin-status-pill <%= campania.estatus ? 'is-active' : 'is-inactive' %>">
+                                    <%= campania.estatusTexto %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</section>
