@@ -2,6 +2,7 @@ const db = require('../config/db');
 const concesionarioModel = require('../models/concesionario.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
+const bitacora = require('../models/bitacora.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 
 exports.home = (req, res) => {
