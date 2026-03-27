@@ -257,6 +257,7 @@ exports.reportes = (req, res) => {
     res.render('modules/adminReportes');
 };
 
+// inicio caso 8 lau
 exports.auditoria = (req, res) => {
     const usuario = req.session.usuario;
     const consultaSolicitada = req.query.consultar === '1';
@@ -371,6 +372,7 @@ exports.auditoria = (req, res) => {
         });
     });
 };
+// fin caso 8 lau
 
 exports.registrarSKU = (req, res) => {
     registrarEvento(req, 'Consulta de registro de producto de catálogo');
