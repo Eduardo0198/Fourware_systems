@@ -15,18 +15,43 @@ exports.crearReserva = (data, callback) => {
     ], callback);
 };
 
-exports.insertarProductos = (productos, folio) => {
-    productos.forEach(p => {
+exports.insertarProductos = (productos, folio, callback) => {
+    if (!Array.isArray(productos) || productos.length === 0) {
+        return callback(null);
+    }
+
+    let pendientes = productos.length;
+    let terminado = false;
+
+    productos.forEach((producto) => {
+        const subtotalLinea = Number(producto.precio) * Number(producto.cantidad);
+
         db.query(`
             INSERT INTO Reserva_Producto 
-            (folio, sku, cantidad, precio, subtotal)
+            (folio, SKU, cantidad, precio_aplicado, subtotal_linea)
             VALUES (?, ?, ?, ?, ?)
         `, [
             folio,
-            p.sku,
-            p.cantidad,
-            p.precio,
-            p.precio * p.cantidad
-        ]);
+            producto.sku,
+            producto.cantidad,
+            producto.precio,
+            subtotalLinea
+        ], (err) => {
+            if (terminado) {
+                return;
+            }
+
+            if (err) {
+                terminado = true;
+                return callback(err);
+            }
+
+            pendientes -= 1;
+
+            if (pendientes === 0) {
+                terminado = true;
+                callback(null);
+            }
+        });
     });
 };

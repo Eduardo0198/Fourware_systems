@@ -238,11 +238,20 @@ exports.confirmarReserva = (req, res) => {
             // fin caso 8 lau
             return res.send("Error al registrar la reserva");
         }
-        reservaModel.insertarProductos(carrito, folio);
-        // inicio caso 8 lau
-        registrarEvento(req, 'Confirmación de reserva con folio auditable', usuario.correo);
-        // fin caso 8 lau
-        req.session.carrito = [];
-        res.send(`Reserva confirmada. Folio: ${folio}`);
+        reservaModel.insertarProductos(carrito, folio, (errProductos) => {
+            if (errProductos) {
+                console.log(errProductos);
+                // inicio caso 8 lau
+                registrarEvento(req, 'Error al registrar productos de la reserva');
+                // fin caso 8 lau
+                return res.send("Error al registrar los productos de la reserva");
+            }
+
+            // inicio caso 8 lau
+            registrarEvento(req, 'Confirmación de reserva con folio auditable', usuario.correo);
+            // fin caso 8 lau
+            req.session.carrito = [];
+            res.send(`Reserva confirmada. Folio: ${folio}`);
+        });
     });
 };
