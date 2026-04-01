@@ -37,6 +37,13 @@ router.get('/catalogo/modificar',
     adminController.modificarSKU
 );
 
+router.post('/catalogo/modificar/:sku',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.modificarSKUPost
+);
+
 router.get('/catalogo/carga-masiva',
     protegerRuta,
     tieneRol(['Administrador']),

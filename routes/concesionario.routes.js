@@ -22,6 +22,13 @@ router.get('/catalogo',
     concesionarioController.catalogo
 );
 
+router.get('/catalogo/buscar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    concesionarioController.catalogoPredictivo
+);
+
 
 router.get('/producto/:sku',
     protegerRuta,

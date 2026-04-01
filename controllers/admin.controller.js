@@ -71,6 +71,57 @@ function renderCatalogoRegistro(res, options = {}) {
     });
 }
 
+function renderCatalogoModificar(req, res, options = {}) {
+    campaniaModel.obtenerTodas((errCampanias, campanias) => {
+        if (errCampanias) {
+            console.error(errCampanias);
+            return res.status(500).send('No fue posible cargar las campañas.');
+        }
+
+        productoModel.listarProductosCatalogo((errProductos, productos) => {
+            if (errProductos) {
+                console.error(errProductos);
+                return res.status(500).send('No fue posible cargar los productos.');
+            }
+
+            const productosNormalizados = productos.map(normalizarProducto);
+            const skuSeleccionado = String(
+                options.skuSeleccionado
+                || options.formData?.sku
+                || req.query.sku
+                || ''
+            ).trim().toUpperCase();
+
+            const productoSeleccionado = skuSeleccionado
+                ? productosNormalizados.find((producto) => producto.SKU === skuSeleccionado) || null
+                : null;
+
+            const formData = options.formData || (productoSeleccionado
+                ? {
+                    sku: productoSeleccionado.SKU,
+                    nombre_comercial: productoSeleccionado.nombre_comercial,
+                    descripcion: productoSeleccionado.descripcion,
+                    unidad_venta: productoSeleccionado.unidad_venta,
+                    medida_primaria: productoSeleccionado.medida_primaria,
+                    precio_unitario: productoSeleccionado.precio_unitario,
+                    peso_unitario: productoSeleccionado.peso_unitario,
+                    volumen_unitario: productoSeleccionado.volumen_unitario,
+                    imagen: productoSeleccionado.imagen,
+                    id_campania: productoSeleccionado.id_campania
+                }
+                : {});
+
+            res.render('modules/catalogoModificar', {
+                pageMessage: options.pageMessage || res.locals.mensaje || null,
+                formData,
+                campanias: campanias.map(normalizarCampania),
+                productos: productosNormalizados,
+                productoSeleccionado
+            });
+        });
+    });
+}
+
 function renderCampaniaCrear(res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
@@ -472,15 +523,151 @@ exports.registrarSKUPost = (req, res) => {
 };
 
 exports.modificarSKU = (req, res) => {
-    productoModel.listarProductosCatalogo((err, productos) => {
+    const sku = String(req.query.sku || '').trim().toUpperCase();
+
+    if (!sku) {
+        registrarEvento(req, 'Consulta de modificación de producto de catálogo');
+        return renderCatalogoModificar(req, res);
+    }
+
+    productoModel.obtenerPorSku(sku, (err, producto) => {
         if (err) {
             console.error(err);
-            return res.status(500).send('No fue posible cargar los productos.');
+            return res.status(500).send('No fue posible cargar el producto seleccionado.');
         }
 
-        registrarEvento(req, 'Consulta de modificación de producto de catálogo');
-        res.render('modules/catalogoModificar', {
-            productos: productos.map(normalizarProducto)
+        if (!producto || Number(producto.activo) !== 1) {
+            registrarBitacora(
+                req,
+                `Intento de edición de producto no disponible ${sku}`
+            );
+
+            return renderCatalogoModificar(req, res, {
+                pageMessage: {
+                    tipo: 'warning',
+                    texto: 'El producto seleccionado no existe o ya no se encuentra disponible para edición.'
+                }
+            });
+        }
+
+        registrarEvento(req, `Consulta de edición de producto ${sku}`);
+        return renderCatalogoModificar(req, res, {
+            skuSeleccionado: sku
+        });
+    });
+};
+
+exports.modificarSKUPost = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+    const validacion = validarProducto({
+        ...req.body,
+        sku
+    });
+
+    if (!validacion.valido) {
+        registrarBitacora(
+            req,
+            `Intento de actualización con datos inválidos para producto ${sku}`
+        );
+        return renderCatalogoModificar(req, res, {
+            skuSeleccionado: sku,
+            formData: validacion.formData,
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'Ingrese datos válidos.'
+            }
+        });
+    }
+
+    productoModel.obtenerPorSku(sku, (errProducto, productoExistente) => {
+        if (errProducto) {
+            console.error(errProducto);
+            return renderCatalogoModificar(req, res, {
+                skuSeleccionado: sku,
+                formData: validacion.formData,
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'No fue posible validar el producto seleccionado.'
+                }
+            });
+        }
+
+        if (!productoExistente || Number(productoExistente.activo) !== 1) {
+            registrarBitacora(
+                req,
+                `Intento de actualización de producto no disponible ${sku}`
+            );
+            return renderCatalogoModificar(req, res, {
+                pageMessage: {
+                    tipo: 'warning',
+                    texto: 'El producto seleccionado no existe o ya no se encuentra disponible para edición.'
+                }
+            });
+        }
+
+        campaniaModel.obtenerPorId(validacion.producto.id_campania, (errCampania, campania) => {
+            if (errCampania) {
+                console.error(errCampania);
+                return renderCatalogoModificar(req, res, {
+                    skuSeleccionado: sku,
+                    formData: validacion.formData,
+                    pageMessage: {
+                        tipo: 'danger',
+                        texto: 'No fue posible validar la campaña seleccionada.'
+                    }
+                });
+            }
+
+            const hoy = new Date(new Date().toDateString());
+            const campaniaInvalida = !campania
+                || Number(campania.estatus) !== 1
+                || new Date(campania.fecha_inicio) > hoy
+                || new Date(campania.fecha_fin) < hoy;
+
+            if (campaniaInvalida) {
+                registrarBitacora(
+                    req,
+                    `Intento de actualización con campaña inválida para producto ${sku}`
+                );
+                return renderCatalogoModificar(req, res, {
+                    skuSeleccionado: sku,
+                    formData: validacion.formData,
+                    pageMessage: {
+                        tipo: 'danger',
+                        texto: 'La campaña seleccionada no es válida.'
+                    }
+                });
+            }
+
+            productoModel.actualizarPorSku(sku, validacion.producto, (errActualizacion) => {
+                if (errActualizacion) {
+                    console.error(errActualizacion);
+                    registrarBitacora(
+                        req,
+                        `Error al actualizar la información del producto ${sku}`
+                    );
+                    return renderCatalogoModificar(req, res, {
+                        skuSeleccionado: sku,
+                        formData: validacion.formData,
+                        pageMessage: {
+                            tipo: 'danger',
+                            texto: 'No fue posible actualizar la información del producto. Intente nuevamente.'
+                        }
+                    });
+                }
+
+                registrarBitacora(
+                    req,
+                    `Actualización de atributos del producto ${sku}`
+                );
+
+                req.session.mensaje = {
+                    tipo: 'success',
+                    texto: 'Información del producto actualizada correctamente.'
+                };
+
+                return res.redirect(`/admin/catalogo/modificar?sku=${encodeURIComponent(sku)}`);
+            });
         });
     });
 };

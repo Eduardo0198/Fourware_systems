@@ -1,30 +1,268 @@
-<h2>Modificar Producto</h2>
-<p class="text-muted">
-Selecciona un producto para editar su información.
-</p>
-<input
-type="text"
-class="form-control mb-3"
-placeholder="Buscar producto por SKU o nombre">
-<table class="table">
-    <thead>
-        <tr>
-            <th>SKU</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>P001</td>
-            <td>Pintura Exterior</td>
-            <td>$120</td>
-            <td>
-            <button class="btn btn-sm btn-primary">
-                Editar
-            </button>
-            </td>
-        </tr>
-    </tbody>
-</table>
+<h2 class="mb-4">Modificar atributos de un producto.</h2>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">Productos registrados</h4>
+            <p class="text-muted mb-0">
+                Selecciona un producto activo del catálogo para editar sus atributos.
+            </p>
+        </div>
+        <div class="w-100" style="max-width: 360px;">
+            <input
+                id="buscarProductoModificar"
+                type="text"
+                class="form-control"
+                placeholder="Buscar por SKU, nombre o campaña">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Campaña</th>
+                    <th>Estatus</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="catalogoModificarBody">
+                <tr id="catalogoModificarInicial">
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Escribe para buscar un producto y comenzar la edición.
+                    </td>
+                </tr>
+
+                <% if (!productos.length) { %>
+                    <tr id="catalogoModificarVacio" style="display: none;">
+                        <td colspan="5" class="text-center text-muted py-4">
+                            No hay productos registrados en el catálogo.
+                        </td>
+                    </tr>
+                <% } %>
+
+                <% productos.forEach((producto) => { %>
+                    <tr
+                        class="catalogo-modificar-row"
+                        data-sku="<%= producto.SKU %>"
+                        style="display: none;"
+                        data-search="<%= [producto.SKU, producto.nombre_comercial, producto.nombre_campania || '', producto.estatusTexto].join(' ').toLowerCase() %>">
+                        <td><strong><%= producto.SKU %></strong></td>
+                        <td><%= producto.nombre_comercial %></td>
+                        <td><%= producto.nombre_campania || 'Sin campaña' %></td>
+                        <td>
+                            <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
+                                <%= producto.estatusTexto %>
+                            </span>
+                        </td>
+                        <td>
+                            <% if (producto.activo) { %>
+                                <a
+                                    href="/admin/catalogo/modificar?sku=<%= encodeURIComponent(producto.SKU) %>#formularioEdicionProducto"
+                                    class="btn btn-sm btn-primary">
+                                    Editar
+                                </a>
+                            <% } else { %>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                                    No disponible
+                                </button>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+
+                <tr id="catalogoModificarSinResultados" style="display: none;">
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Búsqueda sin resultados
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card p-4 catalogo-modificar-form-card" id="formularioEdicionProducto">
+    <% if (formData && formData.sku) { %>
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-3">
+            <div>
+                <h4 class="mb-1">Formulario de edición</h4>
+                <p class="text-muted mb-0">
+                    Edita los atributos del producto seleccionado y confirma la actualización.
+                </p>
+            </div>
+            <a href="/admin/catalogo/modificar" class="btn btn-outline-secondary">
+                Limpiar selección
+            </a>
+        </div>
+
+        <form method="post" action="/admin/catalogo/modificar/<%= encodeURIComponent(formData.sku) %>">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">SKU</label>
+                    <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" readonly>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre comercial</label>
+                    <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea name="descripcion" class="form-control" rows="3" required><%= formData.descripcion || '' %></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Unidad de venta</label>
+                    <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Unidad de medida primaria</label>
+                    <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Precio unitario</label>
+                    <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Peso unitario</label>
+                    <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Volumen unitario</label>
+                    <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Ruta de imagen</label>
+                    <input type="text" name="imagen" class="form-control" value="<%= formData.imagen || '' %>" placeholder="/img/productos/producto.png" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Campaña asociada</label>
+                    <select name="id_campania" class="form-select" required>
+                        <option value="">Selecciona una campaña</option>
+                        <% campanias.forEach((campania) => { %>
+                            <option
+                                value="<%= campania.id_campania %>"
+                                <%= String(formData.id_campania || '') === String(campania.id_campania) ? 'selected' : '' %>>
+                                <%= campania.nombre %> | <%= campania.estatusTexto %> | <%= campania.fecha_inicio_texto %> - <%= campania.fecha_fin_texto %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Actualizar producto
+                </button>
+                <a href="/admin/catalogo" class="btn btn-outline-secondary">
+                    Volver al catálogo
+                </a>
+            </div>
+        </form>
+    <% } else { %>
+        <h4 class="mb-2">Formulario de edición</h4>
+        <p class="text-muted mb-0">
+            Selecciona un producto activo del listado para cargar sus atributos actuales y comenzar la edición.
+        </p>
+    <% } %>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('buscarProductoModificar');
+    const rows = Array.from(document.querySelectorAll('.catalogo-modificar-row'));
+    const sinResultados = document.getElementById('catalogoModificarSinResultados');
+    const vacio = document.getElementById('catalogoModificarVacio');
+    const inicial = document.getElementById('catalogoModificarInicial');
+    const formulario = document.getElementById('formularioEdicionProducto');
+    const skuSeleccionado = '<%= formData && formData.sku ? formData.sku : "" %>';
+    const debeIrAlFormulario = window.location.hash === '#formularioEdicionProducto';
+
+    if (!input || !rows.length) {
+        if (formulario && skuSeleccionado && debeIrAlFormulario) {
+            formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+    }
+
+    if (skuSeleccionado) {
+        const filaSeleccionada = rows.find((row) => row.dataset.sku === skuSeleccionado);
+        if (filaSeleccionada) {
+            filaSeleccionada.classList.add('catalogo-modificar-row-selected');
+            filaSeleccionada.style.display = '';
+        }
+        if (inicial) {
+            inicial.style.display = 'none';
+        }
+        if (formulario && debeIrAlFormulario) {
+            formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const termino = input.value.trim().toLowerCase();
+        let visibles = 0;
+
+        if (!termino) {
+            rows.forEach((row) => {
+                if (skuSeleccionado && row.dataset.sku === skuSeleccionado) {
+                    row.style.display = '';
+                    visibles += 1;
+                    return;
+                }
+
+                row.style.display = 'none';
+            });
+
+            if (inicial) {
+                inicial.style.display = skuSeleccionado ? 'none' : '';
+            }
+
+            if (sinResultados) {
+                sinResultados.style.display = 'none';
+            }
+
+            if (vacio) {
+                vacio.style.display = 'none';
+            }
+            return;
+        }
+
+        if (inicial) {
+            inicial.style.display = 'none';
+        }
+
+        rows.forEach((row) => {
+            const coincide = !termino || row.dataset.search.includes(termino);
+            row.style.display = coincide ? '' : 'none';
+            if (coincide) {
+                visibles += 1;
+            }
+        });
+
+        if (sinResultados) {
+            sinResultados.style.display = visibles === 0 ? '' : 'none';
+        }
+
+        if (vacio) {
+            vacio.style.display = 'none';
+        }
+    });
+});
+</script>

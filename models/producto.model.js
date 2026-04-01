@@ -72,3 +72,33 @@ exports.registrar = (producto, callback) => {
         producto.id_campania
     ], callback);
 };
+
+exports.actualizarPorSku = (sku, producto, callback) => {
+    const query = `
+        UPDATE Producto
+        SET
+            nombre_comercial = ?,
+            descripcion = ?,
+            precio_unitario = ?,
+            peso_unitario = ?,
+            volumen_unitario = ?,
+            medida_primaria = ?,
+            unidad_venta = ?,
+            imagen = ?,
+            id_campania = ?
+        WHERE SKU = ?
+    `;
+
+    db.query(query, [
+        producto.nombre_comercial,
+        producto.descripcion,
+        producto.precio_unitario,
+        producto.peso_unitario,
+        producto.volumen_unitario,
+        producto.medida_primaria,
+        producto.unidad_venta,
+        producto.imagen,
+        producto.id_campania,
+        sku
+    ], callback);
+};

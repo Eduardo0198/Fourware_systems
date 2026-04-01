@@ -12,19 +12,41 @@ exports.obtenerTopProductos = (callback) => {
     db.query(query, callback);
 };
 
-// Obtener productos con paginación y filtros
-exports.obtenerProductosPaginados = (page, limit, searchTerm, precioMin, precioMax, unidadVenta, callback) => {
+// Obtener productos con paginación y filtros del catálogo de la campaña activa
+exports.obtenerProductosPaginados = (
+    page,
+    limit,
+    searchTerm,
+    precioMin,
+    precioMax,
+    unidadVenta,
+    idCampania,
+    callback
+) => {
     const offset = (page - 1) * limit;
     let query = `
-        SELECT SKU, nombre_comercial AS nombre, precio_unitario, peso_unitario, volumen_unitario, medida_primaria, imagen
+        SELECT
+            SKU,
+            nombre_comercial AS nombre,
+            descripcion,
+            precio_unitario,
+            peso_unitario,
+            volumen_unitario,
+            medida_primaria,
+            imagen
         FROM Producto
-        WHERE 1=1
+        WHERE activo = 1
+          AND id_campania = ?
     `;
-    const params = [];
+    const params = [idCampania];
 
     if (searchTerm) {
-        query += ` AND nombre_comercial LIKE ?`;
-        params.push(`%${searchTerm}%`);
+        query += ` AND (
+            SKU LIKE ?
+            OR nombre_comercial LIKE ?
+            OR descripcion LIKE ?
+        )`;
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
 
     if (precioMin !== undefined && precioMin !== null && !isNaN(precioMin)) {
@@ -48,13 +70,21 @@ exports.obtenerProductosPaginados = (page, limit, searchTerm, precioMin, precioM
     db.query(query, params, (err, productos) => {
         if (err) return callback(err);
 
-        // Consulta para contar total con los mismos filtros
-        let countQuery = `SELECT COUNT(*) AS total FROM Producto WHERE 1=1`;
-        const countParams = [];
+        let countQuery = `
+            SELECT COUNT(*) AS total
+            FROM Producto
+            WHERE activo = 1
+              AND id_campania = ?
+        `;
+        const countParams = [idCampania];
 
         if (searchTerm) {
-            countQuery += ` AND nombre_comercial LIKE ?`;
-            countParams.push(`%${searchTerm}%`);
+            countQuery += ` AND (
+                SKU LIKE ?
+                OR nombre_comercial LIKE ?
+                OR descripcion LIKE ?
+            )`;
+            countParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
         }
 
         if (precioMin !== undefined && precioMin !== null && !isNaN(precioMin)) {
@@ -80,15 +110,18 @@ exports.obtenerProductosPaginados = (page, limit, searchTerm, precioMin, precioM
     });
 };
 
-// Obtener unidades de venta únicas para el filtro
-exports.obtenerUnidadesVenta = (callback) => {
+// Obtener unidades de venta únicas de la campaña activa
+exports.obtenerUnidadesVenta = (idCampania, callback) => {
     const query = `
         SELECT DISTINCT unidad_venta
         FROM Producto
-        WHERE unidad_venta IS NOT NULL AND unidad_venta != ''
+        WHERE activo = 1
+          AND id_campania = ?
+          AND unidad_venta IS NOT NULL
+          AND unidad_venta != ''
         ORDER BY unidad_venta
     `;
-    db.query(query, (err, results) => {
+    db.query(query, [idCampania], (err, results) => {
         if (err) return callback(err);
         const unidades = results.map(row => row.unidad_venta);
         callback(null, unidades);
@@ -103,6 +136,33 @@ exports.obtenerProductoPorSku = (sku, callback) => {
         WHERE SKU = ?
     `;
     db.query(query, [sku], (err, results) => {
+        if (err) return callback(err);
+        callback(null, results[0] || null);
+    });
+};
+
+exports.obtenerProductoActivoPorSkuYCampania = (sku, idCampania, callback) => {
+    const query = `
+        SELECT
+            SKU,
+            nombre_comercial AS nombre,
+            precio_unitario,
+            peso_unitario,
+            medida_primaria,
+            imagen,
+            descripcion,
+            unidad_venta,
+            volumen_unitario,
+            activo,
+            id_campania
+        FROM Producto
+        WHERE SKU = ?
+          AND activo = 1
+          AND id_campania = ?
+        LIMIT 1
+    `;
+
+    db.query(query, [sku, idCampania], (err, results) => {
         if (err) return callback(err);
         callback(null, results[0] || null);
     });
