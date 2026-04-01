@@ -1,20 +1,23 @@
 <h2 class="mb-3">Catálogo de Productos</h2>
-<% if (mensaje) { %>
-    <div class="alert alert-<%= mensaje.tipo %> mb-3" role="alert">
-        <%= mensaje.texto %>
+<% const alertMessage = pageMessage || mensaje || null; %>
+<% if (alertMessage) { %>
+    <div class="alert alert-<%= alertMessage.tipo %> mb-3" role="alert">
+        <%= alertMessage.texto %>
     </div>
 <% } %>
 <hr>
 <div class="d-flex align-items-center mb-3 gap-2">
     <div class="flex-grow-1">
-        <form method="GET" action="/concesionario/catalogo">
+        <form method="GET" action="/concesionario/catalogo" id="catalogoSearchForm">
             <div class="input-group shadow-sm">
                 <span class="input-group-text">
                     <i class="bi bi-search"></i>
                 </span>
                 <input type="text"
+                       id="catalogoSearchInput"
                        class="form-control"
                        name="q"
+                       autocomplete="off"
                        placeholder="Buscar producto..."
                        value="<%= typeof query !== 'undefined' ? query : '' %>">
             </div>
@@ -26,24 +29,28 @@
 </div>
 <div id="filtersContainer" style="display:none;">
     <form method="GET" action="/concesionario/catalogo"
+          id="catalogoFiltersForm"
           class="row g-3 align-items-end mb-4">
         <input type="hidden" name="q"
+               id="catalogoFiltersQuery"
                value="<%= typeof query !== 'undefined' ? query : '' %>">
         <div class="col-md-2">
             <label class="form-label">Precio min</label>
             <input type="number" name="precio_min"
+                   id="catalogoPrecioMin"
                    class="form-control"
                    value="<%= typeof precio_min !== 'undefined' ? precio_min : 0 %>">
         </div>
         <div class="col-md-2">
             <label class="form-label">Precio max</label>
             <input type="number" name="precio_max"
+                   id="catalogoPrecioMax"
                    class="form-control"
                    value="<%= typeof precio_max !== 'undefined' ? precio_max : 10000 %>">
         </div>
         <div class="col-md-3">
             <label class="form-label">Unidad</label>
-            <select name="unidad_venta" class="form-select">
+            <select name="unidad_venta" id="catalogoUnidadVenta" class="form-select">
                 <option value="">Todas</option>
                 <% if (Array.isArray(unidadesVenta)) { %>
                     <% unidadesVenta.forEach(u => { %>
@@ -62,11 +69,14 @@
 
     </form>
 </div>
+<p id="catalogoStatus" class="text-muted small mb-3">
+    Busca por SKU, nombre o descripción.
+</p>
 <div class="container-fluid">
-    <div class="row g-3">
+    <div class="row g-3" id="catalogoResultados">
         <% if (productos.length === 0) { %>
             <div class="col-12 text-center mt-5">
-                <h5>No se encontraron productos</h5>
+                <h5><%= hayBusquedaOFiltros ? 'Búsqueda sin resultados' : 'No se encontraron productos' %></h5>
             </div>
         <% } %>
         <% productos.forEach(p => { %>
@@ -105,8 +115,8 @@ function buildQuery(page) {
     return url;
 }
 %>
-<nav>
-    <ul class="pagination justify-content-center mt-4 flex-wrap">
+<nav id="catalogoPaginacionWrapper">
+    <ul class="pagination justify-content-center mt-4 flex-wrap" id="catalogoPaginacion">
         <% if (paginacion.paginaActual > 1) { %>
             <li class="page-item">
                 <a class="page-link"
@@ -135,6 +145,15 @@ function buildQuery(page) {
 document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("toggleFiltersBtn");
     const filters = document.getElementById("filtersContainer");
+    const searchInput = document.getElementById("catalogoSearchInput");
+    const filtersQuery = document.getElementById("catalogoFiltersQuery");
+    const resultados = document.getElementById("catalogoResultados");
+    const paginacion = document.getElementById("catalogoPaginacion");
+    const estado = document.getElementById("catalogoStatus");
+    const precioMin = document.getElementById("catalogoPrecioMin");
+    const precioMax = document.getElementById("catalogoPrecioMax");
+    const unidadVenta = document.getElementById("catalogoUnidadVenta");
+
     if (btn && filters) {
         btn.addEventListener("click", () => {
             filters.style.display =
@@ -142,5 +161,163 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (!searchInput || !resultados || !paginacion || !estado) {
+        return;
+    }
+
+    let debounceTimer = null;
+    let ultimaBusqueda = searchInput.value.trim();
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function buildQuery(page) {
+        const params = new URLSearchParams();
+        const q = searchInput.value.trim();
+        const min = precioMin ? precioMin.value : "";
+        const max = precioMax ? precioMax.value : "";
+        const unidad = unidadVenta ? unidadVenta.value : "";
+
+        params.set("page", String(page));
+        if (q) params.set("q", q);
+        if (min) params.set("precio_min", min);
+        if (max) params.set("precio_max", max);
+        if (unidad) params.set("unidad_venta", unidad);
+        return `?${params.toString()}`;
+    }
+
+    function renderResultados(productos, hayBusquedaOFiltros) {
+        if (!Array.isArray(productos) || productos.length === 0) {
+            resultados.innerHTML = `
+                <div class="col-12 text-center mt-5">
+                    <h5>${hayBusquedaOFiltros ? "Búsqueda sin resultados" : "No se encontraron productos"}</h5>
+                </div>
+            `;
+            return;
+        }
+
+        resultados.innerHTML = productos.map((p) => `
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card shadow-sm h-100">
+                    <img src="${escapeHtml(p.imagen || "/img/ppg-logo.png")}"
+                         class="card-img-top"
+                         style="height:180px; object-fit:contain;"
+                         onerror="this.src='/img/ppg-logo.png'">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">${escapeHtml(p.nombre)}</h6>
+                        <p class="fw-bold text-primary">
+                            $${escapeHtml(p.precio_unitario)}
+                        </p>
+                        <div class="mt-auto">
+                            <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}"
+                               class="btn btn-primary w-100 mb-2">
+                                Seleccionar producto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function renderPaginacion(paginacionData) {
+        if (!paginacionData || paginacionData.totalPaginas <= 1) {
+            paginacion.innerHTML = "";
+            return;
+        }
+
+        const items = [];
+
+        if (paginacionData.paginaActual > 1) {
+            items.push(`
+                <li class="page-item">
+                    <a class="page-link" href="${buildQuery(paginacionData.paginaActual - 1)}">Anterior</a>
+                </li>
+            `);
+        }
+
+        for (let i = 1; i <= paginacionData.totalPaginas; i += 1) {
+            items.push(`
+                <li class="page-item ${i === paginacionData.paginaActual ? "active" : ""}">
+                    <a class="page-link" href="${buildQuery(i)}">${i}</a>
+                </li>
+            `);
+        }
+
+        if (paginacionData.paginaActual < paginacionData.totalPaginas) {
+            items.push(`
+                <li class="page-item">
+                    <a class="page-link" href="${buildQuery(paginacionData.paginaActual + 1)}">Siguiente</a>
+                </li>
+            `);
+        }
+
+        paginacion.innerHTML = items.join("");
+    }
+
+    async function ejecutarBusquedaPredictiva() {
+        const termino = searchInput.value.trim();
+        ultimaBusqueda = termino;
+
+        if (filtersQuery) {
+            filtersQuery.value = termino;
+        }
+
+        estado.textContent = termino
+            ? "Buscando coincidencias..."
+            : "Busca por SKU, nombre o descripción sin presionar Enter.";
+
+        const params = new URLSearchParams({
+            q: termino,
+            precio_min: precioMin ? precioMin.value : "",
+            precio_max: precioMax ? precioMax.value : "",
+            unidad_venta: unidadVenta ? unidadVenta.value : ""
+        });
+
+        try {
+            const response = await fetch(`/concesionario/catalogo/buscar?${params.toString()}`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json"
+                }
+            });
+
+            const data = await response.json();
+
+            if (searchInput.value.trim() !== ultimaBusqueda) {
+                return;
+            }
+
+            if (!response.ok || !data.ok) {
+                throw new Error(data.mensaje || "No fue posible realizar la búsqueda.");
+            }
+
+            renderResultados(data.productos, data.hayBusquedaOFiltros);
+            renderPaginacion(data.paginacion);
+
+            estado.textContent = termino
+                ? `${data.productos.length} coincidencia(s) encontradas.`
+                : "Mostrando productos activos de la campaña vigente.";
+        } catch (error) {
+            resultados.innerHTML = `
+                <div class="col-12 text-center mt-5">
+                    <h5>${escapeHtml(error.message)}</h5>
+                </div>
+            `;
+            paginacion.innerHTML = "";
+            estado.textContent = "Ocurrió un error al consultar el catálogo.";
+        }
+    }
+
+    searchInput.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(ejecutarBusquedaPredictiva, 250);
+    });
 });
 </script>

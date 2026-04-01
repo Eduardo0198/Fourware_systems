@@ -5,6 +5,103 @@ const cuentaModel = require('../models/cuenta.model');
 const bitacora = require('../models/bitacora.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 
+function construirConsultaCatalogo(req) {
+    return {
+        page: parseInt(req.query.page, 10) || 1,
+        limit: parseInt(req.query.limit, 10) || 12,
+        searchTerm: String(req.query.q || '').trim(),
+        precioMin: req.query.precio_min ? parseFloat(req.query.precio_min) : 0,
+        precioMax: req.query.precio_max ? parseFloat(req.query.precio_max) : 10000,
+        unidadVenta: String(req.query.unidad_venta || '').trim()
+    };
+}
+
+function tieneBusquedaOFiltros(req, searchTerm, unidadVenta) {
+    return (
+        searchTerm !== ''
+        || typeof req.query.precio_min !== 'undefined'
+        || typeof req.query.precio_max !== 'undefined'
+        || unidadVenta !== ''
+    );
+}
+
+function obtenerDatosCatalogo(req, callback) {
+    const {
+        page,
+        limit,
+        searchTerm,
+        precioMin,
+        precioMax,
+        unidadVenta
+    } = construirConsultaCatalogo(req);
+
+    campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
+        if (campaniaErr) {
+            return callback(campaniaErr);
+        }
+
+        const campaniaActiva = Array.isArray(campanias) && campanias.length > 0
+            ? campanias[0]
+            : null;
+
+        if (!campaniaActiva) {
+            return callback(null, {
+                campaniaActiva: null,
+                productos: [],
+                unidadesVenta: [],
+                paginacion: {
+                    paginaActual: 1,
+                    totalPaginas: 0
+                },
+                query: searchTerm,
+                precio_min: precioMin,
+                precio_max: precioMax,
+                unidad_venta_seleccionada: unidadVenta,
+                hayBusquedaOFiltros: tieneBusquedaOFiltros(req, searchTerm, unidadVenta)
+            });
+        }
+
+        concesionarioModel.obtenerProductosPaginados(
+            page,
+            limit,
+            searchTerm,
+            precioMin,
+            precioMax,
+            unidadVenta,
+            campaniaActiva.id_campania,
+            (productosErr, result) => {
+                if (productosErr) {
+                    return callback(productosErr);
+                }
+
+                const { productos, total } = result;
+                const totalPaginas = Math.ceil(total / limit);
+
+                concesionarioModel.obtenerUnidadesVenta(campaniaActiva.id_campania, (unidadesErr, unidadesVenta) => {
+                    if (unidadesErr) {
+                        return callback(unidadesErr);
+                    }
+
+                    return callback(null, {
+                        campaniaActiva,
+                        productos,
+                        unidadesVenta,
+                        paginacion: {
+                            paginaActual: page,
+                            totalPaginas
+                        },
+                        query: searchTerm,
+                        precio_min: precioMin,
+                        precio_max: precioMax,
+                        unidad_venta_seleccionada: unidadVenta,
+                        hayBusquedaOFiltros: tieneBusquedaOFiltros(req, searchTerm, unidadVenta)
+                    });
+                });
+            }
+        );
+    });
+}
+
 exports.home = (req, res) => {
     concesionarioModel.obtenerTopProductos((err, productos) => {
 
@@ -116,79 +213,141 @@ exports.seleccionarCuentaActiva = (req, res) => {
 };
 
 exports.catalogo = (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 12;
-    const searchTerm = req.query.q || '';
-    const precioMin = req.query.precio_min ? parseFloat(req.query.precio_min) : 0;
-    const precioMax = req.query.precio_max ? parseFloat(req.query.precio_max) : 10000;
-    const unidadVenta = req.query.unidad_venta || '';
-    concesionarioModel.obtenerProductosPaginados(
-        page,
-        limit,
-        searchTerm,
-        precioMin,
-        precioMax,
-        unidadVenta,
-        (err, result) => {
-            if (err) {
-                console.log(err);
-                // inicio caso 8 lau
-                registrarEvento(req, 'Error al consultar catálogo de productos');
-                // fin caso 8 lau
-                return res.send("Error al obtener catálogo");
-            }
-            const { productos, total } = result;
-            const totalPaginas = Math.ceil(total / limit);
-            concesionarioModel.obtenerUnidadesVenta((err2, unidadesVenta) => {
-                if (err2) {
-                    console.log(err2);
-                    unidadesVenta = [];
+    obtenerDatosCatalogo(req, (err, data) => {
+        if (err) {
+            console.log(err);
+            registrarEvento(req, 'Error al consultar catálogo de productos');
+            return res.send("Error al obtener catálogo");
+        }
+
+        if (!data.campaniaActiva) {
+            registrarEvento(req, 'Intento de consulta de catálogo sin campaña vigente');
+            return res.render('modules/concesionarioCatalogo', {
+                ...data,
+                pageMessage: {
+                    tipo: 'warning',
+                    texto: 'No existe una campaña de preventa vigente.'
                 }
-                // inicio caso 8 lau
-                const accionCatalogo = searchTerm
-                    ? 'Búsqueda de productos en catálogo'
-                    : 'Consulta de catálogo de productos';
-                registrarEvento(req, accionCatalogo);
-                // fin caso 8 lau
-                res.render('modules/concesionarioCatalogo', {
-                    productos: productos,
-                    query: searchTerm,
-                    precio_min: precioMin,
-                    precio_max: precioMax,
-                    unidad_venta_seleccionada: unidadVenta,
-                    unidadesVenta: unidadesVenta,
-                    paginacion: {
-                        paginaActual: page,
-                        totalPaginas: totalPaginas
-                    }
-                });
             });
         }
-    );
+
+        registrarEvento(
+            req,
+            data.query
+                ? 'Búsqueda de productos mediante buscador predictivo'
+                : 'Consulta de catálogo de productos'
+        );
+
+        return res.render('modules/concesionarioCatalogo', {
+            ...data,
+            pageMessage: null
+        });
+    });
+};
+
+exports.catalogoPredictivo = (req, res) => {
+    req.query.page = '1';
+    req.query.limit = '12';
+
+    obtenerDatosCatalogo(req, (err, data) => {
+        if (err) {
+            console.log(err);
+            registrarEvento(req, 'Error en búsqueda predictiva de catálogo');
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'No fue posible realizar la búsqueda.'
+            });
+        }
+
+        if (!data.campaniaActiva) {
+            registrarEvento(req, 'Intento de búsqueda predictiva sin campaña vigente');
+            return res.status(409).json({
+                ok: false,
+                mensaje: 'No existe una campaña de preventa vigente.',
+                productos: [],
+                paginacion: {
+                    paginaActual: 1,
+                    totalPaginas: 0
+                }
+            });
+        }
+
+        registrarEvento(
+            req,
+            data.query
+                ? 'Búsqueda predictiva de productos en catálogo'
+                : 'Consulta predictiva de catálogo de productos'
+        );
+
+        return res.json({
+            ok: true,
+            productos: data.productos,
+            paginacion: data.paginacion,
+            query: data.query,
+            precio_min: data.precio_min,
+            precio_max: data.precio_max,
+            unidad_venta_seleccionada: data.unidad_venta_seleccionada,
+            hayBusquedaOFiltros: data.hayBusquedaOFiltros
+        });
+    });
 };
 
 exports.producto = (req, res) => {
     const sku = req.params.sku;
-    concesionarioModel.obtenerProductoPorSku(sku, (err, producto) => {
-        if (err) {
-            console.log(err);
-            // inicio caso 8 lau
-            registrarEvento(req, 'Error al consultar detalle de producto');
-            // fin caso 8 lau
-            return res.send("Error al obtener producto");
+
+    campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
+        if (campaniaErr) {
+            console.log(campaniaErr);
+            registrarEvento(req, 'Error al validar campaña vigente para detalle de producto');
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'Error en la consulta.'
+            };
+            return res.redirect('/concesionario/catalogo');
         }
-        if (!producto) {
-            // inicio caso 8 lau
-            registrarEvento(req, 'Intento de consulta de producto inexistente');
-            // fin caso 8 lau
-            return res.send("Producto no encontrado");
+
+        const campaniaActiva = Array.isArray(campanias) && campanias.length > 0
+            ? campanias[0]
+            : null;
+
+        if (!campaniaActiva) {
+            registrarEvento(req, 'Intento de consulta de detalle sin campaña vigente');
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La campaña de preventa no se encuentra disponible en este momento.'
+            };
+            return res.redirect('/concesionario/catalogo');
         }
-        // inicio caso 8 lau
-        registrarEvento(req, 'Consulta de detalle de producto');
-        // fin caso 8 lau
-        res.render('modules/concesionarioProducto', {
-            producto: producto
-        });
+
+        concesionarioModel.obtenerProductoActivoPorSkuYCampania(
+            sku,
+            campaniaActiva.id_campania,
+            (err, producto) => {
+                if (err) {
+                    console.log(err);
+                    registrarEvento(req, 'Error al consultar detalle técnico y logístico de producto');
+                    req.session.mensaje = {
+                        tipo: 'danger',
+                        texto: 'Error en la consulta.'
+                    };
+                    return res.redirect('/concesionario/catalogo');
+                }
+
+                if (!producto) {
+                    registrarEvento(req, 'Intento de consulta de producto no disponible');
+                    req.session.mensaje = {
+                        tipo: 'warning',
+                        texto: 'El producto seleccionado ya no se encuentra disponible.'
+                    };
+                    return res.redirect('/concesionario/catalogo');
+                }
+
+                registrarEvento(req, 'Consulta de detalle técnico y logístico de producto');
+                return res.render('modules/concesionarioProducto', {
+                    producto
+                });
+            }
+        );
     });
 };
 

@@ -975,6 +975,59 @@ body.sidebar-hidden .footer-ppg {
     flex: 1;
 }
 
+.product-purchase-form {
+    margin-top: 28px;
+}
+
+.product-purchase-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+.product-quantity-group {
+    flex: 0 0 20%;
+    max-width: 110px;
+}
+
+.product-quantity-group .form-label {
+    margin-bottom: 8px;
+}
+
+.product-add-cart-btn {
+    flex: 0 0 32%;
+    max-width: 240px;
+    min-height: 46px;
+}
+
+.catalogo-modificar-row-selected td {
+    background: #eef6ff;
+}
+
+.catalogo-modificar-form-card {
+    scroll-margin-top: 96px;
+    border: 1px solid #c7dcff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+@media (max-width: 768px) {
+    .product-purchase-row {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+    }
+
+    .product-quantity-group {
+        max-width: 100%;
+    }
+
+    .product-add-cart-btn {
+        flex: 1 1 auto;
+        max-width: 100%;
+    }
+}
+
 /* ================= MODULOS ADMIN ================= */
 
 .admin-shell{
