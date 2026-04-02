@@ -1,0 +1,2 @@
+Error de conexion a MySQL: Access denied for user 'root'@'localhost' (using password: YES)
+Configuracion usada: root@127.0.0.1:3306/ppg_preventa
