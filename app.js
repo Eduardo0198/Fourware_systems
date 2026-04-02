@@ -8,6 +8,7 @@ const app = express();
 
 const isProduction = process.env.NODE_ENV === 'production';
 const sessionSecret = process.env.SESSION_SECRET || 'dev-only-change-me';
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(session({
     secret: sessionSecret,
@@ -59,7 +60,6 @@ app.use((req, res) => {
     res.status(404).send("Página no encontrada");
 });
 
-const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:3000`);
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

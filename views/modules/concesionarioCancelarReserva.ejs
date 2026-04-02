@@ -1,13 +1,59 @@
-<h2>
-    Cancelar Reserva
-</h2>
+<h2>Cancelar Reserva</h2>
 <hr>
-<div class="alert alert-warning">
-    ¿Estás seguro que deseas cancelar esta reserva?
+
+<div class="card mb-4 border-warning">
+    <div class="card-body">
+        <h5 class="card-title">Confirmación de cancelación</h5>
+        <p class="mb-2">
+            Estás por cancelar la reserva <strong><%= reserva.folio %></strong>.
+        </p>
+        <p class="mb-2">
+            Fecha límite para cancelar: <strong><%= reserva.fechaCancelacionTexto %></strong>
+        </p>
+        <p class="mb-0">
+            <% if (reserva.puedeCancelar) { %>
+                La ventana configurada por el administrador sigue vigente y puedes continuar.
+            <% } else if (reserva.estatusNumerico === 0) { %>
+                Esta reserva ya se encuentra cancelada.
+            <% } else { %>
+                La ventana de cancelación ya expiró.
+            <% } %>
+        </p>
+    </div>
 </div>
-<button class="btn btn-danger">
-    Confirmar cancelación
-</button>
-<a href="/concesionario/reservas" class="btn btn-secondary">
-    Volver
-</a>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted">Total</small>
+                <div><strong>$<%= Number(reserva.total || 0).toFixed(2) %></strong></div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Sucursal</small>
+                <div><%= reserva.fechaSucursalTexto %></div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Estatus actual</small>
+                <div>
+                    <span class="badge text-bg-<%= reserva.estatusClase %>"><%= reserva.estatusTexto %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <% if (reserva.puedeCancelar) { %>
+        <form method="POST" action="/concesionario/cancelar-reserva">
+            <input type="hidden" name="folio" value="<%= reserva.folio %>">
+            <button class="btn btn-danger" type="submit">
+                Confirmar cancelación
+            </button>
+        </form>
+    <% } %>
+
+    <a href="/concesionario/reserva/<%= reserva.folio %>" class="btn btn-secondary">
+        Volver
+    </a>
+</div>

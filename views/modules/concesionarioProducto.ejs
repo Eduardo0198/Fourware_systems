@@ -4,6 +4,14 @@
     }
     return url;
 } %>
+<% function renderStars(puntaje) {
+    const valor = Number(puntaje || 0);
+    let html = '';
+    for (let index = 1; index <= 5; index += 1) {
+        html += index <= Math.round(valor) ? '★' : '☆';
+    }
+    return html;
+} %>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Detalle del Producto</h2>
@@ -94,3 +102,145 @@
         </form>
     </div>
 </div>
+
+<!-- inicio ---- lau ----- formCalificarProducto -->
+
+<hr>
+<section class="reviews-showcase" id="reseñas-producto">
+    <div class="reviews-showcase-head">
+        <div>
+            <span class="reviews-eyebrow">Opinión del cliente</span>
+            <h4>Reseñas</h4>
+        </div>
+        <a href="#formulario-resena" class="btn btn-dark reviews-cta-btn">Escriba una reseña</a>
+    </div>
+
+    <!-- inicio ---- fabrizio ----- resumenVisualResenas -->
+    <div class="reviews-showcase-grid">
+        <section class="reviews-panel">
+            <h5>Muestra de puntuación</h5>
+            <p>Selecciona una fila para identificar cómo se distribuyen las reseñas del producto.</p>
+
+            <div class="reviews-distribution-list">
+                <% distribucionConPorcentaje.forEach((item) => { %>
+                    <div class="reviews-distribution-row">
+                        <span class="reviews-distribution-label"><%= item.estrella %>★</span>
+                        <div class="reviews-progress-track" aria-hidden="true">
+                            <span class="reviews-progress-fill" style="width: <%= item.porcentaje %>%"></span>
+                        </div>
+                        <span class="reviews-distribution-total"><%= item.total %></span>
+                    </div>
+                <% }); %>
+            </div>
+        </section>
+
+        <section class="reviews-panel reviews-summary-panel">
+            <h5>Calificaciones promedio del cliente</h5>
+
+            <div class="reviews-average-block">
+                <span class="reviews-average-label">General</span>
+                <div class="reviews-average-stars" aria-label="Promedio general de <%= resumenCalificaciones.promedio_general || 0 %> de 5">
+                    <span class="reviews-average-stars-visual"><%- renderStars(resumenCalificaciones.promedio_general) %></span>
+                    <strong><%= Number(resumenCalificaciones.promedio_general || 0).toFixed(1) %></strong>
+                </div>
+            </div>
+
+            <div class="reviews-summary-metrics">
+                <div class="reviews-summary-metric">
+                    <span>Total de reseñas</span>
+                    <strong><%= resumenCalificaciones.total_resenas || 0 %></strong>
+                </div>
+                <div class="reviews-summary-metric">
+                    <span>Producto evaluado</span>
+                    <strong><%= producto.SKU %></strong>
+                </div>
+                <div class="reviews-summary-metric">
+                    <span>Estado del producto</span>
+                    <strong><%= producto.activo ? 'Disponible' : 'Sin preventa' %></strong>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- fin ---- fabrizio---------- -->
+
+    <!-- inicio ---- lau ----- formularioCalificacionRedisenado -->
+    <div class="reviews-composer-card" id="formulario-resena">
+        <div class="reviews-composer-copy">
+            <span class="reviews-compose-kicker">Comparte tu experiencia</span>
+            <h5>Califica este producto como en un ecommerce</h5>
+            <p>Selecciona estrellas y deja un comentario para ayudar a otros concesionarios a tomar una mejor decisión.</p>
+        </div>
+
+        <form method="POST" action="/concesionario/producto/calificar" class="reviews-form">
+            <input type="hidden" name="sku" value="<%= producto.SKU %>">
+            <div class="reviews-star-picker-block">
+                <span class="form-label">Tu calificación</span>
+                <div class="reviews-star-picker" role="radiogroup" aria-label="Selecciona una calificación de 1 a 5 estrellas">
+                    <input type="radio" id="estrella5" name="calificacion" value="5" required>
+                    <label for="estrella5" title="5 estrellas">★</label>
+                    <input type="radio" id="estrella4" name="calificacion" value="4">
+                    <label for="estrella4" title="4 estrellas">★</label>
+                    <input type="radio" id="estrella3" name="calificacion" value="3">
+                    <label for="estrella3" title="3 estrellas">★</label>
+                    <input type="radio" id="estrella2" name="calificacion" value="2">
+                    <label for="estrella2" title="2 estrellas">★</label>
+                    <input type="radio" id="estrella1" name="calificacion" value="1">
+                    <label for="estrella1" title="1 estrella">★</label>
+                </div>
+                <small>Haz clic en las estrellas para puntuar el producto.</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="comentario" class="form-label">Comentario</label>
+                <textarea id="comentario" name="comentario" class="form-control reviews-textarea" rows="4" maxlength="1000" placeholder="¿Qué te gustó del producto, el acabado o su rendimiento?"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success reviews-submit-btn">Enviar calificación</button>
+        </form>
+    </div>
+    <!-- fin ---- lau---------- -->
+
+    <!-- inicio ---- fabrizio ----- listadoResenasProducto -->
+    <section class="reviews-list-section">
+        <div class="reviews-list-head">
+            <div>
+                <h5>Opiniones recientes</h5>
+                <p>Estas reseñas se almacenan en la preventa del producto actual.</p>
+            </div>
+            <span class="reviews-total-pill"><%= resumenCalificaciones.total_resenas || 0 %> reseñas</span>
+        </div>
+
+        <% if (resenas && resenas.length > 0) { %>
+            <div class="reviews-list-grid">
+                <% resenas.forEach((resena) => { %>
+                    <article class="review-card">
+                        <div class="review-card-head">
+                            <div>
+                                <strong><%= resena.nombre || resena.correo %></strong>
+                                <span><%= resena.correo %></span>
+                            </div>
+                            <span class="review-card-date"><%= resena.fecha %></span>
+                        </div>
+
+                        <div class="review-card-stars" aria-label="Calificación de <%= resena.estrellas %> estrellas">
+                            <span><%- renderStars(resena.estrellas) %></span>
+                            <strong><%= resena.estrellas %>.0</strong>
+                        </div>
+
+                        <p class="review-card-comment">
+                            <%= resena.comentario && resena.comentario.trim() ? resena.comentario : 'El usuario calificó este producto sin dejar comentario adicional.' %>
+                        </p>
+                    </article>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="reviews-empty-state">
+                <strong>Aún no hay reseñas para este producto.</strong>
+                <p>Haz la primera calificación y verás aquí el historial de opiniones.</p>
+            </div>
+        <% } %>
+    </section>
+    <!-- fin ---- fabrizio---------- -->
+</section>
+
+<!-- fin ---- lau---------- -->
