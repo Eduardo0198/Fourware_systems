@@ -3,7 +3,86 @@ const concesionarioModel = require('../models/concesionario.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
 const bitacora = require('../models/bitacora.model');
+const calificacionModel = require('../models/calificacion.model');
+const reservaModel = require('../models/reserva.model');
+const cancelacionModel = require('../models/cancelacion.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
+
+// inicio ---- fabrizio ----- helpersCancelacionReservas --
+
+function formatearFecha(valor, incluirHora = false) {
+    if (!valor) {
+        return 'No disponible';
+    }
+
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) {
+        return String(valor);
+    }
+
+    return fecha.toLocaleString('es-MX', incluirHora
+        ? {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }
+        : {
+            dateStyle: 'medium'
+        });
+}
+
+function normalizarReserva(reserva, horasCancelacion = 24) {
+    const estatusNumerico = Number(reserva.estatus);
+    const fechaLimite = reserva.fecha_cancelacion_reserva
+        ? new Date(reserva.fecha_cancelacion_reserva)
+        : null;
+    const fechaActual = new Date();
+    const limiteValida = fechaLimite && !Number.isNaN(fechaLimite.getTime());
+    const cancelacionDisponible = estatusNumerico === 1
+        && limiteValida
+        && fechaActual <= fechaLimite;
+
+    return {
+        ...reserva,
+        estatusNumerico,
+        estatusTexto: estatusNumerico === 0 ? 'Cancelada' : 'Confirmada',
+        estatusClase: estatusNumerico === 0 ? 'danger' : 'success',
+        horasCancelacion,
+        fechaTexto: formatearFecha(reserva.fecha),
+        fechaCancelacionTexto: formatearFecha(reserva.fecha_cancelacion_reserva, true),
+        fechaSucursalTexto: reserva.nombre_sucursal
+            ? `${reserva.nombre_sucursal}`
+            : 'Sucursal no disponible',
+        puedeCancelar: cancelacionDisponible,
+        cancelacionExpirada: estatusNumerico === 1 && !cancelacionDisponible,
+        direccionSucursal: [
+            reserva.direccion,
+            reserva.municipio,
+            reserva.estado
+        ].filter(Boolean).join(', ')
+    };
+}
+
+function obtenerReservaNormalizada(folio, correo, idCuenta, callback) {
+    cancelacionModel.obtener((configErr, configuracion) => {
+        if (configErr) {
+            return callback(configErr);
+        }
+
+        reservaModel.obtenerDetallePorFolioCorreoYCuenta(folio, correo, idCuenta, (reservaErr, reserva) => {
+            if (reservaErr) {
+                return callback(reservaErr);
+            }
+
+            if (!reserva) {
+                return callback(null, null);
+            }
+
+            callback(null, normalizarReserva(reserva, configuracion?.horas_cancelacion || 24));
+        });
+    });
+}
+
+// fin ---- fabrizio----------
 
 function construirConsultaCatalogo(req) {
     return {
@@ -342,10 +421,51 @@ exports.producto = (req, res) => {
                     return res.redirect('/concesionario/catalogo');
                 }
 
-                registrarEvento(req, 'Consulta de detalle técnico y logístico de producto');
-                return res.render('modules/concesionarioProducto', {
-                    producto
+                // inicio ---- fabrizio ----- detalleProductoConResenas --
+                calificacionModel.obtenerResumenCalificacionesPorSku(sku, (errResumen, resumenCalificaciones) => {
+                    if (errResumen) {
+                        console.log(errResumen);
+                        registrarEvento(req, 'Error al consultar resumen de reseñas del producto');
+                        req.session.mensaje = {
+                            tipo: 'danger',
+                            texto: 'Error en la consulta.'
+                        };
+                        return res.redirect('/concesionario/catalogo');
+                    }
+
+                    calificacionModel.obtenerResenasPorSku(sku, (errResenas, resenas) => {
+                        if (errResenas) {
+                            console.log(errResenas);
+                            registrarEvento(req, 'Error al consultar reseñas del producto');
+                            req.session.mensaje = {
+                                tipo: 'danger',
+                                texto: 'Error en la consulta.'
+                            };
+                            return res.redirect('/concesionario/catalogo');
+                        }
+
+                        const totalResenas = resumenCalificaciones.total_resenas || 0;
+                        const distribucionConPorcentaje = [5, 4, 3, 2, 1].map((estrella) => {
+                            const total = resumenCalificaciones.distribucion[estrella] || 0;
+                            return {
+                                estrella,
+                                total,
+                                porcentaje: totalResenas > 0
+                                    ? Math.round((total / totalResenas) * 100)
+                                    : 0
+                            };
+                        });
+
+                        registrarEvento(req, 'Consulta de detalle técnico y logístico de producto');
+                        return res.render('modules/concesionarioProducto', {
+                            producto,
+                            resumenCalificaciones,
+                            distribucionConPorcentaje,
+                            resenas: Array.isArray(resenas) ? resenas : []
+                        });
+                    });
                 });
+                // fin ---- fabrizio----------
             }
         );
     });
@@ -360,24 +480,226 @@ exports.confirmarReserva = (req, res) => {
 };
 
 exports.reservas = (req, res) => {
-    // inicio caso 8 lau
-    registrarEvento(req, 'Consulta de historial de reservas');
-    // fin caso 8 lau
-    res.render('modules/concesionarioReservas');
+    const correo = req.session.usuario?.correo;
+    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
+
+    cancelacionModel.obtener((configErr, configuracion) => {
+        if (configErr) {
+            console.error(configErr);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible consultar la configuración de cancelación.'
+            };
+            return res.render('modules/concesionarioReservas', { reservas: [] });
+        }
+
+        reservaModel.obtenerReservasPorCorreoYCuenta(correo, idCuenta, (err, reservas) => {
+            if (err) {
+                console.error(err);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible consultar tus reservas.'
+                };
+                return res.render('modules/concesionarioReservas', { reservas: [] });
+            }
+
+            // inicio caso 8 lau
+            registrarEvento(req, 'Consulta de historial de reservas');
+            // fin caso 8 lau
+            res.render('modules/concesionarioReservas', {
+                reservas: (reservas || []).map((item) =>
+                    normalizarReserva(item, configuracion?.horas_cancelacion || 24)
+                )
+            });
+        });
+    });
 };
 
 exports.detalleReserva = (req, res) => {
-    // inicio caso 8 lau
-    registrarEvento(req, 'Consulta de detalle de reserva');
-    // fin caso 8 lau
-    res.render('modules/concesionarioDetalleReserva', {
-        folio: req.params.folio
+    const folio = req.params.folio;
+    const correo = req.session.usuario?.correo;
+    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
+
+    obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
+        if (err) {
+            console.error(err);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible consultar el detalle de la reserva.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        if (!reserva) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        // inicio caso 8 lau
+        registrarEvento(req, 'Consulta de detalle de reserva');
+        // fin caso 8 lau
+        res.render('modules/concesionarioDetalleReserva', {
+            reserva
+        });
     });
 };
 
 exports.cancelarReserva = (req, res) => {
-    // inicio caso 8 lau
-    registrarEvento(req, 'Consulta de cancelación de reserva');
-    // fin caso 8 lau
-    res.render('modules/concesionarioCancelarReserva');
+    const folio = String(req.query.folio || '').trim();
+    const correo = req.session.usuario?.correo;
+    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
+
+    if (!folio) {
+        req.session.mensaje = {
+            tipo: 'warning',
+            texto: 'Debes seleccionar una reserva válida para cancelarla.'
+        };
+        return res.redirect('/concesionario/reservas');
+    }
+
+    obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
+        if (err) {
+            console.error(err);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible consultar la reserva a cancelar.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        if (!reserva) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        // inicio caso 8 lau
+        registrarEvento(req, 'Consulta de cancelación de reserva');
+        // fin caso 8 lau
+        res.render('modules/concesionarioCancelarReserva', {
+            reserva
+        });
+    });
 };
+
+// inicio ---- fabrizio ----- confirmarCancelacionReserva --
+
+exports.cancelarReservaPost = (req, res) => {
+    const folio = String(req.body.folio || '').trim();
+    const correo = req.session.usuario?.correo;
+    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
+
+    if (!folio) {
+        req.session.mensaje = {
+            tipo: 'warning',
+            texto: 'No fue posible identificar la reserva a cancelar.'
+        };
+        return res.redirect('/concesionario/reservas');
+    }
+
+    obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
+        if (err) {
+            console.error(err);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible validar la reserva a cancelar.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        if (!reserva) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+            };
+            return res.redirect('/concesionario/reservas');
+        }
+
+        if (!reserva.puedeCancelar) {
+            registrarEvento(req, 'Intento de cancelación fuera de ventana permitida');
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'La ventana de cancelación para esta reserva ya expiró o la reserva ya fue cancelada.'
+            };
+            return res.redirect(`/concesionario/reserva/${folio}`);
+        }
+
+        reservaModel.cancelarReserva(folio, correo, idCuenta, (cancelErr, result) => {
+            if (cancelErr) {
+                console.error(cancelErr);
+                registrarEvento(req, 'Error al cancelar reserva');
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible cancelar la reserva. Intente nuevamente.'
+                };
+                return res.redirect(`/concesionario/reserva/${folio}`);
+            }
+
+            if (!result || result.affectedRows === 0) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'La reserva ya no se encuentra disponible para cancelación.'
+                };
+                return res.redirect(`/concesionario/reserva/${folio}`);
+            }
+
+            registrarEvento(req, `Cancelación de reserva ${folio}`);
+            req.session.mensaje = {
+                tipo: 'success',
+                texto: `La reserva ${folio} fue cancelada correctamente.`
+            };
+            return res.redirect('/concesionario/reservas');
+        });
+    });
+};
+
+// fin ---- fabrizio----------
+
+// inicio ---- lau ----- calificarProducto --
+
+exports.calificarProducto = (req, res) => {
+    const sku = req.params.sku || req.body.sku;
+    const { calificacion, comentario } = req.body;
+    const correo = req.session.usuario?.correo;
+
+    if (!sku) {
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'No fue posible identificar el producto a calificar.'
+        };
+        return res.redirect('/concesionario/catalogo');
+    }
+
+    if (!calificacion || calificacion < 1 || calificacion > 5) {
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'Calificación inválida. Debe ser entre 1 y 5.'
+        };
+        return res.redirect(`/concesionario/producto/${sku}`);
+    }
+
+    calificacionModel.registrarCalificacion(correo, sku, calificacion, comentario || '', (err) => {
+        if (err) {
+            console.error(err);
+            registrarEvento(req, 'Error al registrar calificación de producto');
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'Error al registrar la calificación.'
+            };
+        } else {
+            registrarEvento(req, 'Registro de calificación y comentario sobre producto de preventa');
+            req.session.mensaje = {
+                tipo: 'success',
+                texto: 'Calificación registrada exitosamente.'
+            };
+        }
+        res.redirect(`/concesionario/producto/${sku}`);
+    });
+};
+
+// fin ---- lau----------

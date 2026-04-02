@@ -1,43 +1,138 @@
-<h2>Reservas Confirmadas</h2>
-<hr>
-<div class="container-fluid mt-4">
-<!-- FILTROS -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="placeholder-box filter-box">
-                Filtro por campaña
-            </div>
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-campaigns">
+        <div>
+            <span class="admin-eyebrow">Logística</span>
+            <h2 class="admin-title">Reservas Confirmadas por Periodo</h2>
+            <p class="admin-subtitle">
+                Consulta de forma simple las reservas confirmadas dentro de un rango de fechas y revisa importe, peso, volumen y campañas involucradas.
+            </p>
         </div>
-        <div class="col-md-4">
-            <div class="placeholder-box filter-box">
-                Filtro por concesionario
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="placeholder-box filter-box">
-                Filtro por fecha
-            </div>
+        <div class="admin-hero-note">
+            <span>Reservas encontradas</span>
+            <strong><%= resumen.totalReservas || 0 %></strong>
+            <small>Periodo del <%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %>.</small>
         </div>
     </div>
-    <!-- MÉTRICA PRINCIPAL -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="placeholder-box metric-box">
-                Total de reservas
+
+    <% if (pageMessage) { %>
+        <div class="alert alert-<%= pageMessage.tipo %>" role="alert">
+            <%= pageMessage.texto %>
+        </div>
+    <% } %>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Filtros de consulta</h4>
+                <p>Selecciona el periodo para mostrar solo reservas confirmadas.</p>
             </div>
+            <span class="admin-table-pill">Estatus: Confirmadas</span>
+        </div>
+
+        <form method="GET" action="/logistica/reservas-confirmadas" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Fecha inicio</label>
+                <input
+                    type="date"
+                    name="fecha_inicio"
+                    class="form-control"
+                    value="<%= filtros.fecha_inicio %>"
+                    required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fecha fin</label>
+                <input
+                    type="date"
+                    name="fecha_fin"
+                    class="form-control"
+                    value="<%= filtros.fecha_fin %>"
+                    required>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn admin-action-btn" type="submit">Consultar</button>
+                <a href="/logistica/reservas-confirmadas" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-stats-grid">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Importe total</span>
+            <strong>$<%= Number(resumen.totalImporte || 0).toFixed(2) %></strong>
+            <p>Suma consolidada de reservas confirmadas en el periodo.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Peso total</span>
+            <strong><%= Number(resumen.totalPeso || 0).toFixed(2) %> kg</strong>
+            <p>Acumulado logístico del peso registrado por reserva.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Volumen total</span>
+            <strong><%= Number(resumen.totalVolumen || 0).toFixed(2) %> m³</strong>
+            <p>Volumen consolidado calculado para el periodo consultado.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Total reservas</span>
+            <strong><%= resumen.totalReservas || 0 %></strong>
+            <p>Cantidad de reservas confirmadas filtradas por el rango indicado.</p>
+        </article>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Detalle consolidado</h4>
+                <p>Se muestran folio, cuenta, distribuidor, fecha, estatus, subtotal, IVA, total, peso, volumen y campaña.</p>
+            </div>
+            <span class="admin-table-pill">Consulta simple</span>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="table admin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Cuenta</th>
+                        <th>Distribuidor</th>
+                        <th>Fecha</th>
+                        <th>Estatus</th>
+                        <th>Subtotal</th>
+                        <th>IVA</th>
+                        <th>Total</th>
+                        <th>Peso total</th>
+                        <th>Volumen total</th>
+                        <th>Campaña</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (reservas && reservas.length > 0) { %>
+                        <% reservas.forEach((reserva) => { %>
+                            <tr>
+                                <td><strong><%= reserva.folio %></strong></td>
+                                <td><%= reserva.cuenta %></td>
+                                <td>
+                                    <strong><%= reserva.distribuidor %></strong>
+                                    <br>
+                                    <small><%= reserva.correo %></small>
+                                </td>
+                                <td><%= reserva.fecha %></td>
+                                <td><span class="badge text-bg-success">Confirmada</span></td>
+                                <td>$<%= Number(reserva.subtotal || 0).toFixed(2) %></td>
+                                <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
+                                <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
+                                <td><%= Number(reserva.peso_total || 0).toFixed(2) %> kg</td>
+                                <td><%= Number(reserva.volumen_total || 0).toFixed(2) %> m³</td>
+                                <td><%= reserva.campanias || 'Sin campaña asociada' %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="11" class="text-center">
+                                No existen reservas confirmadas con ese criterio de periodo.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
-    <!-- TABLA Y DETALLE -->
-    <div class="row">
-        <div class="col-md-8">
-            <div class="placeholder-box table-box">
-                Tabla de reservas confirmadas
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="placeholder-box detail-box">
-                Detalle de la reserva seleccionada
-            </div>
-        </div>
-    </div>
-</div>
+</section>

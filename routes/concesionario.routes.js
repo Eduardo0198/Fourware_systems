@@ -73,4 +73,34 @@ router.get('/cancelar-reserva',
     concesionarioController.cancelarReserva
 );
 
+// inicio ---- fabrizio ----- confirmarCancelacionReserva --
+router.post('/cancelar-reserva',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    tienePrivilegio(['cancelar_reserva']),
+    concesionarioController.cancelarReservaPost
+);
+// fin ---- fabrizio----------
+
+// inicio ---- lau ----- rutaCalificarProducto --
+
+router.post('/producto/:sku/calificar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    concesionarioController.calificarProducto
+);
+
+// inicio ---- fabrizio ----- rutaCalificarProductoFormularioEstatico --
+router.post('/producto/calificar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    concesionarioController.calificarProducto
+);
+// fin ---- fabrizio----------
+
+// fin ---- lau----------
+
 module.exports = router;

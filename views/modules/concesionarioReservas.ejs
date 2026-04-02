@@ -1,46 +1,54 @@
-<h2>
-    Mis Reservas
-</h2>
+<h2>Mis Reservas</h2>
 <hr>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>
-                Folio
-            </th>
-            <th>
-                Fecha
-            </th>
-            <th>
-                Estado
-            </th>
-            <th>
-                Total
-            </th>
-            <th>
-                Acción
-            </th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-                R001
-            </td>
-            <td>
-                2026-03-06
-            </td>
-            <td>
-                Confirmada
-            </td>
-            <td>
-                $---
-            </td>
-            <td>
-                <a href="/concesionario/reserva/R001" class="btn btn-primary btn-sm">
-                    Ver detalle
-                </a>
-            </td>
-        </tr>
-    </tbody>
-</table>
+
+<% if (reservas && reservas.length > 0) { %>
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Folio</th>
+                <th>Fecha</th>
+                <th>Estatus</th>
+                <th>Ventana de cancelación</th>
+                <th>Total</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% reservas.forEach((reserva) => { %>
+                <tr>
+                    <td><strong><%= reserva.folio %></strong></td>
+                    <td><%= reserva.fechaTexto %></td>
+                    <td>
+                        <span class="badge text-bg-<%= reserva.estatusClase %>">
+                            <%= reserva.estatusTexto %>
+                        </span>
+                    </td>
+                    <td>
+                        <% if (reserva.puedeCancelar) { %>
+                            Disponible hasta <%= reserva.fechaCancelacionTexto %>
+                        <% } else if (reserva.estatusNumerico === 0) { %>
+                            Ya cancelada
+                        <% } else { %>
+                            Venció el <%= reserva.fechaCancelacionTexto %>
+                        <% } %>
+                    </td>
+                    <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
+                    <td class="d-flex gap-2">
+                        <a href="/concesionario/reserva/<%= reserva.folio %>" class="btn btn-primary btn-sm">
+                            Ver detalle
+                        </a>
+                        <% if (reserva.puedeCancelar) { %>
+                            <a href="/concesionario/cancelar-reserva?folio=<%= reserva.folio %>" class="btn btn-outline-danger btn-sm">
+                                Cancelar
+                            </a>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+<% } else { %>
+    <div class="alert alert-info">
+        No existen reservas asociadas a la cuenta activa.
+    </div>
+<% } %>
