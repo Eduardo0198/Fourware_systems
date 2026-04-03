@@ -236,13 +236,18 @@ function construirResumenPreliminarCarga(lectura, skusExistentes = []) {
             });
             return;
         }
-
+        // Las filas que pasan todas las validaciones se consideran válidas 
+        // y se preparan para su carga y queda como prodcuto activo directamente
         filasValidas.push({
             numeroFila: fila.numeroFila,
             sku,
             nombre_comercial: validacion.producto.nombre_comercial,
             precio_unitario: validacion.producto.precio_unitario,
-            unidad_venta: validacion.producto.unidad_venta
+            unidad_venta: validacion.producto.unidad_venta,
+            producto: {
+                ...validacion.producto,
+                activo: 1
+            }
         });
     });
 
@@ -261,7 +266,8 @@ function construirResumenPreliminarCarga(lectura, skusExistentes = []) {
         filasConSkuDuplicado: duplicadosInternos,
         previewValidas: filasValidas.slice(0, 10),
         previewOmitidas: filasOmitidas.slice(0, 10),
-        previewErrores: filasInvalidas.slice(0, 10)
+        previewErrores: filasInvalidas.slice(0, 10),
+        productosParaInsertar: filasValidas.map((fila) => fila.producto)
     };
 }
 
@@ -667,6 +673,50 @@ exports.registrarSKU = (req, res) => {
     renderCatalogoRegistro(res);
 };
 
+// registrar con un INSERT en la DB los productos validados, 
+// y se registra en la bitácora el resultado de cada intento de registro,
+exports.registrarMultiples = (productos, callback) => {
+    if (!Array.isArray(productos) || productos.length === 0) {
+        return callback(null, { affectedRows: 0 });
+    }
+
+    const values = productos.map((producto) => ([
+        producto.sku,
+        producto.nombre_comercial,
+        producto.descripcion,
+        producto.precio_unitario,
+        producto.peso_unitario,
+        producto.volumen_unitario,
+        producto.medida_primaria,
+        producto.unidad_venta,
+        producto.imagen,
+        producto.activo,
+        producto.id_campania
+    ]));
+    // se construye una consulta con múltiples valores para insertar 
+    // todos los productos en una sola operación
+    
+    const query = `
+        INSERT INTO Producto (
+            SKU,
+            nombre_comercial,
+            descripcion,
+            precio_unitario,
+            peso_unitario,
+            volumen_unitario,
+            medida_primaria,
+            unidad_venta,
+            imagen,
+            activo,
+            id_campania
+        )
+        VALUES ?
+    `;
+
+    db.query(query, [values], callback);
+};
+
+
 exports.registrarSKUPost = (req, res) => {
     const validacion = validarProducto(req.body);
 
@@ -988,78 +1038,114 @@ exports.cargaMasivaPost = (req, res) => {
         }
 
         try {
-        const lectura = leerArchivoCargaMasiva(req.file.buffer);
-        const lecturaConContexto = {
-            ...lectura,
-            idCampania,
-            nombreArchivo: req.file.originalname
-        };
+            const lectura = leerArchivoCargaMasiva(req.file.buffer);
+            const lecturaConContexto = {
+                ...lectura,
+                idCampania,
+                nombreArchivo: req.file.originalname
+            };
 
-        if (!lectura.encabezadosValidos) {
-            const resumen = construirResumenPreliminarCarga(lecturaConContexto);
+            if (!lectura.encabezadosValidos) {
+                const resumen = construirResumenPreliminarCarga(lecturaConContexto);
 
-            registrarBitacora(req, `Validacion fallida de encabezados en carga masiva ${req.file.originalname}`);
-            return renderCatalogoCargaMasiva(res, {
-                pageMessage: {
-                    tipo: 'warning',
-                    texto: 'El archivo fue leido, pero los encabezados no coinciden con la plantilla esperada.'
-                },
-                formData,
-                resumen
-            });
-        }
-
-        if (lectura.filas.length === 0) {
-            const resumen = construirResumenPreliminarCarga(lecturaConContexto);
-
-            return renderCatalogoCargaMasiva(res, {
-                pageMessage: {
-                    tipo: 'warning',
-                    texto: 'El archivo no contiene filas con datos para validar.'
-                },
-                formData,
-                resumen
-            });
-        }
-
-        const skusArchivo = lectura.filas
-            .map((fila) => String(fila.registro.SKU || '').trim().toUpperCase())
-            .filter(Boolean);
-
-        productoModel.obtenerPorSkus(skusArchivo, (errSkus, productosExistentes) => {
-            if (errSkus) {
-                console.error(errSkus);
-                registrarBitacora(req, `Error al consultar SKUs existentes para carga masiva ${req.file.originalname}`);
+                registrarBitacora(req, `Validacion fallida de encabezados en carga masiva ${req.file.originalname}`);
                 return renderCatalogoCargaMasiva(res, {
                     pageMessage: {
-                        tipo: 'danger',
-                        texto: 'No fue posible validar los productos existentes en el catálogo.'
+                        tipo: 'warning',
+                        texto: 'El archivo fue leido, pero los encabezados no coinciden con la plantilla esperada.'
                     },
-                    formData
+                    formData,
+                    resumen
                 });
             }
 
-            const skusExistentes = productosExistentes.map((producto) => producto.SKU);
-            const resumen = construirResumenPreliminarCarga(lecturaConContexto, skusExistentes);
+            if (lectura.filas.length === 0) {
+                const resumen = construirResumenPreliminarCarga(lecturaConContexto);
 
-            registrarBitacora(
-                req,
-                `Validacion preliminar de carga masiva ${req.file.originalname} para campania ${campania.id_campania}`
-            );
+                return renderCatalogoCargaMasiva(res, {
+                    pageMessage: {
+                        tipo: 'warning',
+                        texto: 'El archivo no contiene filas con datos para validar.'
+                    },
+                    formData,
+                    resumen
+                });
+            }
 
-            return renderCatalogoCargaMasiva(res, {
-                pageMessage: {
-                    tipo: resumen.filasConError > 0 || resumen.filasOmitidas > 0 ? 'warning' : 'success',
-                    texto: resumen.filasConError > 0 || resumen.filasOmitidas > 0
-                        ? 'Se proceso el archivo y se detectaron filas con error u omitidas por existencia previa en catálogo.'
-                        : 'Archivo validado correctamente. Este corte ya identifica productos omitidos por SKU existente, pero aun no inserta productos.'
-                },
-                formData,
-                resumen
+            const skusArchivo = lectura.filas
+                .map((fila) => String(fila.registro.SKU || '').trim().toUpperCase())
+                .filter(Boolean);
+
+            productoModel.obtenerPorSkus(skusArchivo, (errSkus, productosExistentes) => {
+                if (errSkus) {
+                    console.error(errSkus);
+                    registrarBitacora(req, `Error al consultar SKUs existentes para carga masiva ${req.file.originalname}`);
+                    return renderCatalogoCargaMasiva(res, {
+                        pageMessage: {
+                            tipo: 'danger',
+                            texto: 'No fue posible validar los productos existentes en el catalogo.'
+                        },
+                        formData
+                    });
+                }
+
+                const skusExistentes = productosExistentes.map((producto) => producto.SKU);
+                const resumen = construirResumenPreliminarCarga(lecturaConContexto, skusExistentes);
+
+                if (resumen.productosParaInsertar.length === 0) {
+                    registrarBitacora(
+                        req,
+                        `Carga masiva sin inserciones para archivo ${req.file.originalname} en campania ${campania.id_campania}`
+                    );
+
+                    return renderCatalogoCargaMasiva(res, {
+                        pageMessage: {
+                            tipo: resumen.filasConError > 0 || resumen.filasOmitidas > 0 ? 'warning' : 'info',
+                            texto: 'No hubo productos nuevos para insertar. Revisa el resumen de omitidos y errores.'
+                        },
+                        formData,
+                        resumen: {
+                            ...resumen,
+                            filasInsertadas: 0
+                        }
+                    });
+                }
+
+                productoModel.registrarMultiples(resumen.productosParaInsertar, (errRegistro, resultado) => {
+                    if (errRegistro) {
+                        console.error(errRegistro);
+                        registrarBitacora(req, `Error en carga masiva ${req.file.originalname}`);
+
+                        return renderCatalogoCargaMasiva(res, {
+                            pageMessage: {
+                                tipo: 'danger',
+                                texto: 'No fue posible registrar los productos validados en el catalogo.'
+                            },
+                            formData,
+                            resumen
+                        });
+                    }
+
+                    registrarBitacora(
+                        req,
+                        `Carga masiva de ${resultado.affectedRows} producto(s) desde archivo ${req.file.originalname} en campania ${campania.id_campania}`
+                    );
+
+                    return renderCatalogoCargaMasiva(res, {
+                        pageMessage: {
+                            tipo: resumen.filasConError > 0 || resumen.filasOmitidas > 0 ? 'warning' : 'success',
+                            texto: resumen.filasConError > 0 || resumen.filasOmitidas > 0
+                                ? `Se insertaron ${resultado.affectedRows} producto(s). Tambien hubo registros omitidos o con error.`
+                                : `Se insertaron correctamente ${resultado.affectedRows} producto(s) en el catalogo.`
+                        },
+                        formData,
+                        resumen: {
+                            ...resumen,
+                            filasInsertadas: resultado.affectedRows
+                        }
+                    });
+                });
             });
-        });
-
-
         } catch (error) {
             console.error(error);
             registrarBitacora(req, `Error al leer archivo de carga masiva ${req.file.originalname}`);

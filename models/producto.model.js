@@ -92,6 +92,45 @@ exports.registrar = (producto, callback) => {
     ], callback);
 };
 
+exports.registrarMultiples = (productos, callback) => {
+    if (!Array.isArray(productos) || productos.length === 0) {
+        return callback(null, { affectedRows: 0 });
+    }
+
+    const values = productos.map((producto) => ([
+        producto.sku,
+        producto.nombre_comercial,
+        producto.descripcion,
+        producto.precio_unitario,
+        producto.peso_unitario,
+        producto.volumen_unitario,
+        producto.medida_primaria,
+        producto.unidad_venta,
+        producto.imagen,
+        producto.activo,
+        producto.id_campania
+    ]));
+
+    const query = `
+        INSERT INTO Producto (
+            SKU,
+            nombre_comercial,
+            descripcion,
+            precio_unitario,
+            peso_unitario,
+            volumen_unitario,
+            medida_primaria,
+            unidad_venta,
+            imagen,
+            activo,
+            id_campania
+        )
+        VALUES ?
+    `;
+
+    db.query(query, [values], callback);
+};
+
 exports.actualizarPorSku = (sku, producto, callback) => {
     const query = `
         UPDATE Producto
