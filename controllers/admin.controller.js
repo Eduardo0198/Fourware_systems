@@ -1,8 +1,30 @@
+// Agrego Xlss para lectura de Excel, fs y path para manejo de archivos, 
+// y el modelo de bitácora para registrar eventos de auditoría relacionados con la carga masiva
+const path = require('path');
+const XLSX = require('xlsx');
 const bitacoraModel = require('../models/bitacora.model');
 const campaniaModel = require('../models/campania.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const productoModel = require('../models/producto.model');
 const { registrarEvento, normalizarIp } = require('../utils/auditoria.helper');
+
+
+// CARGA MASIVA
+// Columnas esperadas para la carga masiva de productos, 
+// en el orden que se espera que estén en el archivo
+const COLUMNAS_CARGA_MASIVA = [
+    'SKU',
+    'nombre_comercial',
+    'descripcion',
+    'precio_unitario',
+    'peso_unitario',
+    'volumen_unitario',
+    'medida_primaria',
+    'unidad_venta',
+    'imagen'
+];
+// formatos de archivo permitidos para la carga masiva
+const EXTENSIONES_CARGA_MASIVA = new Set(['.csv', '.xlsx', '.xls']);
 
 function aNumeroDecimal(valor) {
     const numero = parseFloat(valor);
@@ -45,6 +67,187 @@ function normalizarProducto(producto) {
         ...producto,
         activo: Number(producto.activo) === 1 ? 1 : 0,
         estatusTexto: Number(producto.activo) === 1 ? 'Activo' : 'Inactivo'
+    };
+}
+
+// Quita espacios extra y convierte a minúsculas para facilitar 
+// la comparación de encabezados
+function normalizarEncabezadoCarga(valor) {
+    return String(valor || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+// Valida que los formatos sean los permitidos 
+// csv, xlsx o xls 
+function esArchivoCargaMasivaPermitido(nombreArchivo) {
+    return EXTENSIONES_CARGA_MASIVA.has(
+        path.extname(String(nombreArchivo || '')).toLowerCase()
+    );
+}
+
+
+// Lee el archivo de carga masiva y devuelve un objeto con la información 
+// de los encabezados detectados, las filas con datos, y cualquier inconsistencia 
+// encontrada en los encabezados
+function leerArchivoCargaMasiva(buffer) {
+
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const nombreHoja = workbook.SheetNames[0];
+    // Si no se encuentra una hoja o no se pueden leer los datos, 
+    // se lanza un error para informar al usuario
+    if (!nombreHoja) {
+        throw new Error('El archivo no contiene hojas o datos legibles.');
+    }
+
+    // Convierte la hoja de Excel a una matriz de filas y columnas,
+    // donde la primera fila se asume que contiene los encabezados
+    const hoja = workbook.Sheets[nombreHoja];
+    const matriz = XLSX.utils.sheet_to_json(hoja, {
+        header: 1,
+        defval: '',
+        blankrows: false
+    });
+
+    // Si el archivo no contiene filas, se devuelve un resultado indicando 
+    // que no se detectaron encabezados ni datos
+    if (!matriz.length) {
+        return {
+            nombreHoja,
+            encabezadosDetectados: [],
+            filas: [],
+            encabezadosValidos: false,
+            encabezadosFaltantes: COLUMNAS_CARGA_MASIVA,
+            encabezadosDuplicados: []
+        };
+    }
+
+    // Se procesan los encabezados detectados en la primera fila del archivo,
+    const encabezadosDetectados = (matriz[0] || []).map((valor) => String(valor || '').trim());
+    const mapaIndices = {};
+    const encabezadosDuplicados = [];
+
+    // Se comparan los encabezados detectados con las columnas esperadas
+    encabezadosDetectados.forEach((encabezado, indice) => {
+        const encabezadoCanonico = COLUMNAS_CARGA_MASIVA.find(
+            (columna) => normalizarEncabezadoCarga(columna) === normalizarEncabezadoCarga(encabezado)
+        );
+
+        if (!encabezadoCanonico) {
+            return;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(mapaIndices, encabezadoCanonico)) {
+            encabezadosDuplicados.push(encabezadoCanonico);
+            return;
+        }
+
+        mapaIndices[encabezadoCanonico] = indice;
+    });
+
+    const encabezadosFaltantes = COLUMNAS_CARGA_MASIVA.filter(
+        (columna) => !Object.prototype.hasOwnProperty.call(mapaIndices, columna)
+    );
+
+    // Se procesan las filas de datos a partir de la segunda fila del archivo
+    const filas = matriz
+        .slice(1)
+        .map((fila, indice) => ({
+            numeroFila: indice + 2,
+            valores: fila
+        }))
+        .filter((fila) => fila.valores.some((valor) => String(valor || '').trim() !== ''))
+        .map((fila) => {
+            const registro = {};
+
+            COLUMNAS_CARGA_MASIVA.forEach((columna) => {
+                const indice = mapaIndices[columna];
+                registro[columna] = indice === undefined ? '' : String(fila.valores[indice] || '').trim();
+            });
+
+            return {
+                numeroFila: fila.numeroFila,
+                registro
+            };
+        });
+
+    return {
+        nombreHoja,
+        encabezadosDetectados,
+        filas,
+        encabezadosValidos: encabezadosFaltantes.length === 0 && encabezadosDuplicados.length === 0,
+        encabezadosFaltantes,
+        encabezadosDuplicados
+    };
+}
+
+function construirResumenPreliminarCarga(lectura) {
+    const skusVistos = new Set();
+    const filasValidas = [];
+    const filasInvalidas = [];
+    let duplicadosInternos = 0;
+
+    lectura.filas.forEach((fila) => {
+        const validacion = validarProducto({
+            ...fila.registro,
+            id_campania: lectura.idCampania
+        });
+
+        // si no tiene formato válido, se agrega a las filas con error 
+        // indicando el motivo de la invalidación
+        if (!validacion.valido) {
+            filasInvalidas.push({
+                numeroFila: fila.numeroFila,
+                sku: String(fila.registro.SKU || '').trim().toUpperCase() || 'SIN SKU',
+                motivo: validacion.mensaje
+            });
+            return;
+        }
+
+        // si tiene formato válido, se verifica si el SKU ya se ha visto 
+        // en este mismo archivo para detectar duplicados internos
+        const sku = validacion.producto.sku;
+
+        if (skusVistos.has(sku)) {
+            duplicadosInternos += 1;
+            filasInvalidas.push({
+                numeroFila: fila.numeroFila,
+                sku,
+                motivo: 'El SKU se encuentra duplicado dentro del mismo archivo.'
+            });
+            return;
+        }
+
+        // los productos que pasan ambas validaciones se consideran 
+        // filas listas para carga,
+        skusVistos.add(sku);
+        filasValidas.push({
+            numeroFila: fila.numeroFila,
+            sku,
+            nombre_comercial: validacion.producto.nombre_comercial,
+            precio_unitario: validacion.producto.precio_unitario,
+            unidad_venta: validacion.producto.unidad_venta
+        });
+    });
+
+    // finalmente se construye un resumen preliminar que incluye 
+    // información sobre los encabezados detectados,
+    return {
+        archivo: lectura.nombreArchivo,
+        hoja: lectura.nombreHoja,
+        totalFilas: lectura.filas.length,
+        encabezadosDetectados: lectura.encabezadosDetectados,
+        encabezadosEsperados: COLUMNAS_CARGA_MASIVA,
+        encabezadosValidos: lectura.encabezadosValidos,
+        encabezadosFaltantes: lectura.encabezadosFaltantes,
+        encabezadosDuplicados: lectura.encabezadosDuplicados,
+        filasListasParaCarga: filasValidas.length,
+        filasConError: filasInvalidas.length,
+        filasConSkuDuplicado: duplicadosInternos,
+        previewValidas: filasValidas.slice(0, 10),
+        previewErrores: filasInvalidas.slice(0, 10)
     };
 }
 
@@ -118,6 +321,25 @@ function renderCatalogoModificar(req, res, options = {}) {
                 productos: productosNormalizados,
                 productoSeleccionado
             });
+        });
+    });
+}
+
+// función para renderizar la vista de carga masiva,
+// que incluye la lista de campañas disponibles
+function renderCatalogoCargaMasiva(res, options = {}) {
+    campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
+        if (errCampanias) {
+            console.error(errCampanias);
+            return res.status(500).send('No fue posible cargar las campanas.');
+        }
+        // se renderiza la vista de carga masiva pasando las campañas disponibles
+        res.render('modules/catalogoCargaMasiva', {
+            pageMessage: options.pageMessage || res.locals.mensaje || null,
+            formData: options.formData || {},
+            campanias: campanias.map(normalizarCampania),
+            resumen: options.resumen || null,
+            columnasEsperadas: COLUMNAS_CARGA_MASIVA
         });
     });
 }
@@ -674,7 +896,140 @@ exports.modificarSKUPost = (req, res) => {
 
 exports.cargaMasiva = (req, res) => {
     registrarEvento(req, 'Consulta de carga masiva de productos');
-    res.render('modules/catalogoCargaMasiva');
+    renderCatalogoCargaMasiva(res);
+};
+
+
+exports.cargaMasivaPost = (req, res) => {
+    const formData = {
+        id_campania: String(req.body.id_campania || '').trim()
+    };
+
+    if (!formData.id_campania) {
+        return renderCatalogoCargaMasiva(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'Debes seleccionar una campana para validar la carga masiva.'
+            },
+            formData
+        });
+    }
+
+    if (!req.file) {
+        return renderCatalogoCargaMasiva(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'Debes adjuntar un archivo CSV o Excel.'
+            },
+            formData
+        });
+    }
+
+    if (!esArchivoCargaMasivaPermitido(req.file.originalname)) {
+        return renderCatalogoCargaMasiva(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'El archivo debe estar en formato CSV o Excel.'
+            },
+            formData
+        });
+    }
+
+    const idCampania = parseInt(formData.id_campania, 10);
+
+    if (Number.isNaN(idCampania)) {
+        return renderCatalogoCargaMasiva(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'Debes seleccionar una campana valida.'
+            },
+            formData
+        });
+    }
+
+    campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
+        if (errCampania) {
+            console.error(errCampania);
+            return renderCatalogoCargaMasiva(res, {
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'No fue posible validar la campana seleccionada.'
+                },
+                formData
+            });
+        }
+
+        const hoy = new Date(new Date().toDateString());
+        const campaniaInvalida = !campania || new Date(campania.fecha_fin) < hoy;
+
+        if (campaniaInvalida) {
+            return renderCatalogoCargaMasiva(res, {
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'La campana seleccionada no es valida para la carga.'
+                },
+                formData
+            });
+        }
+
+        try {
+            const lectura = leerArchivoCargaMasiva(req.file.buffer);
+            const resumen = construirResumenPreliminarCarga({
+                ...lectura,
+                idCampania,
+                nombreArchivo: req.file.originalname
+            });
+
+            if (!lectura.encabezadosValidos) {
+                registrarBitacora(req, `Validacion fallida de encabezados en carga masiva ${req.file.originalname}`);
+                return renderCatalogoCargaMasiva(res, {
+                    pageMessage: {
+                        tipo: 'warning',
+                        texto: 'El archivo fue leido, pero los encabezados no coinciden con la plantilla esperada.'
+                    },
+                    formData,
+                    resumen
+                });
+            }
+
+            if (resumen.totalFilas === 0) {
+                return renderCatalogoCargaMasiva(res, {
+                    pageMessage: {
+                        tipo: 'warning',
+                        texto: 'El archivo no contiene filas con datos para validar.'
+                    },
+                    formData,
+                    resumen
+                });
+            }
+
+            registrarBitacora(
+                req,
+                `Validacion preliminar de carga masiva ${req.file.originalname} para campania ${campania.id_campania}`
+            );
+
+            return renderCatalogoCargaMasiva(res, {
+                pageMessage: {
+                    tipo: resumen.filasConError > 0 ? 'warning' : 'success',
+                    texto: resumen.filasConError > 0
+                        ? 'Se proceso el archivo y se detectaron filas con error. Revisa el resumen antes de habilitar la carga real.'
+                        : 'Archivo validado correctamente. Este primer corte solo muestra el resumen preliminar; aun no inserta productos.'
+                },
+                formData,
+                resumen
+            });
+        } catch (error) {
+            console.error(error);
+            registrarBitacora(req, `Error al leer archivo de carga masiva ${req.file.originalname}`);
+            return renderCatalogoCargaMasiva(res, {
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'No fue posible leer el archivo cargado. Verifica su contenido e intenta nuevamente.'
+                },
+                formData
+            });
+        }
+    });
 };
 
 exports.crearCampana = (req, res) => {
