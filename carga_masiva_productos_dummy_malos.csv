@@ -1,0 +1,31 @@
+SKU,nombre_comercial,descripcion,precio_unitario,peso_unitario,volumen_unitario,medida_primaria,unidad_venta,imagen
+CU12T-001,Protek Coat Base A,Recubrimiento industrial de prueba para validacion CU12 lote 1,1250.5,12.3,5.1,litros,cubeta,/img/productos/cu12t-001.png
+CU12T-002,Protek Coat Base B,Recubrimiento industrial de prueba para validacion CU12 lote 2,1325,10.8,4.95,litros,cubeta,/img/productos/cu12t-002.png
+CU12T-003,ShieldMax Primer 100,Primario protector de prueba para catalogo masivo lote 3,980.99,-0.5,3.2,kg,caja,/img/productos/cu12t-003.png
+CU12T-004,ShieldMax Primer 200,Primario protector de prueba para catalogo masivo lote 4,1015.75,8.9,3.45,kg,caja,/img/productos/cu12t-004.png
+CU12T-005,UltraSeal Marine X,Producto marino de prueba para carga masiva lote 5,2100,15,6.5,litros,tambor,/img/productos/cu12t-005.png
+CU12T-006,UltraSeal Marine Y,Producto marino de prueba para carga masiva lote 6,2199.9,15.4,6.8,litros,tambor,/img/productos/cu12t-006.png
+CU12T-007,RoadLine Traffic A,Solucion vial de prueba para validacion de archivo lote 7,875.6,9.75,2.9,piezas,unidad,/img/productos/cu12t-007.png
+CU12T-008,RoadLine Traffic B,Solucion vial de prueba para validacion de archivo lote 8,930.1,10.1,3.1,piezas,unidad,/img/productos/cu12t-008.png
+CU12T-009,AutoPrime OEM Red,Recubrimiento automotriz de prueba para proceso masivo lote 9,1560.45,avf,4,litros,cubeta,/img/productos/cu12t-009.png
+CU12T-010,AutoPrime OEM Blue,Recubrimiento automotriz de prueba para proceso masivo lote 10,1588.3,11.5,4.15,litros,cubeta,/img/productos/cu12t-010.png
+CU12T-011,PowerDust Coat A,Recubrimiento en polvo de prueba para lote 11,1440,13.25,5.55,kg,saco,/img/productos/cu12t-011.png
+CU12T-003,PowerDust Coat B,Recubrimiento en polvo de prueba para lote 12,1468.8,13.6,5.7,kg,saco,/img/productos/cu12t-012.png
+CU12T-013,CanGuard Pack 1,Recubrimiento para envases de prueba lote 13,1675.4,14.2,5.95,piezas,caja,/img/productos/cu12t-013.png
+CU12T-014,CanGuard Pack 2,Recubrimiento para envases de prueba lote 14,1698.15,14.5,6.05,piezas,caja,/img/productos/cu12t-014.png
+CU12T-003,HeavyShield Core A,Producto industrial de prueba para lote 15,1890.7,16.1,6.9,kg,tambor,/img/productos/cu12t-015.png
+CU12T-016,HeavyShield Core B,Producto industrial de prueba para lote 16,1915.25,16.45,7.05,kg,tambor,/img/productos/cu12t-016.png
+CU12T-017,ArchiColor Plus A,Recubrimiento arquitectonico de prueba lote 17,1110.35,9.2,3.85,litros,caja,/img/productos/cu12t-017.png
+CU12T-018,ArchiColor Plus B,Recubrimiento arquitectonico de prueba lote 18,1139.9,9.55,4,litros,caja,/img/productos/cu12t-018.png
+CU12T-003,AeroShield Test A,Producto aeroespacial de prueba para lote 19,2450,17.3,7.8,piezas,unidad,/img/productos/cu12t-019.png
+CU12T-020,AeroShield Test B,Producto aeroespacial de prueba para lote 20,2489.5,17.7,8.05,piezas,unidad,/img/productos/cu12t-020.png
+CU12T-021,TrafficMark Pro A,Solucion de trafico de prueba para lote 21,905.75,10,3.3,kg,cubeta,/img/productos/cu12t-021.png
+CU12T-022,TrafficMark Pro B,Solucion de trafico de prueba para lote 22,942.6,10.35,3.45,kg,cubeta,/img/productos/cu12t-022.png
+CU12T-003,SpecialChem Test A,Producto especializado de prueba para lote 23,1755.8,12.75,5.25,litros,unidad,/img/productos/cu12t-023.png
+CU12T-024,SpecialChem Test B,Producto especializado de prueba para lote 24,1788.1,13.05,5.4,litros,unidad,/img/productos/cu12t-024.png
+CU12T-025,MarineGuard Trial A,Producto marino de prueba para lote 25,2230.2,15.9,6.95,litros,tambor,/img/productos/cu12t-025.png
+CU12T-026,MarineGuard Trial B,Producto marino de prueba para lote 26,2265.45,16.25,7.1,litros,tambor,/img/productos/cu12t-026.png
+CU12T-027,RefinishLab Test A,Producto de repintado automotriz de prueba lote 27,1398.85,11.1,4.3,kg,caja,/img/productos/cu12t-027.png
+CU12T-028,RefinishLab Test B,Producto de repintado automotriz de prueba lote 28,1420.55,11.35,4.45,kg,caja,/img/productos/cu12t-028.png
+CU12T-029,IndustrialCore Test A,Recubrimiento industrial de prueba para lote 29,1988.65,16.8,7.2,piezas,cubeta,/img/productos/cu12t-029.png
+CU12T-030,IndustrialCore Test B,Recubrimiento industrial de prueba para lote 30,2022.4,17.1,7.35,piezas,cubeta,/img/productos/cu12t-030.png

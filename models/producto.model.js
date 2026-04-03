@@ -40,6 +40,25 @@ exports.obtenerPorSku = (sku, callback) => {
     });
 };
 
+// recibe un arreglo de SKUs y 
+// devuelve un arreglo con los SKUs que existen en la base de datos
+exports.obtenerPorSkus = (skus, callback) => {
+    if (!Array.isArray(skus) || skus.length === 0) {
+        return callback(null, []);
+    }
+    // se construye una consulta con tantos placeholders como SKUs se recibieron
+    const placeholders = skus.map(() => '?').join(', ');
+    const query = `
+        SELECT SKU
+        FROM Producto
+        WHERE SKU IN (${placeholders})
+    `;
+
+    db.query(query, skus, callback);
+};
+
+
+
 exports.registrar = (producto, callback) => {
     const query = `
         INSERT INTO Producto (

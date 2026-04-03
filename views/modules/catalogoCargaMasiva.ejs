@@ -100,10 +100,19 @@
             </div>
             <div class="col-md-4 mb-2">
                 <div class="border rounded p-3 h-100">
+                    <strong>Filas omitidas</strong>
+                    <div><%= resumen.filasOmitidas || 0 %></div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="border rounded p-3 h-100">
                     <strong>SKU duplicado en archivo</strong>
                     <div><%= resumen.filasConSkuDuplicado %></div>
                 </div>
             </div>
+        </div>
+
+        <div class="row mb-3">
             <div class="col-md-4 mb-2">
                 <div class="border rounded p-3 h-100">
                     <strong>Encabezados válidos</strong>
@@ -167,6 +176,32 @@
     </div>
 
     <div class="card p-4">
+        <h4 class="mb-3">Vista previa de filas omitidas</h4>
+        <% if ((resumen.previewOmitidas || []).length) { %>
+            <div class="table-responsive mb-4">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>SKU</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resumen.previewOmitidas.forEach((fila) => { %>
+                            <tr>
+                                <td><%= fila.numeroFila %></td>
+                                <td><strong><%= fila.sku %></strong></td>
+                                <td><%= fila.motivo %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-muted">No se detectaron filas omitidas por existencia previa en catálogo.</p>
+        <% } %>
+
         <h4 class="mb-3">Vista previa de errores</h4>
         <% if (resumen.previewErrores.length) { %>
             <div class="table-responsive">
