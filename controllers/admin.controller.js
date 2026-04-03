@@ -191,7 +191,15 @@ function construirResumenPreliminarCarga(lectura) {
 
     lectura.filas.forEach((fila) => {
         const validacion = validarProducto({
-            ...fila.registro,
+            sku: fila.registro.SKU,
+            nombre_comercial: fila.registro.nombre_comercial,
+            descripcion: fila.registro.descripcion,
+            unidad_venta: fila.registro.unidad_venta,
+            medida_primaria: fila.registro.medida_primaria,
+            precio_unitario: fila.registro.precio_unitario,
+            peso_unitario: fila.registro.peso_unitario,
+            volumen_unitario: fila.registro.volumen_unitario,
+            imagen: fila.registro.imagen,
             id_campania: lectura.idCampania
         });
 
