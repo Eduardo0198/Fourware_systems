@@ -141,6 +141,13 @@ router.get('/reportes',
     adminController.reportes
 );
 
+router.post('/reportes',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['generar_reporte_preventas']),
+    adminController.reportesPost
+);
+
 router.get('/auditoria',
     protegerRuta,
     tieneRol(['Administrador']),
