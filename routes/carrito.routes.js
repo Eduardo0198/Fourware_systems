@@ -18,7 +18,7 @@ router.get('/',
     carritoController.verCarrito
 );
 
-router.get('/eliminar/:sku',
+router.post('/eliminar',
     protegerRuta,
     tieneRol(['Concesionario']),
     requiereCuentaActiva,

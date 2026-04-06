@@ -4,7 +4,6 @@ const {
     incrementarIntento
 } = require('../utils/auditoria.helper');
 
-// inicio caso 8 lau
 function obtenerDescripcionAccesoSinSesion(ruta) {
     const rutaLimpia = (ruta || '').split('?')[0];
 
@@ -19,18 +18,15 @@ function obtenerDescripcionAccesoSinSesion(ruta) {
 
     return descripciones[rutaLimpia] || `Intento de acceso sin sesión a ${rutaLimpia || 'ruta protegida'}`;
 }
-// fin caso 8 lau
 
 exports.protegerRuta = (req, res, next) => {
     if (!req.session.usuario) {
-        // inicio caso 8 lau
         const numeroIntento = incrementarIntento(req, 'acceso_sin_sesion');
         registrarEvento(
             req,
             `${obtenerDescripcionAccesoSinSesion(req.originalUrl)}. Intento numero ${numeroIntento}`,
             null
         );
-        // fin caso 8 lau
         req.session.mensaje = {
             tipo: 'danger',
             texto: 'Tu sesión no está vigente. Inicia sesión nuevamente.'
@@ -50,13 +46,11 @@ exports.tieneRol = (rolesPermitidos) => {
             rolesPermitidos.includes(r)
         );
         if (!tiene) {
-            // inicio caso 8 lau
             const numeroIntento = incrementarIntento(req, 'acceso_no_autorizado_rol');
             registrarEvento(
                 req,
                 `Intento de acceso no autorizado por rol a ${req.path}. Intento numero ${numeroIntento}`
             );
-            // fin caso 8 lau
             return res.send("Acceso denegado");
         }
         next();
@@ -73,13 +67,11 @@ exports.tienePrivilegio = (privilegiosPermitidos) => {
             privilegiosPermitidos.includes(p)
         );
         if (!tiene) {
-            // inicio caso 8 lau
             const numeroIntento = incrementarIntento(req, 'acceso_sin_privilegio');
             registrarEvento(
                 req,
                 `Intento de acceso sin privilegio a ${req.path}. Intento numero ${numeroIntento}`
             );
-            // fin caso 8 lau
             return res.send("No tienes permiso");
         }
         next();
@@ -94,13 +86,11 @@ exports.requiereCuentaActiva = (req, res, next) => {
     }
 
     if (!usuario.cuentaActiva || !usuario.cuentaActiva.id_cuenta) {
-        // inicio caso 8 lau
         const numeroIntento = incrementarIntento(req, 'operacion_sin_cuenta_activa');
         registrarEvento(
             req,
             `Intento de operación sin cuenta activa. Intento numero ${numeroIntento}`
         );
-        // fin caso 8 lau
         req.session.mensaje = {
             tipo: 'warning',
             texto: 'Debes seleccionar una cuenta activa antes de operar en el sistema.'
@@ -111,9 +101,7 @@ exports.requiereCuentaActiva = (req, res, next) => {
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, usuario.cuentaActiva.id_cuenta, (err, cuenta) => {
         if (err) {
             console.error(err);
-            // inicio caso 8 lau
             registrarEvento(req, 'Error al validar cuenta activa');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible validar la cuenta activa.'
@@ -123,9 +111,7 @@ exports.requiereCuentaActiva = (req, res, next) => {
 
         if (!cuenta) {
             req.session.usuario.cuentaActiva = null;
-            // inicio caso 8 lau
             registrarEvento(req, 'Cuenta activa no asociada al usuario');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'La cuenta activa ya no esta asociada a tu usuario.'
@@ -135,13 +121,11 @@ exports.requiereCuentaActiva = (req, res, next) => {
 
         if (!cuenta.activo) {
             req.session.usuario.cuentaActiva = null;
-            // inicio caso 8 lau
             const numeroIntento = incrementarIntento(req, 'operacion_con_cuenta_inactiva');
             registrarEvento(
                 req,
                 `Intento de operación con cuenta inactiva. Intento numero ${numeroIntento}`
             );
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'warning',
                 texto: 'La cuenta activa se encuentra inactiva. Selecciona otra para continuar.'

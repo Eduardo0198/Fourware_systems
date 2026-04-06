@@ -54,14 +54,12 @@ router.get('/confirmar-reserva',
 router.get('/reservas',
     protegerRuta,
     tieneRol(['Concesionario']),
-    requiereCuentaActiva,
     concesionarioController.reservas
 );
 
 router.get('/reserva/:folio',
     protegerRuta,
     tieneRol(['Concesionario']),
-    requiereCuentaActiva,
     concesionarioController.detalleReserva
 );
 

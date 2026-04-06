@@ -70,10 +70,15 @@
                                     +
                                 </button>
                             </form>
-                            <a href="/concesionario/carrito/eliminar/<%= p.sku %>"
-                               class="cart-remove-link">
-                                Eliminar
-                            </a>
+                            <form method="POST"
+                                  action="/concesionario/carrito/eliminar"
+                                  class="cart-remove-form"
+                                  onsubmit="return confirm('¿Deseas eliminar este producto del carrito?');">
+                                <input type="hidden" name="sku" value="<%= p.sku %>">
+                                <button type="submit" class="cart-remove-link">
+                                    Eliminar
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </article>

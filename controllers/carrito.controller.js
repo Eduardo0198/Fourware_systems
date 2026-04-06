@@ -3,7 +3,6 @@ const campaniaModel = require('../models/campania.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
-const bitacora = require('../models/bitacora.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 
 function generarFolioReserva() {
@@ -44,6 +43,17 @@ function sincronizarCarritoConProducto(itemActual, producto) {
     };
 }
 
+function obtenerCarritoActivo(req) {
+    const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+
+    if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
+        req.session.carrito = [];
+        req.session.carritoCuentaId = cuentaActivaId;
+    }
+
+    return req.session.carrito || [];
+}
+
 exports.agregarProducto = (req, res) => {
     const sku = String(req.body.sku || '').trim();
     const cantidadNumerica = parseInt(req.body.cantidad, 10);
@@ -59,9 +69,7 @@ exports.agregarProducto = (req, res) => {
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
         if (err) {
-            // inicio caso 8 lau
             registrarEvento(req, 'Error al agregar producto al carrito');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
@@ -70,9 +78,7 @@ exports.agregarProducto = (req, res) => {
         }
 
         if (!result || result.length === 0) {
-            // inicio caso 8 lau
             registrarEvento(req, 'Intento de agregar producto al carrito sin campaña activa');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'warning',
                 texto: 'La campaña de preventa no se encuentra disponible en este momento.'
@@ -93,10 +99,10 @@ exports.agregarProducto = (req, res) => {
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
                 console.error(productoErr);
-                bitacora.registrar(
-                    req.session.usuario?.correo || null,
+                registrarEvento(
+                    req,
                     `Error al consultar producto ${sku} para agregar al carrito`,
-                    req.ip
+                    req.session.usuario?.correo || null
                 );
                 req.session.mensaje = {
                     tipo: 'danger',
@@ -106,10 +112,10 @@ exports.agregarProducto = (req, res) => {
             }
 
             if (!producto) {
-                bitacora.registrar(
-                    req.session.usuario?.correo || null,
+                registrarEvento(
+                    req,
                     `Intento de agregar producto inexistente ${sku} al carrito`,
-                    req.ip
+                    req.session.usuario?.correo || null
                 );
                 req.session.mensaje = {
                     tipo: 'warning',
@@ -132,11 +138,7 @@ exports.agregarProducto = (req, res) => {
 
             const correo = req.session.usuario?.correo
                      || req.session.usuario?.usuario?.correo;
-            bitacora.registrar(
-                correo,
-                `Agregó producto ${sku} al carrito`,
-                req.ip
-            );
+            registrarEvento(req, `Agregó producto ${sku} al carrito`, correo);
 
             req.session.mensaje = {
                 tipo: 'success',
@@ -197,14 +199,51 @@ exports.verCarrito = (req, res) => {
 };
 
 exports.eliminarProducto = (req, res) => {
-    const { sku } = req.params;
-    let carrito = req.session.carrito || [];
-    carrito = carrito.filter(p => p.sku !== sku);
-    req.session.carrito = carrito;
-    // inicio caso 8 lau
-    registrarEvento(req, 'Eliminación de producto del carrito');
-    // fin caso 8 lau
-    res.redirect('/concesionario/carrito');
+    const sku = String(req.body.sku || '').trim();
+
+    try {
+        const carrito = obtenerCarritoActivo(req);
+
+        if (!Array.isArray(carrito) || carrito.length === 0) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'El producto seleccionado no existe en el carrito actual.'
+            };
+            return res.redirect('/concesionario/carrito');
+        }
+
+        const index = carrito.findIndex((producto) => producto.sku === sku);
+
+        if (index === -1) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'El producto seleccionado no existe en el carrito actual.'
+            };
+            return res.redirect('/concesionario/carrito');
+        }
+
+        const [productoEliminado] = carrito.splice(index, 1);
+        req.session.carrito = carrito;
+
+        registrarEvento(
+            req,
+            `Eliminó producto ${productoEliminado?.sku || sku} del carrito`
+        );
+
+        req.session.mensaje = {
+            tipo: 'success',
+            texto: 'Producto eliminado correctamente del carrito.'
+        };
+        return res.redirect('/concesionario/carrito');
+    } catch (error) {
+        console.error(error);
+        registrarEvento(req, `Error al eliminar producto ${sku || 'desconocido'} del carrito`);
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'No fue posible eliminar el producto del carrito. Intente nuevamente.'
+        };
+        return res.redirect('/concesionario/carrito');
+    }
 };
 
 exports.actualizarCantidad = (req, res) => {
@@ -225,9 +264,7 @@ exports.actualizarCantidad = (req, res) => {
     const index = carrito.findIndex(p => p.sku === sku);
 
     if (index === -1) {
-        // inicio caso 8 lau
         registrarEvento(req, 'Intento de modificar producto inexistente en carrito');
-        // fin caso 8 lau
         req.session.mensaje = {
             tipo: 'warning',
             texto: 'El producto seleccionado no existe en el carrito.'
@@ -237,9 +274,7 @@ exports.actualizarCantidad = (req, res) => {
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
         if (err) {
-            // inicio caso 8 lau
             registrarEvento(req, 'Error al modificar producto del carrito');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible actualizar el producto en el carrito.'
@@ -248,9 +283,7 @@ exports.actualizarCantidad = (req, res) => {
         }
 
         if (!result || result.length === 0) {
-            // inicio caso 8 lau
             registrarEvento(req, 'Intento de modificar carrito sin campaña activa');
-            // fin caso 8 lau
             req.session.mensaje = {
                 tipo: 'warning',
                 texto: 'La campaña de preventa no se encuentra disponible.'
@@ -260,9 +293,7 @@ exports.actualizarCantidad = (req, res) => {
 
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
-                // inicio caso 8 lau
                 registrarEvento(req, 'Error técnico al validar producto en carrito');
-                // fin caso 8 lau
                 req.session.mensaje = {
                     tipo: 'danger',
                     texto: 'No fue posible actualizar el producto en el carrito.'
@@ -271,9 +302,7 @@ exports.actualizarCantidad = (req, res) => {
             }
 
             if (!producto) {
-                // inicio caso 8 lau
                 registrarEvento(req, 'Intento de modificar producto no disponible en carrito');
-                // fin caso 8 lau
                 req.session.mensaje = {
                     tipo: 'warning',
                     texto: 'El producto seleccionado ya no se encuentra disponible.'
@@ -296,9 +325,7 @@ exports.actualizarCantidad = (req, res) => {
             carrito[index].cantidad = nuevaCantidad;
             req.session.carrito = carrito;
 
-            // inicio caso 8 lau
             registrarEvento(req, 'Modificación de productos en carrito');
-            // fin caso 8 lau
 
             return res.redirect('/concesionario/carrito');
         });
@@ -316,11 +343,7 @@ exports.confirmarReserva = (req, res) => {
     }
 
     if (!carrito || carrito.length === 0) {
-        bitacora.registrar(
-            usuario.correo,
-            'Intentó confirmar una reserva con el carrito vacío',
-            req.ip
-        );
+        registrarEvento(req, 'Intentó confirmar una reserva con el carrito vacío', usuario.correo);
         req.session.mensaje = {
             tipo: 'warning',
             texto: 'El carrito de preventa se encuentra vacío.'
@@ -339,11 +362,7 @@ exports.confirmarReserva = (req, res) => {
     campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
         if (campaniaErr) {
             console.error(campaniaErr);
-            bitacora.registrar(
-                usuario.correo,
-                'Error al validar campaña durante confirmación de reserva',
-                req.ip
-            );
+            registrarEvento(req, 'Error al validar campaña durante confirmación de reserva', usuario.correo);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
@@ -354,11 +373,7 @@ exports.confirmarReserva = (req, res) => {
         const campaniaActiva = campanias && campanias[0];
 
         if (!campaniaActiva) {
-            bitacora.registrar(
-                usuario.correo,
-                'Intentó confirmar una reserva sin campaña activa',
-                req.ip
-            );
+            registrarEvento(req, 'Intentó confirmar una reserva sin campaña activa', usuario.correo);
             req.session.mensaje = {
                 tipo: 'warning',
                 texto: 'La campaña de preventa no se encuentra disponible.'
@@ -369,11 +384,7 @@ exports.confirmarReserva = (req, res) => {
         cuentaModel.obtenerSucursalesActivasPorCuenta(cuentaActivaId, (sucursalesErr, sucursales) => {
             if (sucursalesErr) {
                 console.error(sucursalesErr);
-                bitacora.registrar(
-                    usuario.correo,
-                    'Error al validar sucursal durante confirmación de reserva',
-                    req.ip
-                );
+                registrarEvento(req, 'Error al validar sucursal durante confirmación de reserva', usuario.correo);
                 req.session.mensaje = {
                     tipo: 'danger',
                     texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
@@ -412,11 +423,7 @@ exports.confirmarReserva = (req, res) => {
                     if (productoErr) {
                         errorDisponibilidad = true;
                         console.error(productoErr);
-                        bitacora.registrar(
-                            usuario.correo,
-                            `Error al validar disponibilidad del producto ${item.sku}`,
-                            req.ip
-                        );
+                        registrarEvento(req, `Error al validar disponibilidad del producto ${item.sku}`, usuario.correo);
                         req.session.mensaje = {
                             tipo: 'danger',
                             texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
@@ -426,11 +433,7 @@ exports.confirmarReserva = (req, res) => {
 
                     if (!producto || Number(producto.activo) !== 1) {
                         errorDisponibilidad = true;
-                        bitacora.registrar(
-                            usuario.correo,
-                            `Producto ${item.sku} no disponible durante confirmación de reserva`,
-                            req.ip
-                        );
+                        registrarEvento(req, `Producto ${item.sku} no disponible durante confirmación de reserva`, usuario.correo);
                         req.session.mensaje = {
                             tipo: 'warning',
                             texto: 'Uno o más productos del carrito ya no se encuentran disponibles.'
@@ -452,11 +455,7 @@ exports.confirmarReserva = (req, res) => {
                         cancelacionModel.obtener((configErr, configuracion) => {
                             if (configErr) {
                                 console.error(configErr);
-                                bitacora.registrar(
-                                    usuario.correo,
-                                    'Error al obtener la ventana de cancelación configurada',
-                                    req.ip
-                                );
+                                registrarEvento(req, 'Error al obtener la ventana de cancelación configurada', usuario.correo);
                                 req.session.mensaje = {
                                     tipo: 'danger',
                                     texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
@@ -480,11 +479,7 @@ exports.confirmarReserva = (req, res) => {
                             }, productosValidados, (reservaErr) => {
                                 if (reservaErr) {
                                     console.error(reservaErr);
-                                    bitacora.registrar(
-                                        usuario.correo,
-                                        `Error al registrar la reserva ${folio}`,
-                                        req.ip
-                                    );
+                                    registrarEvento(req, `Error al registrar la reserva ${folio}`, usuario.correo);
                                     req.session.mensaje = {
                                         tipo: 'danger',
                                         texto: 'No fue posible confirmar la reserva. Intente nuevamente.'
@@ -492,11 +487,7 @@ exports.confirmarReserva = (req, res) => {
                                     return res.redirect('/concesionario/carrito');
                                 }
 
-                                bitacora.registrar(
-                                    usuario.correo,
-                                    `Confirmó reserva ${folio}`,
-                                    req.ip
-                                );
+                                registrarEvento(req, `Confirmó reserva ${folio}`, usuario.correo);
 
                                 req.session.carrito = [];
                                 req.session.carritoCuentaId = cuentaActivaId;
