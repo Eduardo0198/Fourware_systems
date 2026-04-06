@@ -35,6 +35,59 @@
             </div>
 
             <div class="col-md-4 mb-3">
+                <label class="form-label">Campana</label>
+                <select name="id_campania" class="form-select">
+                    <option value="">Todas las campanas</option>
+                    <% campanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(formData.id_campania || '') === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Tipo de reporte</label>
+                <select name="tipo_reporte" id="tipoReporte" class="form-select" required>
+                    <option value="general" <%= formData.tipo_reporte === 'general' ? 'selected' : '' %>>General</option>
+                    <option value="cuenta" <%= formData.tipo_reporte === 'cuenta' ? 'selected' : '' %>>Por cuenta</option>
+                    <option value="concesionario" <%= formData.tipo_reporte === 'concesionario' ? 'selected' : '' %>>Por concesionario</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3" id="filtroCuentaWrap">
+                <label class="form-label">Cuenta</label>
+                <select name="id_cuenta" id="filtroCuenta" class="form-select">
+                    <option value="">Selecciona una cuenta</option>
+                    <% cuentas.forEach((cuenta) => { %>
+                        <option
+                            value="<%= cuenta.id_cuenta %>"
+                            <%= String(formData.id_cuenta || '') === String(cuenta.id_cuenta) ? 'selected' : '' %>>
+                            <%= cuenta.nombre %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3" id="filtroConcesionarioWrap">
+                <label class="form-label">Concesionario</label>
+                <select name="correo_concesionario" id="filtroConcesionario" class="form-select">
+                    <option value="">Selecciona un concesionario</option>
+                    <% concesionarios.forEach((concesionario) => { %>
+                        <option
+                            value="<%= concesionario.correo %>"
+                            <%= String(formData.correo_concesionario || '') === String(concesionario.correo) ? 'selected' : '' %>>
+                            <%= concesionario.nombre %> | <%= concesionario.correo %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
                 <label class="form-label">Formato</label>
                 <select name="formato" class="form-select" required>
                     <option value="">Selecciona un formato</option>
@@ -71,3 +124,34 @@
         <span class="badge bg-secondary">Campana</span>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tipoReporte = document.getElementById('tipoReporte');
+    const filtroCuentaWrap = document.getElementById('filtroCuentaWrap');
+    const filtroCuenta = document.getElementById('filtroCuenta');
+    const filtroConcesionarioWrap = document.getElementById('filtroConcesionarioWrap');
+    const filtroConcesionario = document.getElementById('filtroConcesionario');
+
+    function actualizarFiltros() {
+        const tipo = tipoReporte.value;
+
+        filtroCuentaWrap.style.display = tipo === 'cuenta' ? '' : 'none';
+        filtroConcesionarioWrap.style.display = tipo === 'concesionario' ? '' : 'none';
+
+        filtroCuenta.required = tipo === 'cuenta';
+        filtroConcesionario.required = tipo === 'concesionario';
+
+        if (tipo !== 'cuenta') {
+            filtroCuenta.value = '';
+        }
+
+        if (tipo !== 'concesionario') {
+            filtroConcesionario.value = '';
+        }
+    }
+
+    tipoReporte.addEventListener('change', actualizarFiltros);
+    actualizarFiltros();
+});
+</script>

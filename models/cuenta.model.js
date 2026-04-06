@@ -44,6 +44,34 @@ exports.obtenerCuentasPorCorreo = (correo, callback) => {
     });
 };
 
+exports.obtenerTodas = (callback) => {
+    const query = `
+        SELECT
+            c.id_cuenta,
+            c.nombre,
+            c.RFC,
+            c.razon_social,
+            c.activo,
+            (
+                SELECT CONCAT_WS(', ', s.direccion, s.municipio, s.estado)
+                FROM Sucursal s
+                WHERE s.id_cuenta = c.id_cuenta
+                ORDER BY s.activo DESC, s.id_sucursal ASC
+                LIMIT 1
+            ) AS direccion
+        FROM Cuenta c
+        ORDER BY c.nombre ASC, c.id_cuenta ASC
+    `;
+
+    db.query(query, (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+
+        callback(null, rows.map(normalizarCuenta));
+    });
+};
+
 exports.obtenerCuentaPorCorreoYId = (correo, idCuenta, callback) => {
     const query = `
         SELECT

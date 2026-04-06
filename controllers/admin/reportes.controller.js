@@ -1,7 +1,11 @@
 const XLSX = require('xlsx');
+const campaniaModel = require('../../models/campania.model');
+const cuentaModel = require('../../models/cuenta.model');
 const reservaModel = require('../../models/reserva.model');
+const usuarioModel = require('../../models/usuario.model');
 const {
     esFechaValida,
+    normalizarCampania,
     registrarBitacora,
     registrarEvento
 } = require('./shared');
@@ -40,15 +44,61 @@ function normalizarReservasReporte(reservas) {
 }
 
 function renderReportes(res, options = {}) {
-    res.render('modules/adminReportes', {
-        pageMessage: options.pageMessage || res.locals.mensaje || null,
-        formData: options.formData || {},
-        totalResultados: options.totalResultados || 0
+    cuentaModel.obtenerTodas((errCuentas, cuentas) => {
+        if (errCuentas) {
+            console.error(errCuentas);
+            return res.status(500).send('No fue posible cargar las cuentas para el reporte.');
+        }
+
+        campaniaModel.obtenerTodas((errCampanias, campanias) => {
+            if (errCampanias) {
+                console.error(errCampanias);
+                return res.status(500).send('No fue posible cargar las campanas para el reporte.');
+            }
+
+            usuarioModel.obtenerConcesionariosConReservasConfirmadas((errUsuarios, concesionarios) => {
+                if (errUsuarios) {
+                    console.error(errUsuarios);
+                    return res.status(500).send('No fue posible cargar los concesionarios para el reporte.');
+                }
+
+                res.render('modules/adminReportes', {
+                    pageMessage: options.pageMessage || res.locals.mensaje || null,
+                    formData: {
+                        tipo_reporte: 'general',
+                        ...options.formData
+                    },
+                    totalResultados: options.totalResultados || 0,
+                    cuentas,
+                    campanias: campanias.map(normalizarCampania),
+                    concesionarios
+                });
+            });
+        });
     });
 }
 
-function construirNombreArchivo(fechaInicio, fechaFin, formato) {
-    return `reporte_preventas_${fechaInicio}_${fechaFin}.${formato}`;
+function construirNombreArchivo(fechaInicio, fechaFin, formato, tipoReporte, filtroValor, idCampania) {
+    const segmentos = [
+        'reporte_preventas',
+        fechaInicio,
+        fechaFin,
+        tipoReporte
+    ];
+
+    if (filtroValor) {
+        segmentos.push(
+            tipoReporte === 'cuenta'
+                ? `cuenta-${filtroValor}`
+                : `concesionario-${String(filtroValor).replace(/[^a-zA-Z0-9_-]/g, '-')}`
+        );
+    }
+
+    if (idCampania) {
+        segmentos.push(`campana-${idCampania}`);
+    }
+
+    return `${segmentos.join('_')}.${formato}`;
 }
 
 function construirFilasExportacion(registros) {
@@ -110,14 +160,18 @@ exports.reportesPost = (req, res) => {
     const formData = {
         fecha_inicio: String(req.body.fecha_inicio || '').trim(),
         fecha_fin: String(req.body.fecha_fin || '').trim(),
-        formato: String(req.body.formato || '').trim().toLowerCase()
+        formato: String(req.body.formato || '').trim().toLowerCase(),
+        id_campania: String(req.body.id_campania || '').trim(),
+        tipo_reporte: String(req.body.tipo_reporte || '').trim().toLowerCase(),
+        id_cuenta: String(req.body.id_cuenta || '').trim(),
+        correo_concesionario: String(req.body.correo_concesionario || '').trim()
     };
 
-    if (Object.values(formData).some((valor) => !valor)) {
+    if (!formData.fecha_inicio || !formData.fecha_fin || !formData.formato || !formData.tipo_reporte) {
         return renderReportes(res, {
             pageMessage: {
                 tipo: 'danger',
-                texto: 'Debes capturar fecha inicial, fecha final y formato del reporte.'
+                texto: 'Debes capturar fecha inicial, fecha final, tipo de reporte y formato.'
             },
             formData
         });
@@ -153,9 +207,72 @@ exports.reportesPost = (req, res) => {
         });
     }
 
-    reservaModel.obtenerReservasConfirmadasPorPeriodo(
-        formData.fecha_inicio,
-        formData.fecha_fin,
+    if (!['general', 'cuenta', 'concesionario'].includes(formData.tipo_reporte)) {
+        return renderReportes(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'El tipo de reporte seleccionado no es valido.'
+            },
+            formData
+        });
+    }
+
+    const idCampania = formData.id_campania ? parseInt(formData.id_campania, 10) : null;
+    const idCuenta = formData.tipo_reporte === 'cuenta' && formData.id_cuenta
+        ? parseInt(formData.id_cuenta, 10)
+        : null;
+    const correoConcesionario = formData.tipo_reporte === 'concesionario'
+        ? formData.correo_concesionario
+        : null;
+
+    if (formData.tipo_reporte === 'cuenta' && !formData.id_cuenta) {
+        return renderReportes(res, {
+            pageMessage: {
+                tipo: 'warning',
+                texto: 'Debes seleccionar una cuenta para el reporte por cuenta.'
+            },
+            formData
+        });
+    }
+
+    if (formData.tipo_reporte === 'concesionario' && !formData.correo_concesionario) {
+        return renderReportes(res, {
+            pageMessage: {
+                tipo: 'warning',
+                texto: 'Debes seleccionar un concesionario para ese tipo de reporte.'
+            },
+            formData
+        });
+    }
+
+    if (formData.tipo_reporte === 'cuenta' && Number.isNaN(idCuenta)) {
+        return renderReportes(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'La cuenta seleccionada no es valida.'
+            },
+            formData
+        });
+    }
+
+    if (formData.id_campania && Number.isNaN(idCampania)) {
+        return renderReportes(res, {
+            pageMessage: {
+                tipo: 'danger',
+                texto: 'La campana seleccionada no es valida.'
+            },
+            formData
+        });
+    }
+
+    reservaModel.obtenerReservasConfirmadasConFiltros(
+        {
+            fechaInicio: formData.fecha_inicio,
+            fechaFin: formData.fecha_fin,
+            idCuenta,
+            correo: correoConcesionario,
+            idCampania
+        },
         (err, reservas) => {
             if (err) {
                 console.error(err);
@@ -191,7 +308,10 @@ exports.reportesPost = (req, res) => {
             const nombreArchivo = construirNombreArchivo(
                 formData.fecha_inicio,
                 formData.fecha_fin,
-                formData.formato
+                formData.formato,
+                formData.tipo_reporte,
+                idCuenta || correoConcesionario,
+                idCampania
             );
 
             registrarBitacora(
