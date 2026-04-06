@@ -1,93 +1,157 @@
 <h2 class="mb-4">
-Reportes Consolidados
+    Reporte Consolidado de Preventas
 </h2>
 <p class="text-muted">
-Análisis visual del sistema de preventa.
+    CU-13. Genera un archivo CSV o Excel con las reservas confirmadas dentro de un rango de fechas.
 </p>
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card p-3 chart-container">
-            <h6 class="text-center">
-            Ventas por mes
-            </h6>
-            <canvas id="ventasChart" class="chart-small"></canvas>
-        </div>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
     </div>
-    <div class="col-md-6 mb-4">
-        <div class="card p-3 chart-container">
-            <h6 class="text-center">
-            Distribución de productos
-            </h6>
-            <canvas id="productosChart" class="chart-small"></canvas>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <form method="post" action="/admin/reportes">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha inicial</label>
+                <input
+                    type="date"
+                    name="fecha_inicio"
+                    class="form-control"
+                    value="<%= formData.fecha_inicio || '' %>"
+                    required>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha final</label>
+                <input
+                    type="date"
+                    name="fecha_fin"
+                    class="form-control"
+                    value="<%= formData.fecha_fin || '' %>"
+                    required>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Campana</label>
+                <select name="id_campania" class="form-select">
+                    <option value="">Todas las campanas</option>
+                    <% campanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(formData.id_campania || '') === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
         </div>
-    </div>
-    <div class="col-md-6 mb-4">
-        <div class="card p-3 chart-container">
-            <h6 class="text-center">
-            Relación peso / volumen
-            </h6>
-            <canvas id="scatterChart" class="chart-small"></canvas>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Tipo de reporte</label>
+                <select name="tipo_reporte" id="tipoReporte" class="form-select" required>
+                    <option value="general" <%= formData.tipo_reporte === 'general' ? 'selected' : '' %>>General</option>
+                    <option value="cuenta" <%= formData.tipo_reporte === 'cuenta' ? 'selected' : '' %>>Por cuenta</option>
+                    <option value="concesionario" <%= formData.tipo_reporte === 'concesionario' ? 'selected' : '' %>>Por concesionario</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3" id="filtroCuentaWrap">
+                <label class="form-label">Cuenta</label>
+                <select name="id_cuenta" id="filtroCuenta" class="form-select">
+                    <option value="">Selecciona una cuenta</option>
+                    <% cuentas.forEach((cuenta) => { %>
+                        <option
+                            value="<%= cuenta.id_cuenta %>"
+                            <%= String(formData.id_cuenta || '') === String(cuenta.id_cuenta) ? 'selected' : '' %>>
+                            <%= cuenta.nombre %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3" id="filtroConcesionarioWrap">
+                <label class="form-label">Concesionario</label>
+                <select name="correo_concesionario" id="filtroConcesionario" class="form-select">
+                    <option value="">Selecciona un concesionario</option>
+                    <% concesionarios.forEach((concesionario) => { %>
+                        <option
+                            value="<%= concesionario.correo %>"
+                            <%= String(formData.correo_concesionario || '') === String(concesionario.correo) ? 'selected' : '' %>>
+                            <%= concesionario.nombre %> | <%= concesionario.correo %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Formato</label>
+                <select name="formato" class="form-select" required>
+                    <option value="">Selecciona un formato</option>
+                    <option value="csv" <%= formData.formato === 'csv' ? 'selected' : '' %>>CSV</option>
+                    <option value="xlsx" <%= formData.formato === 'xlsx' ? 'selected' : '' %>>Excel</option>
+                </select>
+            </div>
         </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                Generar reporte
+            </button>
+            <a href="/admin" class="btn btn-outline-secondary">
+                Volver
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="card p-4">
+    <h4 class="mb-3">Columnas incluidas</h4>
+    <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-secondary">Folio</span>
+        <span class="badge bg-secondary">Cuenta</span>
+        <span class="badge bg-secondary">Distribuidor</span>
+        <span class="badge bg-secondary">Fecha de reserva</span>
+        <span class="badge bg-secondary">Estatus</span>
+        <span class="badge bg-secondary">Subtotal</span>
+        <span class="badge bg-secondary">IVA</span>
+        <span class="badge bg-secondary">Total</span>
+        <span class="badge bg-secondary">Peso total</span>
+        <span class="badge bg-secondary">Volumen total</span>
+        <span class="badge bg-secondary">Campana</span>
     </div>
 </div>
+
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tipoReporte = document.getElementById('tipoReporte');
+    const filtroCuentaWrap = document.getElementById('filtroCuentaWrap');
+    const filtroCuenta = document.getElementById('filtroCuenta');
+    const filtroConcesionarioWrap = document.getElementById('filtroConcesionarioWrap');
+    const filtroConcesionario = document.getElementById('filtroConcesionario');
 
-document.addEventListener("DOMContentLoaded", function () {
-new Chart(document.getElementById('ventasChart'), {
-    type: 'bar',
-    data: {
-        labels: ['Enero','Febrero','Marzo','Abril'],
-        datasets: [{
-            label: 'Ventas',
-            data: [120,190,300,250],
-            backgroundColor: '#4a8ad8'
-        }]
-    }
-    }
-);
+    function actualizarFiltros() {
+        const tipo = tipoReporte.value;
 
-new Chart(document.getElementById('productosChart'), {
-    type: 'pie',
-    data: {
-        labels: ['Exterior','Automotriz','Industrial'],
-        datasets: [{
-            data: [30,40,30],
-            backgroundColor: [
-            '#4a8ad8',
-            '#2f5fa6',
-            '#183c6b'
-            ]
-        }]
-    }
-    }
-);
+        filtroCuentaWrap.style.display = tipo === 'cuenta' ? '' : 'none';
+        filtroConcesionarioWrap.style.display = tipo === 'concesionario' ? '' : 'none';
 
-new Chart(document.getElementById('scatterChart'), {
-    type: 'scatter',
-    data: {
-        datasets: [{
-            label: 'Peso vs Volumen',
-            data: [
-            {x:5,y:10},
-            {x:8,y:15},
-            {x:12,y:20},
-            {x:15,y:30}
-            ],
-            backgroundColor:'#2f5fa6'
-        }]
-    },
-    options:{
-        scales:{
-            x:{
-                title:{display:true,text:'Peso'}
-                },
-                y:{
-                title:{display:true,text:'Volumen'}
-                }
-                }
-            }
+        filtroCuenta.required = tipo === 'cuenta';
+        filtroConcesionario.required = tipo === 'concesionario';
+
+        if (tipo !== 'cuenta') {
+            filtroCuenta.value = '';
         }
-    );
-});
 
+        if (tipo !== 'concesionario') {
+            filtroConcesionario.value = '';
+        }
+    }
+
+    tipoReporte.addEventListener('change', actualizarFiltros);
+    actualizarFiltros();
+});
 </script>

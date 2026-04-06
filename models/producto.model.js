@@ -40,6 +40,25 @@ exports.obtenerPorSku = (sku, callback) => {
     });
 };
 
+// recibe un arreglo de SKUs y 
+// devuelve un arreglo con los SKUs que existen en la base de datos
+exports.obtenerPorSkus = (skus, callback) => {
+    if (!Array.isArray(skus) || skus.length === 0) {
+        return callback(null, []);
+    }
+    // se construye una consulta con tantos placeholders como SKUs se recibieron
+    const placeholders = skus.map(() => '?').join(', ');
+    const query = `
+        SELECT SKU
+        FROM Producto
+        WHERE SKU IN (${placeholders})
+    `;
+
+    db.query(query, skus, callback);
+};
+
+
+
 exports.registrar = (producto, callback) => {
     const query = `
         INSERT INTO Producto (
@@ -71,6 +90,45 @@ exports.registrar = (producto, callback) => {
         producto.activo,
         producto.id_campania
     ], callback);
+};
+
+exports.registrarMultiples = (productos, callback) => {
+    if (!Array.isArray(productos) || productos.length === 0) {
+        return callback(null, { affectedRows: 0 });
+    }
+
+    const values = productos.map((producto) => ([
+        producto.sku,
+        producto.nombre_comercial,
+        producto.descripcion,
+        producto.precio_unitario,
+        producto.peso_unitario,
+        producto.volumen_unitario,
+        producto.medida_primaria,
+        producto.unidad_venta,
+        producto.imagen,
+        producto.activo,
+        producto.id_campania
+    ]));
+
+    const query = `
+        INSERT INTO Producto (
+            SKU,
+            nombre_comercial,
+            descripcion,
+            precio_unitario,
+            peso_unitario,
+            volumen_unitario,
+            medida_primaria,
+            unidad_venta,
+            imagen,
+            activo,
+            id_campania
+        )
+        VALUES ?
+    `;
+
+    db.query(query, [values], callback);
 };
 
 exports.actualizarPorSku = (sku, producto, callback) => {

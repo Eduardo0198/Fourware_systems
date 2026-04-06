@@ -1,8 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const adminController = require('../controllers/admin.controller');
 
 const { protegerRuta, tieneRol, tienePrivilegio } = require('../middlewares/auth.middleware');
+const uploadCargaMasiva = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    }
+});
 
 router.get('/dashboard',
     protegerRuta,
@@ -49,6 +56,14 @@ router.get('/catalogo/carga-masiva',
     tieneRol(['Administrador']),
     tienePrivilegio(['carga_masiva_productos']), 
     adminController.cargaMasiva
+);
+
+router.post('/catalogo/carga-masiva',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['carga_masiva_productos']),
+    uploadCargaMasiva.single('archivo'),
+    adminController.cargaMasivaPost
 );
 
 router.get('/campanas',
@@ -124,6 +139,13 @@ router.get('/reportes',
     tieneRol(['Administrador']),
     tienePrivilegio(['generar_reporte_preventas']), 
     adminController.reportes
+);
+
+router.post('/reportes',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['generar_reporte_preventas']),
+    adminController.reportesPost
 );
 
 router.get('/auditoria',

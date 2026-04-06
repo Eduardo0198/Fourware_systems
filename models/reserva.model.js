@@ -142,6 +142,73 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
     db.query(query, [fechaInicio, fechaFin], callback);
 };
 
+exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    if (filtros.correo) {
+        condiciones.push('r.correo = ?');
+        params.push(filtros.correo);
+    }
+
+    if (filtros.idCampania) {
+        condiciones.push(`
+            EXISTS (
+                SELECT 1
+                FROM Reserva_Producto rp_filtro
+                JOIN Producto p_filtro ON p_filtro.SKU = rp_filtro.SKU
+                WHERE rp_filtro.folio = r.folio
+                  AND p_filtro.id_campania = ?
+            )
+        `);
+        params.push(filtros.idCampania);
+    }
+
+    const query = `
+        SELECT
+            r.folio,
+            r.fecha,
+            r.estatus,
+            r.subtotal,
+            r.iva,
+            r.total,
+            c.nombre AS cuenta,
+            u.nombre AS distribuidor,
+            u.correo,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total,
+            GROUP_CONCAT(DISTINCT ca.nombre ORDER BY ca.nombre SEPARATOR ', ') AS campanias
+        FROM Reserva r
+        JOIN Cuenta c ON c.id_cuenta = r.id_cuenta
+        JOIN Usuario u ON u.correo = r.correo
+        LEFT JOIN Reserva_Producto rp ON rp.folio = r.folio
+        LEFT JOIN Producto p ON p.SKU = rp.SKU
+        LEFT JOIN Campania ca ON ca.id_campania = p.id_campania
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY
+            r.folio,
+            r.fecha,
+            r.estatus,
+            r.subtotal,
+            r.iva,
+            r.total,
+            c.nombre,
+            u.nombre,
+            u.correo
+        ORDER BY r.fecha DESC, r.folio DESC
+    `;
+
+    db.query(query, params, callback);
+};
+
 // fin ---- fabrizio----------
 
 exports.crearReservaConProductos = (data, productos, callback) => {

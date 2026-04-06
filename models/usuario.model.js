@@ -27,3 +27,17 @@ exports.obtenerPrivilegios = (correo, callback) => {
     `;
     db.query(query, [correo], callback);
 };
+
+exports.obtenerConcesionariosConReservasConfirmadas = (callback) => {
+    const query = `
+        SELECT DISTINCT
+            u.correo,
+            u.nombre
+        FROM Usuario u
+        JOIN Reserva r ON r.correo = u.correo
+        WHERE r.estatus = 1
+        ORDER BY u.nombre ASC, u.correo ASC
+    `;
+
+    db.query(query, callback);
+};
