@@ -1,14 +1,10 @@
-const db = require('../config/db');
 const concesionarioModel = require('../models/concesionario.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
-const bitacora = require('../models/bitacora.model');
 const calificacionModel = require('../models/calificacion.model');
 const reservaModel = require('../models/reserva.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
-
-// inicio ---- fabrizio ----- helpersCancelacionReservas --
 
 function formatearFecha(valor, incluirHora = false) {
     if (!valor) {
@@ -82,7 +78,33 @@ function obtenerReservaNormalizada(folio, correo, idCuenta, callback) {
     });
 }
 
-// fin ---- fabrizio----------
+function obtenerContextoCuentaActiva(req, callback) {
+    const correo = req.session.usuario?.correo;
+    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
+
+    if (!correo || !idCuenta) {
+        return callback(null, null);
+    }
+
+    cuentaModel.obtenerCuentaPorCorreoYId(correo, idCuenta, (err, cuenta) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!cuenta || !cuenta.activo) {
+            return callback(null, null);
+        }
+
+        return callback(null, { correo, idCuenta });
+    });
+}
+
+function renderHistorialReservas(res, reservas, pageMessage = null) {
+    res.render('modules/concesionarioReservas', {
+        reservas,
+        pageMessage
+    });
+}
 
 function construirConsultaCatalogo(req) {
     return {
@@ -185,21 +207,17 @@ exports.home = (req, res) => {
     concesionarioModel.obtenerTopProductos((err, productos) => {
 
         if (err) {
-            console.log(err);
-            // inicio caso 8 lau
+            console.error(err);
             registrarEvento(req, 'Error al consultar inicio de concesionario');
-            // fin caso 8 lau
             return res.send("Error al obtener productos");
         }
         campaniaModel.obtenerCampaniaActiva((err2, result) => {
 
             if (err2) {
-                console.log(err2);
+                console.error(err2);
             }
             const campania = (result && result.length > 0) ? result[0] : null;
-            // inicio caso 8 lau
             registrarEvento(req, 'Consulta de inicio de concesionario');
-            // fin caso 8 lau
             res.render('modules/concesionarioHome', {
                 productos: productos,
                 campania: campania
@@ -244,10 +262,10 @@ exports.seleccionarCuentaActiva = (req, res) => {
         }
 
         if (!cuenta.activo) {
-            bitacora.registrar(
-                usuario.correo,
+            registrarEvento(
+                req,
                 `Intento de seleccionar cuenta inactiva ${cuenta.id_cuenta} - ${cuenta.nombre}`,
-                req.ip
+                usuario.correo
             );
             req.session.mensaje = {
                 tipo: 'warning',
@@ -275,10 +293,10 @@ exports.seleccionarCuentaActiva = (req, res) => {
                 req.session.carrito = [];
             }
 
-            bitacora.registrar(
-                usuario.correo,
+            registrarEvento(
+                req,
                 `Seleccionó la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,
-                req.ip
+                usuario.correo
             );
 
             req.session.mensaje = {
@@ -294,7 +312,7 @@ exports.seleccionarCuentaActiva = (req, res) => {
 exports.catalogo = (req, res) => {
     obtenerDatosCatalogo(req, (err, data) => {
         if (err) {
-            console.log(err);
+            console.error(err);
             registrarEvento(req, 'Error al consultar catálogo de productos');
             return res.send("Error al obtener catálogo");
         }
@@ -330,7 +348,7 @@ exports.catalogoPredictivo = (req, res) => {
 
     obtenerDatosCatalogo(req, (err, data) => {
         if (err) {
-            console.log(err);
+            console.error(err);
             registrarEvento(req, 'Error en búsqueda predictiva de catálogo');
             return res.status(500).json({
                 ok: false,
@@ -376,7 +394,7 @@ exports.producto = (req, res) => {
 
     campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
         if (campaniaErr) {
-            console.log(campaniaErr);
+            console.error(campaniaErr);
             registrarEvento(req, 'Error al validar campaña vigente para detalle de producto');
             req.session.mensaje = {
                 tipo: 'danger',
@@ -403,7 +421,7 @@ exports.producto = (req, res) => {
             campaniaActiva.id_campania,
             (err, producto) => {
                 if (err) {
-                    console.log(err);
+                    console.error(err);
                     registrarEvento(req, 'Error al consultar detalle técnico y logístico de producto');
                     req.session.mensaje = {
                         tipo: 'danger',
@@ -421,10 +439,9 @@ exports.producto = (req, res) => {
                     return res.redirect('/concesionario/catalogo');
                 }
 
-                // inicio ---- fabrizio ----- detalleProductoConResenas --
                 calificacionModel.obtenerResumenCalificacionesPorSku(sku, (errResumen, resumenCalificaciones) => {
                     if (errResumen) {
-                        console.log(errResumen);
+                        console.error(errResumen);
                         registrarEvento(req, 'Error al consultar resumen de reseñas del producto');
                         req.session.mensaje = {
                             tipo: 'danger',
@@ -435,7 +452,7 @@ exports.producto = (req, res) => {
 
                     calificacionModel.obtenerResenasPorSku(sku, (errResenas, resenas) => {
                         if (errResenas) {
-                            console.log(errResenas);
+                            console.error(errResenas);
                             registrarEvento(req, 'Error al consultar reseñas del producto');
                             req.session.mensaje = {
                                 tipo: 'danger',
@@ -465,7 +482,6 @@ exports.producto = (req, res) => {
                         });
                     });
                 });
-                // fin ---- fabrizio----------
             }
         );
     });
@@ -473,43 +489,66 @@ exports.producto = (req, res) => {
 
 
 exports.confirmarReserva = (req, res) => {
-    // inicio caso 8 lau
     registrarEvento(req, 'Consulta de confirmación de reserva');
-    // fin caso 8 lau
     res.render('modules/concesionarioConfirmarReserva');
 };
 
 exports.reservas = (req, res) => {
-    const correo = req.session.usuario?.correo;
-    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
-
-    cancelacionModel.obtener((configErr, configuracion) => {
-        if (configErr) {
-            console.error(configErr);
+    obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
+        if (contextoErr) {
+            console.error(contextoErr);
+            registrarEvento(req, 'Error al validar cuenta activa para historial de reservas');
             req.session.mensaje = {
                 tipo: 'danger',
-                texto: 'No fue posible consultar la configuración de cancelación.'
+                texto: 'No fue posible consultar el historial de reservas. Intente nuevamente.'
             };
-            return res.render('modules/concesionarioReservas', { reservas: [] });
+            return res.redirect('/concesionario/home');
         }
 
-        reservaModel.obtenerReservasPorCorreoYCuenta(correo, idCuenta, (err, reservas) => {
-            if (err) {
-                console.error(err);
-                req.session.mensaje = {
+        if (!contexto) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'No fue posible identificar una cuenta activa para el usuario.'
+            };
+            return res.redirect('/concesionario/home');
+        }
+
+        const { correo, idCuenta } = contexto;
+
+        cancelacionModel.obtener((configErr, configuracion) => {
+            if (configErr) {
+                console.error(configErr);
+                registrarEvento(req, 'Error al consultar historial de reservas');
+                return renderHistorialReservas(res, [], {
                     tipo: 'danger',
-                    texto: 'No fue posible consultar tus reservas.'
-                };
-                return res.render('modules/concesionarioReservas', { reservas: [] });
+                    texto: 'No fue posible consultar el historial de reservas. Intente nuevamente.'
+                });
             }
 
-            // inicio caso 8 lau
-            registrarEvento(req, 'Consulta de historial de reservas');
-            // fin caso 8 lau
-            res.render('modules/concesionarioReservas', {
-                reservas: (reservas || []).map((item) =>
+            reservaModel.obtenerReservasPorCorreoYCuenta(correo, idCuenta, (err, reservas) => {
+                if (err) {
+                    console.error(err);
+                    registrarEvento(req, 'Error al consultar historial de reservas');
+                    return renderHistorialReservas(res, [], {
+                        tipo: 'danger',
+                        texto: 'No fue posible consultar el historial de reservas. Intente nuevamente.'
+                    });
+                }
+
+                const reservasNormalizadas = (reservas || []).map((item) =>
                     normalizarReserva(item, configuracion?.horas_cancelacion || 24)
-                )
+                );
+
+                if (reservasNormalizadas.length === 0) {
+                    registrarEvento(req, 'Consulta de historial de reservas sin registros');
+                    return renderHistorialReservas(res, [], {
+                        tipo: 'info',
+                        texto: 'No existen reservas registradas para la cuenta activa.'
+                    });
+                }
+
+                registrarEvento(req, 'Consulta de historial de reservas');
+                return renderHistorialReservas(res, reservasNormalizadas);
             });
         });
     });
@@ -517,32 +556,50 @@ exports.reservas = (req, res) => {
 
 exports.detalleReserva = (req, res) => {
     const folio = req.params.folio;
-    const correo = req.session.usuario?.correo;
-    const idCuenta = req.session.usuario?.cuentaActiva?.id_cuenta;
-
-    obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
-        if (err) {
-            console.error(err);
+    obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
+        if (contextoErr) {
+            console.error(contextoErr);
+            registrarEvento(req, `Error al validar cuenta activa para detalle de reserva ${folio}`);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible consultar el detalle de la reserva.'
             };
-            return res.redirect('/concesionario/reservas');
+            return res.redirect('/concesionario/home');
         }
 
-        if (!reserva) {
+        if (!contexto) {
             req.session.mensaje = {
                 tipo: 'warning',
-                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+                texto: 'No fue posible identificar una cuenta activa para el usuario.'
             };
-            return res.redirect('/concesionario/reservas');
+            return res.redirect('/concesionario/home');
         }
 
-        // inicio caso 8 lau
-        registrarEvento(req, 'Consulta de detalle de reserva');
-        // fin caso 8 lau
-        res.render('modules/concesionarioDetalleReserva', {
-            reserva
+        const { correo, idCuenta } = contexto;
+
+        obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
+            if (err) {
+                console.error(err);
+                registrarEvento(req, `Error al consultar detalle de reserva ${folio}`);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible consultar el detalle de la reserva.'
+                };
+                return res.redirect('/concesionario/reservas');
+            }
+
+            if (!reserva) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'La reserva seleccionada no existe para la cuenta activa.'
+                };
+                return res.redirect('/concesionario/reservas');
+            }
+
+            registrarEvento(req, `Consulta de detalle de reserva ${folio}`);
+            res.render('modules/concesionarioDetalleReserva', {
+                reserva
+            });
         });
     });
 };
@@ -578,16 +635,12 @@ exports.cancelarReserva = (req, res) => {
             return res.redirect('/concesionario/reservas');
         }
 
-        // inicio caso 8 lau
         registrarEvento(req, 'Consulta de cancelación de reserva');
-        // fin caso 8 lau
         res.render('modules/concesionarioCancelarReserva', {
             reserva
         });
     });
 };
-
-// inicio ---- fabrizio ----- confirmarCancelacionReserva --
 
 exports.cancelarReservaPost = (req, res) => {
     const folio = String(req.body.folio || '').trim();
@@ -658,10 +711,6 @@ exports.cancelarReservaPost = (req, res) => {
     });
 };
 
-// fin ---- fabrizio----------
-
-// inicio ---- lau ----- calificarProducto --
-
 exports.calificarProducto = (req, res) => {
     const sku = req.params.sku || req.body.sku;
     const { calificacion, comentario } = req.body;
@@ -701,5 +750,3 @@ exports.calificarProducto = (req, res) => {
         res.redirect(`/concesionario/producto/${sku}`);
     });
 };
-
-// fin ---- lau----------

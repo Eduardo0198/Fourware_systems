@@ -1,6 +1,13 @@
 <h2>Mis Reservas</h2>
 <hr>
 
+<% const alertMessage = pageMessage || mensaje || null; %>
+<% if (alertMessage) { %>
+    <div class="alert alert-<%= alertMessage.tipo %> mb-3" role="alert">
+        <%= alertMessage.texto %>
+    </div>
+<% } %>
+
 <% if (reservas && reservas.length > 0) { %>
     <table class="table table-striped align-middle">
         <thead>
@@ -8,8 +15,10 @@
                 <th>Folio</th>
                 <th>Fecha</th>
                 <th>Estatus</th>
-                <th>Ventana de cancelación</th>
+                <th>Subtotal</th>
+                <th>IVA</th>
                 <th>Total</th>
+                <th>Fecha límite de cancelación</th>
                 <th>Acción</th>
             </tr>
         </thead>
@@ -23,6 +32,9 @@
                             <%= reserva.estatusTexto %>
                         </span>
                     </td>
+                    <td>$<%= Number(reserva.subtotal || 0).toFixed(2) %></td>
+                    <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
+                    <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
                     <td>
                         <% if (reserva.puedeCancelar) { %>
                             Disponible hasta <%= reserva.fechaCancelacionTexto %>
@@ -32,7 +44,6 @@
                             Venció el <%= reserva.fechaCancelacionTexto %>
                         <% } %>
                     </td>
-                    <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
                     <td class="d-flex gap-2">
                         <a href="/concesionario/reserva/<%= reserva.folio %>" class="btn btn-primary btn-sm">
                             Ver detalle
@@ -48,7 +59,9 @@
         </tbody>
     </table>
 <% } else { %>
-    <div class="alert alert-info">
-        No existen reservas asociadas a la cuenta activa.
-    </div>
+    <% if (!alertMessage) { %>
+        <div class="alert alert-info">
+            No existen reservas registradas para la cuenta activa.
+        </div>
+    <% } %>
 <% } %>

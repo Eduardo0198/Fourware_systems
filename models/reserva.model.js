@@ -8,6 +8,8 @@ exports.obtenerReservasPorCorreoYCuenta = (correo, idCuenta, callback) => {
             r.folio,
             r.estatus,
             r.fecha,
+            r.subtotal,
+            r.iva,
             r.total,
             r.fecha_cancelacion_reserva,
             r.correo,

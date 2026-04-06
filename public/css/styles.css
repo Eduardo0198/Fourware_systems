@@ -634,10 +634,18 @@ body.sidebar-hidden .footer-ppg {
     color:#0f172a;
 }
 
+.cart-remove-form{
+    margin:0;
+}
+
 .cart-remove-link{
+    background:none;
+    border:0;
+    padding:0;
     color:#dc2626;
     text-decoration:none;
     font-weight:700;
+    cursor:pointer;
 }
 
 .cart-remove-link:hover{
