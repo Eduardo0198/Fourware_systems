@@ -1,12 +1,237 @@
-<h2>
-Carga Masiva de Productos
+<h2 class="mb-4">
+    Carga Masiva de Productos
 </h2>
 <p class="text-muted">
-Sube un archivo CSV o Excel con múltiples productos.
+    CU-12. El administrador carga un archivo CSV o Excel para validar productos del catálogo antes de ejecutar la carga real.
 </p>
-<div class="card p-4">
-    <input type="file" class="form-control mb-3">
-    <button class="btn btn-primary">
-        Subir archivo
-    </button>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <form method="post" action="/admin/catalogo/carga-masiva" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Campaña asociada</label>
+                <select name="id_campania" class="form-select" required>
+                    <option value="">Selecciona una campaña</option>
+                    <% campanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(formData.id_campania || '') === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %> | <%= campania.estatusTexto %> | <%= campania.fecha_inicio_texto %> - <%= campania.fecha_fin_texto %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Archivo de carga</label>
+                <input type="file" name="archivo" class="form-control" accept=".csv,.xlsx,.xls" required>
+                <div class="form-text">
+                    Formatos permitidos: CSV, XLSX y XLS.
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                Validar archivo
+            </button>
+            <a href="/admin/catalogo" class="btn btn-outline-secondary">
+                Volver al catálogo
+            </a>
+        </div>
+    </form>
 </div>
+
+<div class="card p-4 mb-4">
+    <h4 class="mb-3">Plantilla esperada</h4>
+    <p class="text-muted mb-2">
+        El archivo debe contener exactamente estas columnas:
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+        <% columnasEsperadas.forEach((columna) => { %>
+            <span class="badge bg-secondary"><%= columna %></span>
+        <% }) %>
+    </div>
+</div>
+
+<% if (resumen) { %>
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3">Resumen preliminar</h4>
+
+        <div class="row mb-3">
+            <div class="col-md-3 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Insertadas</strong>
+                    <div><%= resumen.filasInsertadas || 0 %></div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Archivo</strong>
+                    <div><%= resumen.archivo %></div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Hoja</strong>
+                    <div><%= resumen.hoja %></div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Total de filas</strong>
+                    <div><%= resumen.totalFilas %></div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Listas para carga</strong>
+                    <div><%= resumen.filasListasParaCarga %></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Filas con error</strong>
+                    <div><%= resumen.filasConError %></div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Filas omitidas</strong>
+                    <div><%= resumen.filasOmitidas || 0 %></div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>SKU duplicado en archivo</strong>
+                    <div><%= resumen.filasConSkuDuplicado %></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4 mb-2">
+                <div class="border rounded p-3 h-100">
+                    <strong>Encabezados válidos</strong>
+                    <div><%= resumen.encabezadosValidos ? 'Sí' : 'No' %></div>
+                </div>
+            </div>
+        </div>
+
+        <% if (!resumen.encabezadosValidos) { %>
+            <div class="alert alert-warning">
+                <strong>Problemas detectados en encabezados.</strong><br>
+                <% if (resumen.encabezadosFaltantes.length) { %>
+                    Faltan: <%= resumen.encabezadosFaltantes.join(', ') %><br>
+                <% } %>
+                <% if (resumen.encabezadosDuplicados.length) { %>
+                    Duplicados: <%= resumen.encabezadosDuplicados.join(', ') %>
+                <% } %>
+            </div>
+        <% } %>
+
+        <div class="mb-3">
+            <strong>Encabezados detectados:</strong>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <% resumen.encabezadosDetectados.forEach((encabezado) => { %>
+                    <span class="badge bg-info text-dark"><%= encabezado || '(vacío)' %></span>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3">Vista previa de filas válidas</h4>
+        <% if (resumen.previewValidas.length) { %>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>SKU</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Unidad de venta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resumen.previewValidas.forEach((fila) => { %>
+                            <tr>
+                                <td><%= fila.numeroFila %></td>
+                                <td><strong><%= fila.sku %></strong></td>
+                                <td><%= fila.nombre_comercial %></td>
+                                <td><%= fila.precio_unitario %></td>
+                                <td><%= fila.unidad_venta %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-muted mb-0">No hay filas válidas para mostrar.</p>
+        <% } %>
+    </div>
+
+    <div class="card p-4">
+        <h4 class="mb-3">Vista previa de filas omitidas</h4>
+        <% if ((resumen.previewOmitidas || []).length) { %>
+            <div class="table-responsive mb-4">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>SKU</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resumen.previewOmitidas.forEach((fila) => { %>
+                            <tr>
+                                <td><%= fila.numeroFila %></td>
+                                <td><strong><%= fila.sku %></strong></td>
+                                <td><%= fila.motivo %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-muted">No se detectaron filas omitidas por existencia previa en catálogo.</p>
+        <% } %>
+
+        <h4 class="mb-3">Vista previa de errores</h4>
+        <% if (resumen.previewErrores.length) { %>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>SKU</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resumen.previewErrores.forEach((fila) => { %>
+                            <tr>
+                                <td><%= fila.numeroFila %></td>
+                                <td><strong><%= fila.sku %></strong></td>
+                                <td><%= fila.motivo %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-muted mb-0">No se detectaron errores en las primeras filas procesadas.</p>
+        <% } %>
+    </div>
+<% } %>
