@@ -231,6 +231,7 @@ module.exports = {
     MENSAJE_CANCELACION_FUERA_DE_PLAZO,
     MENSAJE_ERROR_CANCELACION,
     MENSAJE_RESERVA_INVALIDA,
+    formatearFecha,
     normalizarReserva,
     obtenerContextoCuentaActiva,
     obtenerDatosCatalogo,

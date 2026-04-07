@@ -1,27 +1,118 @@
 const cuentaModel = require('../../models/cuenta.model');
 const concesionarioModel = require('../../models/concesionario.model');
-const campaniaModel = require('../../models/campania.model');
+const reservaModel = require('../../models/reserva.model');
 const { registrarEvento } = require('../../utils/auditoria.helper');
+const { obtenerContextoCuentaActiva, formatearFecha } = require('./shared');
+
+function obtenerPrimerNombre(nombreCompleto) {
+    if (!nombreCompleto) {
+        return 'Concesionario';
+    }
+
+    return String(nombreCompleto).trim().split(/\s+/)[0];
+}
 
 exports.home = (req, res) => {
-    concesionarioModel.obtenerTopProductos((err, productos) => {
-        if (err) {
-            console.error(err);
-            registrarEvento(req, 'Error al consultar inicio de concesionario');
-            return res.send('Error al obtener productos');
+    const usuario = req.session.usuario || {};
+    const cuentaActiva = usuario.cuentaActiva || null;
+    const carrito = Array.isArray(req.session.carrito) ? req.session.carrito : [];
+    const productosEnCarrito = carrito.reduce((acumulado, item) => acumulado + Number(item.cantidad || 0), 0);
+
+    obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
+        if (contextoErr) {
+            console.error(contextoErr);
+            registrarEvento(req, 'Error al validar cuenta activa para inicio de concesionario');
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible cargar la información inicial del concesionario.'
+            };
+            return res.redirect('/concesionario/catalogo');
         }
 
-        campaniaModel.obtenerCampaniaActiva((err2, result) => {
-            if (err2) {
-                console.error(err2);
+        concesionarioModel.obtenerTopProductos((topErr, productosTop) => {
+            if (topErr) {
+                console.error(topErr);
+                registrarEvento(req, 'Error al consultar inicio de concesionario');
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible cargar el inicio del concesionario.'
+                };
+                return res.redirect('/concesionario/catalogo');
             }
 
-            const campania = (result && result.length > 0) ? result[0] : null;
-            registrarEvento(req, 'Consulta de inicio de concesionario');
+            if (!contexto) {
+                registrarEvento(req, 'Consulta de inicio de concesionario sin cuenta activa');
+                return res.render('modules/concesionarioHome', {
+                    saludo: obtenerPrimerNombre(usuario.nombre),
+                    cuentaActiva,
+                    resumen: {
+                        totalReservas: 0,
+                        reservasConfirmadas: 0,
+                        reservasCanceladas: 0,
+                        ultimaReservaTexto: 'Sin actividad registrada',
+                        productosEnCarrito
+                    },
+                    reservasRecientes: [],
+                    productosTop: productosTop || []
+                });
+            }
 
-            return res.render('modules/concesionarioHome', {
-                productos,
-                campania
+            reservaModel.obtenerResumenPorCorreoYCuenta(contexto.correo, contexto.idCuenta, (resumenErr, resumenReserva) => {
+                if (resumenErr) {
+                    console.error(resumenErr);
+                    registrarEvento(req, 'Error al consultar resumen de reservas para inicio de concesionario');
+                    req.session.mensaje = {
+                        tipo: 'danger',
+                        texto: 'No fue posible cargar el resumen del concesionario.'
+                    };
+                    return res.redirect('/concesionario/catalogo');
+                }
+
+                reservaModel.obtenerReservasRecientesPorCorreoYCuenta(
+                    contexto.correo,
+                    contexto.idCuenta,
+                    5,
+                    (recientesErr, reservasRecientes) => {
+                        if (recientesErr) {
+                            console.error(recientesErr);
+                            registrarEvento(req, 'Error al consultar reservas recientes para inicio de concesionario');
+                            req.session.mensaje = {
+                                tipo: 'danger',
+                                texto: 'No fue posible cargar la actividad reciente del concesionario.'
+                            };
+                            return res.redirect('/concesionario/catalogo');
+                        }
+
+                        const reservasNormalizadas = (reservasRecientes || []).map((reserva) => ({
+                            ...reserva,
+                            estatusTexto: Number(reserva.estatus) === 1 ? 'Confirmada' : 'Cancelada',
+                            estatusClase: Number(reserva.estatus) === 1 ? 'success' : 'secondary',
+                            fechaTexto: formatearFecha(reserva.fecha),
+                            totalTexto: Number(reserva.total || 0).toLocaleString('es-MX', {
+                                style: 'currency',
+                                currency: 'MXN'
+                            })
+                        }));
+
+                        registrarEvento(req, 'Consulta de inicio de concesionario');
+
+                        return res.render('modules/concesionarioHome', {
+                            saludo: obtenerPrimerNombre(usuario.nombre),
+                            cuentaActiva,
+                            resumen: {
+                                totalReservas: Number(resumenReserva.total_reservas || 0),
+                                reservasConfirmadas: Number(resumenReserva.reservas_confirmadas || 0),
+                                reservasCanceladas: Number(resumenReserva.reservas_canceladas || 0),
+                                ultimaReservaTexto: resumenReserva.ultima_reserva_fecha
+                                    ? formatearFecha(resumenReserva.ultima_reserva_fecha, true)
+                                    : 'Sin actividad registrada',
+                                productosEnCarrito
+                            },
+                            reservasRecientes: reservasNormalizadas,
+                            productosTop: productosTop || []
+                        });
+                    }
+                );
             });
         });
     });

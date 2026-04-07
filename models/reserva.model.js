@@ -1,5 +1,51 @@
 const db = require('../config/db');
 
+exports.obtenerResumenPorCorreoYCuenta = (correo, idCuenta, callback) => {
+    const query = `
+        SELECT
+            COUNT(*) AS total_reservas,
+            SUM(CASE WHEN estatus = 1 THEN 1 ELSE 0 END) AS reservas_confirmadas,
+            SUM(CASE WHEN estatus = 0 THEN 1 ELSE 0 END) AS reservas_canceladas,
+            MAX(fecha) AS ultima_reserva_fecha
+        FROM Reserva
+        WHERE correo = ?
+          AND id_cuenta = ?
+    `;
+
+    db.query(query, [correo, idCuenta], (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+
+        return callback(null, rows[0] || {
+            total_reservas: 0,
+            reservas_confirmadas: 0,
+            reservas_canceladas: 0,
+            ultima_reserva_fecha: null
+        });
+    });
+};
+
+exports.obtenerReservasRecientesPorCorreoYCuenta = (correo, idCuenta, limite, callback) => {
+    const query = `
+        SELECT
+            r.folio,
+            r.estatus,
+            r.fecha,
+            r.total,
+            r.fecha_cancelacion_reserva,
+            s.nombre AS nombre_sucursal
+        FROM Reserva r
+        LEFT JOIN Sucursal s ON s.id_sucursal = r.id_sucursal
+        WHERE r.correo = ?
+          AND r.id_cuenta = ?
+        ORDER BY r.fecha DESC, r.folio DESC
+        LIMIT ?
+    `;
+
+    db.query(query, [correo, idCuenta, Number(limite) || 5], callback);
+};
+
 exports.obtenerReservasPorCorreoYCuenta = (correo, idCuenta, callback) => {
     const query = `
         SELECT
@@ -66,7 +112,8 @@ exports.obtenerDetallePorFolioCorreoYCuenta = (folio, correo, idCuenta, callback
                 rp.precio_aplicado,
                 rp.subtotal_linea,
                 p.nombre_comercial,
-                p.imagen
+                p.imagen,
+                p.medida_primaria
             FROM Reserva_Producto rp
             LEFT JOIN Producto p ON p.SKU = rp.SKU
             WHERE rp.folio = ?

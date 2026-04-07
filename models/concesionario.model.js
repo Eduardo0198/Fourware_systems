@@ -2,10 +2,24 @@ const db = require('../config/db');
 
 exports.obtenerTopProductos = (callback) => {
     const query = `
-        SELECT p.nombre_comercial, COUNT(r.SKU) AS total
+        SELECT
+            p.SKU,
+            p.nombre_comercial,
+            p.imagen,
+            COUNT(r.SKU) AS total,
+            COALESCE(cal.promedio_estrellas, 0) AS promedio_estrellas,
+            COALESCE(cal.total_resenas, 0) AS total_resenas
         FROM Producto p
         JOIN Reserva_Producto r ON p.SKU = r.SKU
-        GROUP BY p.nombre_comercial
+        LEFT JOIN (
+            SELECT
+                SKU,
+                ROUND(AVG(estrellas), 1) AS promedio_estrellas,
+                COUNT(*) AS total_resenas
+            FROM Calificacion
+            GROUP BY SKU
+        ) cal ON cal.SKU = p.SKU
+        GROUP BY p.SKU, p.nombre_comercial, p.imagen, cal.promedio_estrellas, cal.total_resenas
         ORDER BY total DESC
         LIMIT 5
     `;
@@ -26,41 +40,51 @@ exports.obtenerProductosPaginados = (
     const offset = (page - 1) * limit;
     let query = `
         SELECT
-            SKU,
-            nombre_comercial AS nombre,
-            descripcion,
-            precio_unitario,
-            peso_unitario,
-            volumen_unitario,
-            medida_primaria,
-            imagen
-        FROM Producto
-        WHERE activo = 1
-          AND id_campania = ?
+            p.SKU,
+            p.nombre_comercial AS nombre,
+            p.descripcion,
+            p.precio_unitario,
+            p.peso_unitario,
+            p.volumen_unitario,
+            p.medida_primaria,
+            p.imagen,
+            COALESCE(cal.promedio_estrellas, 0) AS promedio_estrellas,
+            COALESCE(cal.total_resenas, 0) AS total_resenas
+        FROM Producto p
+        LEFT JOIN (
+            SELECT
+                SKU,
+                ROUND(AVG(estrellas), 1) AS promedio_estrellas,
+                COUNT(*) AS total_resenas
+            FROM Calificacion
+            GROUP BY SKU
+        ) cal ON cal.SKU = p.SKU
+        WHERE p.activo = 1
+          AND p.id_campania = ?
     `;
     const params = [idCampania];
 
     if (searchTerm) {
         query += ` AND (
-            SKU LIKE ?
-            OR nombre_comercial LIKE ?
-            OR descripcion LIKE ?
+            p.SKU LIKE ?
+            OR p.nombre_comercial LIKE ?
+            OR p.descripcion LIKE ?
         )`;
         params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
 
     if (precioMin !== undefined && precioMin !== null && !isNaN(precioMin)) {
-        query += ` AND precio_unitario >= ?`;
+        query += ` AND p.precio_unitario >= ?`;
         params.push(parseFloat(precioMin));
     }
 
     if (precioMax !== undefined && precioMax !== null && !isNaN(precioMax)) {
-        query += ` AND precio_unitario <= ?`;
+        query += ` AND p.precio_unitario <= ?`;
         params.push(parseFloat(precioMax));
     }
 
     if (unidadVenta && unidadVenta !== '') {
-        query += ` AND unidad_venta = ?`;
+        query += ` AND p.unidad_venta = ?`;
         params.push(unidadVenta);
     }
 
