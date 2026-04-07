@@ -1,73 +1,59 @@
 <section class="admin-shell">
-    <div class="admin-hero admin-hero-catalog">
-        <div>
-            <span class="admin-eyebrow">Administrador</span>
-            <h2 class="admin-title">Gestión de Catálogo</h2>
-            <p class="admin-subtitle">
-                Centraliza el alta, mantenimiento y carga operativa de SKUs para mantener el catálogo listo para preventa.
-            </p>
-        </div>
-        <div class="admin-hero-note">
-            <span>Estado del módulo</span>
-            <strong>Catálogo operativo</strong>
-            <small>Administra productos y vínculos con campañas vigentes.</small>
-        </div>
-    </div>
+    <%- include('../includes/admin/hero', {
+        heroClass: 'admin-hero-catalog',
+        eyebrow: 'Administrador',
+        title: 'Gestión de Catálogo',
+        subtitle: 'Centraliza el alta, mantenimiento y carga operativa de SKUs para mantener el catálogo listo para preventa.',
+        note: {
+            label: 'Estado del módulo',
+            value: 'Catálogo operativo',
+            help: 'Administra productos y vínculos con campañas vigentes.'
+        }
+    }) %>
 
     <div class="admin-stats-grid">
-        <article class="admin-stat-card">
-            <span class="admin-stat-label">Productos registrados</span>
-            <strong><%= totalProductos || 0 %></strong>
-            <p>Inventario lógico disponible dentro del sistema.</p>
-        </article>
-        <article class="admin-stat-card admin-stat-accent">
-            <span class="admin-stat-label">Campañas vigentes seleccionables</span>
-            <strong><%= totalCampaniasVigentes || 0 %></strong>
-            <p>Campañas activas o vigentes para asociar nuevos productos.</p>
-        </article>
+        <%- include('../includes/admin/statCard', {
+            label: 'Productos registrados',
+            value: totalProductos || 0,
+            description: 'Inventario lógico disponible dentro del sistema.',
+            accent: false
+        }) %>
+        <%- include('../includes/admin/statCard', {
+            label: 'Campañas vigentes seleccionables',
+            value: totalCampaniasVigentes || 0,
+            description: 'Campañas activas o vigentes para asociar nuevos productos.',
+            accent: true
+        }) %>
     </div>
 
     <div class="admin-action-grid">
-        <article class="admin-action-card">
-            <div class="admin-action-icon">
-                <i class="bi bi-box-seam"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Alta individual</span>
-                <h3>Registrar SKU</h3>
-                <p>Crea un producto nuevo, captura sus atributos base y asígnalo a una campaña válida.</p>
-            </div>
-            <a href="/admin/catalogo/registrar" class="btn admin-action-btn">
-                Registrar producto
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-box-seam',
+            tag: 'Alta individual',
+            title: 'Registrar SKU',
+            description: 'Crea un producto nuevo, captura sus atributos base y asígnalo a una campaña válida.',
+            href: '/admin/catalogo/registrar',
+            buttonText: 'Registrar producto'
+        }) %>
 
-        <article class="admin-action-card">
-            <div class="admin-action-icon admin-action-icon-alt">
-                <i class="bi bi-pencil-square"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Mantenimiento</span>
-                <h3>Modificar atributos de un producto.</h3>
-                <p>Actualiza información de productos ya registrados sin salir del flujo administrativo.</p>
-            </div>
-            <a href="/admin/catalogo/modificar" class="btn admin-action-btn">
-                Modificar atributos
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-pencil-square',
+            iconVariantClass: 'admin-action-icon-alt',
+            tag: 'Mantenimiento',
+            title: 'Modificar atributos de un producto.',
+            description: 'Actualiza información de productos ya registrados sin salir del flujo administrativo.',
+            href: '/admin/catalogo/modificar',
+            buttonText: 'Modificar atributos'
+        }) %>
 
-        <article class="admin-action-card">
-            <div class="admin-action-icon admin-action-icon-soft">
-                <i class="bi bi-cloud-arrow-up"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Operación masiva</span>
-                <h3>Carga masiva</h3>
-                <p>Importa múltiples productos desde un archivo estructurado para acelerar la actualización del catálogo.</p>
-            </div>
-            <a href="/admin/catalogo/carga-masiva" class="btn admin-action-btn">
-                Subir archivo
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-cloud-arrow-up',
+            iconVariantClass: 'admin-action-icon-soft',
+            tag: 'Operación masiva',
+            title: 'Carga masiva',
+            description: 'Importa múltiples productos desde un archivo estructurado para acelerar la actualización del catálogo.',
+            href: '/admin/catalogo/carga-masiva',
+            buttonText: 'Subir archivo'
+        }) %>
     </div>
 </section>

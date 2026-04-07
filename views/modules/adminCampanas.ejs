@@ -1,84 +1,68 @@
 <section class="admin-shell">
-    <div class="admin-hero admin-hero-campaigns">
-        <div>
-            <span class="admin-eyebrow">Administrador</span>
-            <h2 class="admin-title">Gestión de Campañas</h2>
-            <p class="admin-subtitle">
-                Supervisa la vigencia comercial del sistema, controla activaciones y mantén una sola campaña activa por temporada.
-            </p>
-        </div>
-        <div class="admin-hero-note">
-            <span>Política activa</span>
-            <strong>Una campaña activa a la vez</strong>
-            <small>Cualquier activación adicional requiere desactivar la vigente.</small>
-        </div>
-    </div>
+    <%- include('../includes/admin/hero', {
+        heroClass: 'admin-hero-campaigns',
+        eyebrow: 'Administrador',
+        title: 'Gestión de Campañas',
+        subtitle: 'Supervisa la vigencia comercial del sistema, controla activaciones y mantén una sola campaña activa por temporada.',
+        note: {
+            label: 'Política activa',
+            value: 'Una campaña activa a la vez',
+            help: 'Cualquier activación adicional requiere desactivar la vigente.'
+        }
+    }) %>
 
     <div class="admin-stats-grid">
-        <article class="admin-stat-card">
-            <span class="admin-stat-label">Total de campañas</span>
-            <strong><%= totalCampanias || 0 %></strong>
-            <p>Histórico registrado en el sistema de preventa.</p>
-        </article>
-        <article class="admin-stat-card admin-stat-accent">
-            <span class="admin-stat-label">Campañas activas hoy</span>
-            <strong><%= totalActivas || 0 %></strong>
-            <p>Debe mantenerse en uno o cero según la temporada vigente.</p>
-        </article>
+        <%- include('../includes/admin/statCard', {
+            label: 'Total de campañas',
+            value: totalCampanias || 0,
+            description: 'Histórico registrado en el sistema de preventa.',
+            accent: false
+        }) %>
+        <%- include('../includes/admin/statCard', {
+            label: 'Campañas activas hoy',
+            value: totalActivas || 0,
+            description: 'Debe mantenerse en uno o cero según la temporada vigente.',
+            accent: true
+        }) %>
     </div>
 
     <div class="admin-action-grid">
-        <article class="admin-action-card">
-            <div class="admin-action-icon">
-                <i class="bi bi-megaphone"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Configuración</span>
-                <h3>Crear campaña</h3>
-                <p>Registra nuevas campañas con nombre, vigencia y banner dentro del flujo administrativo.</p>
-            </div>
-            <a href="/admin/campanas/crear" class="btn admin-action-btn">
-                Crear campaña
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-megaphone',
+            tag: 'Configuración',
+            title: 'Crear campaña',
+            description: 'Registra nuevas campañas con nombre, vigencia y banner dentro del flujo administrativo.',
+            href: '/admin/campanas/crear',
+            buttonText: 'Crear campaña'
+        }) %>
 
-        <article class="admin-action-card">
-            <div class="admin-action-icon admin-action-icon-alt">
-                <i class="bi bi-sliders"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Control operativo</span>
-                <h3>Editar campaña</h3>
-                <p>Modifica vigencia, banner y estatus, respetando la regla de una campaña activa por vez.</p>
-            </div>
-            <a href="/admin/campanas/editar" class="btn admin-action-btn">
-                Editar campaña
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-sliders',
+            iconVariantClass: 'admin-action-icon-alt',
+            tag: 'Control operativo',
+            title: 'Editar campaña',
+            description: 'Modifica vigencia, banner y estatus, respetando la regla de una campaña activa por vez.',
+            href: '/admin/campanas/editar',
+            buttonText: 'Editar campaña'
+        }) %>
 
-        <article class="admin-action-card">
-            <div class="admin-action-icon admin-action-icon-soft">
-                <i class="bi bi-clock-history"></i>
-            </div>
-            <div class="admin-action-copy">
-                <span class="admin-action-tag">Política de negocio</span>
-                <h3>Ventana de cancelación</h3>
-                <p>Consulta o configura la regla de tiempo permitida para cancelar reservas según la operación.</p>
-            </div>
-            <a href="/admin/campanas/cancelacion" class="btn admin-action-btn">
-                Configurar
-            </a>
-        </article>
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-clock-history',
+            iconVariantClass: 'admin-action-icon-soft',
+            tag: 'Política de negocio',
+            title: 'Ventana de cancelación',
+            description: 'Consulta o configura la regla de tiempo permitida para cancelar reservas según la operación.',
+            href: '/admin/campanas/cancelacion',
+            buttonText: 'Configurar'
+        }) %>
     </div>
 
     <div class="admin-table-card">
-        <div class="admin-table-head">
-            <div>
-                <h4>Campañas registradas</h4>
-                <p>Resumen visual de vigencia, banner y estatus actual.</p>
-            </div>
-            <span class="admin-table-pill">Total: <%= totalCampanias || 0 %></span>
-        </div>
+        <%- include('../includes/admin/tableHead', {
+            title: 'Campañas registradas',
+            subtitle: 'Resumen visual de vigencia, banner y estatus actual.',
+            pillText: `Total: ${totalCampanias || 0}`
+        }) %>
         <div class="admin-table-wrap">
             <table class="table admin-table align-middle mb-0">
                 <thead>

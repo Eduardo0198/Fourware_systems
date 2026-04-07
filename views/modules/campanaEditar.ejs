@@ -1,12 +1,9 @@
-<h2 class="mb-4">
-Editar Campaña
-</h2>
+<%- include('../includes/admin/pageIntro', {
+    title: 'Editar Campaña',
+    subtitle: ''
+}) %>
 
-<% if (pageMessage) { %>
-    <div class="alert alert-<%= pageMessage.tipo %>">
-        <%= pageMessage.texto %>
-    </div>
-<% } %>
+<%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
 <div class="card p-4 mb-4">
     <div class="table-responsive">
