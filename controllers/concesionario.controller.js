@@ -6,6 +6,11 @@ const reservaModel = require('../models/reserva.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 
+const MENSAJE_RESERVA_INVALIDA = 'La reserva seleccionada no es válida.';
+const MENSAJE_CANCELACION_FUERA_DE_PLAZO = 'La reserva ya no puede cancelarse porque el plazo permitido ha expirado.';
+const MENSAJE_ERROR_CANCELACION = 'No fue posible cancelar la reserva. Intente nuevamente.';
+const MENSAJE_CANCELACION_EXITOSA = 'La reserva ha sido cancelada correctamente.';
+
 function formatearFecha(valor, incluirHora = false) {
     if (!valor) {
         return 'No disponible';
@@ -76,6 +81,27 @@ function obtenerReservaNormalizada(folio, correo, idCuenta, callback) {
             callback(null, normalizarReserva(reserva, configuracion?.horas_cancelacion || 24));
         });
     });
+}
+
+function validarReservaCancelable(reserva) {
+    if (!reserva || reserva.estatusNumerico !== 1) {
+        return {
+            valida: false,
+            mensaje: MENSAJE_RESERVA_INVALIDA
+        };
+    }
+
+    if (!reserva.puedeCancelar) {
+        return {
+            valida: false,
+            mensaje: MENSAJE_CANCELACION_FUERA_DE_PLAZO
+        };
+    }
+
+    return {
+        valida: true,
+        mensaje: null
+    };
 }
 
 function obtenerContextoCuentaActiva(req, callback) {
@@ -612,7 +638,7 @@ exports.cancelarReserva = (req, res) => {
     if (!folio) {
         req.session.mensaje = {
             tipo: 'warning',
-            texto: 'Debes seleccionar una reserva válida para cancelarla.'
+            texto: MENSAJE_RESERVA_INVALIDA
         };
         return res.redirect('/concesionario/reservas');
     }
@@ -630,12 +656,21 @@ exports.cancelarReserva = (req, res) => {
         if (!reserva) {
             req.session.mensaje = {
                 tipo: 'warning',
-                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+                texto: MENSAJE_RESERVA_INVALIDA
             };
             return res.redirect('/concesionario/reservas');
         }
 
-        registrarEvento(req, 'Consulta de cancelación de reserva');
+        const validacion = validarReservaCancelable(reserva);
+        if (!validacion.valida) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: validacion.mensaje
+            };
+            return res.redirect(`/concesionario/reserva/${folio}`);
+        }
+
+        registrarEvento(req, `Consulta de cancelación de reserva ${folio}`);
         res.render('modules/concesionarioCancelarReserva', {
             reserva
         });
@@ -650,7 +685,7 @@ exports.cancelarReservaPost = (req, res) => {
     if (!folio) {
         req.session.mensaje = {
             tipo: 'warning',
-            texto: 'No fue posible identificar la reserva a cancelar.'
+            texto: MENSAJE_RESERVA_INVALIDA
         };
         return res.redirect('/concesionario/reservas');
     }
@@ -668,16 +703,19 @@ exports.cancelarReservaPost = (req, res) => {
         if (!reserva) {
             req.session.mensaje = {
                 tipo: 'warning',
-                texto: 'La reserva seleccionada no existe para la cuenta activa.'
+                texto: MENSAJE_RESERVA_INVALIDA
             };
             return res.redirect('/concesionario/reservas');
         }
 
-        if (!reserva.puedeCancelar) {
-            registrarEvento(req, 'Intento de cancelación fuera de ventana permitida');
+        const validacion = validarReservaCancelable(reserva);
+        if (!validacion.valida) {
+            if (validacion.mensaje === MENSAJE_CANCELACION_FUERA_DE_PLAZO) {
+                registrarEvento(req, `Intento de cancelación fuera de plazo para la reserva ${folio}`);
+            }
             req.session.mensaje = {
                 tipo: 'warning',
-                texto: 'La ventana de cancelación para esta reserva ya expiró o la reserva ya fue cancelada.'
+                texto: validacion.mensaje
             };
             return res.redirect(`/concesionario/reserva/${folio}`);
         }
@@ -688,7 +726,7 @@ exports.cancelarReservaPost = (req, res) => {
                 registrarEvento(req, 'Error al cancelar reserva');
                 req.session.mensaje = {
                     tipo: 'danger',
-                    texto: 'No fue posible cancelar la reserva. Intente nuevamente.'
+                    texto: MENSAJE_ERROR_CANCELACION
                 };
                 return res.redirect(`/concesionario/reserva/${folio}`);
             }
@@ -696,7 +734,7 @@ exports.cancelarReservaPost = (req, res) => {
             if (!result || result.affectedRows === 0) {
                 req.session.mensaje = {
                     tipo: 'warning',
-                    texto: 'La reserva ya no se encuentra disponible para cancelación.'
+                    texto: MENSAJE_RESERVA_INVALIDA
                 };
                 return res.redirect(`/concesionario/reserva/${folio}`);
             }
@@ -704,7 +742,7 @@ exports.cancelarReservaPost = (req, res) => {
             registrarEvento(req, `Cancelación de reserva ${folio}`);
             req.session.mensaje = {
                 tipo: 'success',
-                texto: `La reserva ${folio} fue cancelada correctamente.`
+                texto: MENSAJE_CANCELACION_EXITOSA
             };
             return res.redirect('/concesionario/reservas');
         });

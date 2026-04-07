@@ -1,7 +1,5 @@
 const db = require('../config/db');
 
-// inicio ---- fabrizio ----- consultasReservasConCancelacion --
-
 exports.obtenerReservasPorCorreoYCuenta = (correo, idCuenta, callback) => {
     const query = `
         SELECT
@@ -100,10 +98,6 @@ exports.cancelarReserva = (folio, correo, idCuenta, callback) => {
 
     db.query(query, [folio, correo, idCuenta], callback);
 };
-
-// fin ---- fabrizio----------
-
-// inicio ---- fabrizio ----- reservasConfirmadasPorPeriodoLogistica --
 
 exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback) => {
     const query = `
@@ -210,8 +204,6 @@ exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
 
     db.query(query, params, callback);
 };
-
-// fin ---- fabrizio----------
 
 exports.crearReservaConProductos = (data, productos, callback) => {
     db.beginTransaction((transactionErr) => {
