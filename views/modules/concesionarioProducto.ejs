@@ -13,16 +13,18 @@
     return html;
 } %>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Detalle del Producto</h2>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <h2 class="mb-0">Detalle del Producto</h2>
     <a href="/concesionario/catalogo" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver al catálogo
     </a>
 </div>
 <hr>
 
-<div class="producto-detalle">
-    <div class="detalle-imagenes">
+<div class="row g-4 align-items-start">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
         <% if (producto.imagenes && producto.imagenes.length > 1) { %>
             <div id="productoCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
@@ -46,46 +48,53 @@
         %>
             <img src="<%= getImgUrl(singleImg) %>" alt="<%= producto.nombre %>" class="img-fluid">
         <% } %>
-    </div>
-
-    <div class="detalle-info">
-        <h3><%= producto.nombre %></h3>
-        <div class="product-attributes">
-            <div class="attribute-row">
-                <span class="attribute-label">Descripción:</span>
-                <span class="attribute-value"><%= producto.descripcion || 'Sin descripción' %></span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">Precio unitario:</span>
-                <span class="attribute-value">$<%= producto.precio_unitario %></span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">Unidad de venta:</span>
-                <span class="attribute-value"><%= producto.unidad_venta || 'No especificada' %></span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">Peso unitario:</span>
-                <span class="attribute-value"><%= producto.peso_unitario %> kg</span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">Volumen unitario:</span>
-                <span class="attribute-value"><%= producto.volumen_unitario %> m³</span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">Medida primaria:</span>
-                <span class="attribute-value"><%= producto.medida_primaria %></span>
-            </div>
-            <div class="attribute-row">
-                <span class="attribute-label">SKU:</span>
-                <span class="attribute-value"><%= producto.SKU %></span>
             </div>
         </div>
+    </div>
 
-        <form method="POST" action="/concesionario/carrito/agregar" class="mt-4 product-purchase-form">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 d-flex flex-column gap-4">
+                <div>
+                    <h3 class="fw-bold mb-3"><%= producto.nombre %></h3>
+                    <div class="list-group list-group-flush border rounded-4 overflow-hidden">
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Descripción:</span>
+                            <span class="text-body-secondary"><%= producto.descripcion || 'Sin descripción' %></span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2 bg-primary-subtle">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Precio unitario:</span>
+                            <span class="text-body-secondary">$<%= producto.precio_unitario %></span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Unidad de venta:</span>
+                            <span class="text-body-secondary"><%= producto.unidad_venta || 'No especificada' %></span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2 bg-primary-subtle">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Peso unitario:</span>
+                            <span class="text-body-secondary"><%= producto.peso_unitario %> kg</span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Volumen unitario:</span>
+                            <span class="text-body-secondary"><%= producto.volumen_unitario %> m³</span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2 bg-primary-subtle">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">Medida primaria:</span>
+                            <span class="text-body-secondary"><%= producto.medida_primaria %></span>
+                        </div>
+                        <div class="list-group-item d-flex flex-column flex-sm-row gap-2">
+                            <span class="fw-semibold text-primary-emphasis flex-shrink-0" style="min-width: 150px;">SKU:</span>
+                            <span class="text-body-secondary"><%= producto.SKU %></span>
+                        </div>
+                    </div>
+                </div>
+
+        <form method="POST" action="/concesionario/carrito/agregar" class="mt-2">
             <input type="hidden" name="sku" value="<%= producto.SKU %>">
+            <input type="hidden" name="return_to" value="<%= returnTo || '/concesionario/catalogo' %>">
 
-            <div class="product-purchase-row">
-                <div class="product-quantity-group">
+            <div class="row g-3 align-items-end justify-content-end">
+                <div class="col-sm-4 col-md-3">
                     <label for="cantidad" class="form-label fw-semibold">Cantidad</label>
                     <input type="number"
                            id="cantidad"
@@ -97,9 +106,13 @@
                            required>
                 </div>
 
-                <button class="btn btn-primary product-add-cart-btn">Agregar al carrito</button>
+                <div class="col-sm-8 col-md-auto">
+                    <button class="btn btn-primary w-100 px-4">Agregar al carrito</button>
+                </div>
             </div>
         </form>
+            </div>
+        </div>
     </div>
 </div>
 

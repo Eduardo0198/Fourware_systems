@@ -1,120 +1,136 @@
-<section class="cart-page">
+<section class="d-flex flex-column gap-4">
     <% if (mensaje) { %>
         <div class="alert alert-<%= mensaje.tipo %> mb-0" role="alert">
             <%= mensaje.texto %>
         </div>
     <% } %>
 
-    <div class="cart-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
         <div>
             <p class="cart-eyebrow">Preventa</p>
-            <h2>Carrito</h2>
+            <h2 class="display-6 fw-bold text-dark mb-0">Carrito</h2>
         </div>
-        <span class="cart-count"><%= carrito.length %> producto(s)</span>
+        <span class="badge rounded-pill text-bg-primary px-3 py-2 fs-6 fw-semibold align-self-start align-self-md-auto">
+            <%= carrito.length %> producto(s)
+        </span>
     </div>
 
-    <div class="cart-layout">
-        <div class="cart-items-column">
+    <div class="row g-4 align-items-start">
+        <div class="col-xl-8">
+            <div class="d-flex flex-column gap-3">
             <% if (carrito.length === 0) { %>
-                <div class="cart-empty-state">
-                    <h4>Tu carrito está vacío</h4>
-                    <p>Agrega productos desde el catálogo para ver el resumen aquí.</p>
+                <div class="cart-empty-state card border-0 shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+                    <h4 class="fw-bold">Tu carrito está vacío</h4>
+                    <p class="text-muted">Agrega productos desde el catálogo para ver el resumen aquí.</p>
                     <a href="/concesionario/catalogo" class="btn btn-primary">
                         Ir al catálogo
                     </a>
+                    </div>
                 </div>
             <% } %>
 
             <% carrito.forEach(p => { %>
-                <article class="cart-item-card">
-                    <div class="cart-item-media">
-                        <img src="<%= p.imagen || '/img/ppg-logo.png' %>"
-                             alt="<%= p.nombre %>"
-                             onerror="this.src='/img/ppg-logo.png'">
-                    </div>
-
-                    <div class="cart-item-main">
-                        <div class="cart-item-top">
-                            <div>
-                                <h3><%= p.nombre %></h3>
-                                <p class="cart-sku">SKU: <%= p.sku %></p>
+                <article class="card border-0 shadow-sm cart-item-card">
+                    <div class="card-body p-4">
+                        <div class="row g-4 align-items-center">
+                            <div class="col-md-3 col-lg-4 col-xl-3">
+                                <div class="cart-item-media">
+                                    <img src="<%= p.imagen || '/img/ppg-logo.png' %>"
+                                         alt="<%= p.nombre %>"
+                                         onerror="this.src='/img/ppg-logo.png'">
+                                </div>
                             </div>
-                            <div class="cart-price-block">
-                                <span class="cart-price">$<%= p.precio.toFixed(2) %></span>
-                                <span class="cart-line-total">
-                                    Total: $<%= (p.precio * p.cantidad).toFixed(2) %>
-                                </span>
+
+                            <div class="col-md-9 col-lg-8 col-xl-9">
+                                <div class="d-flex flex-column gap-4">
+                                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                        <div>
+                                            <h3 class="fs-2 fw-bold text-dark mb-2"><%= p.nombre %></h3>
+                                            <p class="text-muted mb-0">SKU: <%= p.sku %></p>
+                                        </div>
+                                        <div class="text-lg-end">
+                                            <div class="fs-2 fw-bold text-dark">$<%= p.precio.toFixed(2) %></div>
+                                            <div class="text-secondary fw-semibold">
+                                                Total: $<%= (p.precio * p.cantidad).toFixed(2) %>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pt-3 border-top">
+                                        <form method="POST"
+                                              action="/concesionario/carrito/actualizar-cantidad"
+                                              class="cart-quantity-form">
+                                            <input type="hidden" name="sku" value="<%= p.sku %>">
+
+                                            <button type="submit"
+                                                    name="accion"
+                                                    value="decrementar"
+                                                    class="cart-qty-btn"
+                                                    <%= p.cantidad <= 1 ? 'disabled' : '' %>>
+                                                -
+                                            </button>
+
+                                            <span class="cart-qty-value"><%= p.cantidad %></span>
+
+                                            <button type="submit"
+                                                    name="accion"
+                                                    value="incrementar"
+                                                    class="cart-qty-btn">
+                                                +
+                                            </button>
+                                        </form>
+                                        <form method="POST"
+                                              action="/concesionario/carrito/eliminar"
+                                              class="m-0"
+                                              onsubmit="return confirm('¿Deseas eliminar este producto del carrito?');">
+                                            <input type="hidden" name="sku" value="<%= p.sku %>">
+                                            <button type="submit" class="btn btn-link p-0 text-danger fw-bold text-decoration-none">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="cart-item-meta">
-                            <form method="POST"
-                                  action="/concesionario/carrito/actualizar-cantidad"
-                                  class="cart-quantity-form">
-                                <input type="hidden" name="sku" value="<%= p.sku %>">
-
-                                <button type="submit"
-                                        name="accion"
-                                        value="decrementar"
-                                        class="cart-qty-btn"
-                                        <%= p.cantidad <= 1 ? 'disabled' : '' %>>
-                                    -
-                                </button>
-
-                                <span class="cart-qty-value"><%= p.cantidad %></span>
-
-                                <button type="submit"
-                                        name="accion"
-                                        value="incrementar"
-                                        class="cart-qty-btn">
-                                    +
-                                </button>
-                            </form>
-                            <form method="POST"
-                                  action="/concesionario/carrito/eliminar"
-                                  class="cart-remove-form"
-                                  onsubmit="return confirm('¿Deseas eliminar este producto del carrito?');">
-                                <input type="hidden" name="sku" value="<%= p.sku %>">
-                                <button type="submit" class="cart-remove-link">
-                                    Eliminar
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </article>
             <% }) %>
+            </div>
         </div>
 
-        <aside class="cart-summary-card">
-            <div class="cart-summary-header">
+        <div class="col-xl-4">
+        <aside class="card border-0 shadow-sm cart-summary-card">
+            <div class="card-body p-4">
+            <div>
                 <p class="cart-eyebrow">Resumen</p>
-                <h3>Order summary</h3>
+                <h3 class="fs-2 fw-bold text-dark mb-0">Order summary</h3>
             </div>
 
-            <div class="cart-summary-lines">
-                <div class="cart-summary-row">
+            <div class="d-flex flex-column gap-3 border-top border-bottom py-3 my-4">
+                <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Subtotal</span>
                     <strong>$<%= subtotal.toFixed(2) %></strong>
                 </div>
-                <div class="cart-summary-row">
+                <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Peso total</span>
                     <strong><%= totalPeso.toFixed(2) %> kg</strong>
                 </div>
-                <div class="cart-summary-row">
+                <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Volumen total</span>
                     <strong><%= totalVolumen.toFixed(2) %> m³</strong>
                 </div>
-                <div class="cart-summary-row">
+                <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>IVA (16%)</span>
                     <strong>$<%= iva.toFixed(2) %></strong>
                 </div>
-                <div class="cart-summary-row cart-summary-total">
+                <div class="d-flex justify-content-between align-items-center gap-3 fs-5 fw-bold text-dark">
                     <span>Total</span>
                     <strong>$<%= total.toFixed(2) %></strong>
                 </div>
             </div>
 
-            <form method="POST" action="/concesionario/carrito/confirmar" class="cart-summary-form">
+            <form method="POST" action="/concesionario/carrito/confirmar" class="d-flex flex-column gap-3">
                 <label for="sucursal" class="form-label">Sucursal</label>
                 <select name="sucursal"
                         id="sucursal"
@@ -140,7 +156,9 @@
                     Confirmar reserva
                 </button>
             </form>
+            </div>
         </aside>
+        </div>
     </div>
 </section>
 

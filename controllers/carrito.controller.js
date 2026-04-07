@@ -6,55 +6,15 @@ const cuentaModel = require('../models/cuenta.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const { obtenerDetalleReservaParaCorreo } = require('../services/reservaDetalle.service');
 const { enviarCorreoReservaConfirmada } = require('../services/email.service');
-
-function generarFolioReserva() {
-    const ahora = new Date();
-    const yy = String(ahora.getFullYear()).slice(-2);
-    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dd = String(ahora.getDate()).padStart(2, '0');
-    const hh = String(ahora.getHours()).padStart(2, '0');
-    const mi = String(ahora.getMinutes()).padStart(2, '0');
-    const ss = String(ahora.getSeconds()).padStart(2, '0');
-    const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-
-    return `R${yy}${mm}${dd}${hh}${mi}${ss}${random}`;
-}
-
-function calcularFechaLimiteCancelacion(horas = 24) {
-    const fecha = new Date();
-    fecha.setHours(fecha.getHours() + horas);
-    return fecha;
-}
-
-function construirItemCarrito(producto, cantidad) {
-    return {
-        sku: producto.SKU,
-        nombre: producto.nombre,
-        imagen: producto.imagen || '/img/ppg-logo.png',
-        precio: Number(producto.precio_unitario) || 0,
-        cantidad,
-        peso_unitario: Number(producto.peso_unitario) || 0,
-        volumen_unitario: Number(producto.volumen_unitario) || 0
-    };
-}
-
-function sincronizarCarritoConProducto(itemActual, producto) {
-    return {
-        ...itemActual,
-        ...construirItemCarrito(producto, itemActual.cantidad)
-    };
-}
-
-function obtenerCarritoActivo(req) {
-    const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
-
-    if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
-        req.session.carrito = [];
-        req.session.carritoCuentaId = cuentaActivaId;
-    }
-
-    return req.session.carrito || [];
-}
+const {
+    calcularFechaLimiteCancelacion,
+    calcularResumenCarrito,
+    construirItemCarrito,
+    construirRedirectCatalogo,
+    generarFolioReserva,
+    obtenerCarritoActivo,
+    sincronizarCarritoConProducto
+} = require('../services/carrito.service');
 
 function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
     setImmediate(() => {
@@ -89,6 +49,7 @@ exports.agregarProducto = (req, res) => {
     const sku = String(req.body.sku || '').trim();
     const cantidadNumerica = parseInt(req.body.cantidad, 10);
     const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+    const redirectCatalogo = construirRedirectCatalogo(req.body.return_to, sku);
 
     if (!sku || !Number.isInteger(cantidadNumerica) || cantidadNumerica <= 0) {
         req.session.mensaje = {
@@ -176,7 +137,7 @@ exports.agregarProducto = (req, res) => {
                 texto: 'Producto agregado correctamente al carrito.'
             };
 
-            return res.redirect('/concesionario/carrito');
+            return res.redirect(redirectCatalogo);
         });
     });
 };
@@ -190,17 +151,13 @@ exports.verCarrito = (req, res) => {
     }
 
     const carrito = req.session.carrito || [];
-    const subtotal = carrito.reduce((acc, p) => {
-        return acc + (p.precio * p.cantidad);
-    }, 0);
-    const totalPeso = carrito.reduce((acc, p) => {
-        return acc + ((p.peso_unitario || 0) * p.cantidad);
-    }, 0);
-    const totalVolumen = carrito.reduce((acc, p) => {
-        return acc + ((p.volumen_unitario || 0) * p.cantidad);
-    }, 0);
-    const iva = subtotal * 0.16;
-    const total = subtotal + iva;
+    const {
+        subtotal,
+        totalPeso,
+        totalVolumen,
+        iva,
+        total
+    } = calcularResumenCarrito(carrito);
     const renderCarrito = (sucursales = []) => res.render('modules/concesionarioCarrito', {
         carrito,
         subtotal,

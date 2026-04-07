@@ -1,93 +1,111 @@
 <h2>Detalle de Reserva</h2>
 <hr>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <small class="text-muted">Folio</small>
-                <div><strong><%= reserva.folio %></strong></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">Fecha</small>
-                <div><%= reserva.fechaTexto %></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">Estatus</small>
-                <div>
-                    <span class="badge text-bg-<%= reserva.estatusClase %>">
-                        <%= reserva.estatusTexto %>
-                    </span>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Sucursal</small>
-                <div><%= reserva.fechaSucursalTexto %></div>
-                <div><%= reserva.direccionSucursal || 'Sin dirección registrada' %></div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Límite de cancelación</small>
-                <div><%= reserva.fechaCancelacionTexto %></div>
-                <% if (reserva.puedeCancelar) { %>
-                    <div class="text-success">La reserva aún puede cancelarse dentro de la ventana configurada.</div>
-                <% } else if (reserva.estatusNumerico === 0) { %>
-                    <div class="text-danger">La reserva ya fue cancelada.</div>
-                <% } else { %>
-                    <div class="text-danger">La ventana de cancelación ya expiró.</div>
-                <% } %>
-            </div>
+<%- include('../includes/reservaInfoCard', {
+    items: [
+        {
+            label: 'Folio',
+            value: reserva.folio,
+            valueClass: 'fw-bold'
+        },
+        {
+            label: 'Fecha',
+            value: reserva.fechaTexto
+        },
+        {
+            label: 'Estatus',
+            badge: {
+                className: reserva.estatusClase,
+                text: reserva.estatusTexto
+            }
+        },
+        {
+            label: 'Sucursal',
+            value: reserva.fechaSucursalTexto,
+            col: 'col-md-6',
+            extra: {
+                className: 'text-muted',
+                text: reserva.direccionSucursal || 'Sin dirección registrada'
+            }
+        },
+        {
+            label: 'Límite de cancelación',
+            value: reserva.fechaCancelacionTexto,
+            col: 'col-md-6',
+            extra: reserva.puedeCancelar
+                ? {
+                    className: 'text-success',
+                    text: 'La reserva aún puede cancelarse dentro de la ventana configurada.'
+                }
+                : reserva.estatusNumerico === 0
+                    ? {
+                        className: 'text-danger',
+                        text: 'La reserva ya fue cancelada.'
+                    }
+                    : {
+                        className: 'text-danger',
+                        text: 'La ventana de cancelación ya expiró.'
+                    }
+        }
+    ]
+}) %>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% reserva.productos.forEach((producto) => { %>
+                        <tr>
+                            <td><%= producto.nombre_comercial || 'Producto sin nombre' %></td>
+                            <td><%= producto.SKU %></td>
+                            <td><%= producto.cantidad %></td>
+                            <td>$<%= Number(producto.precio_aplicado || 0).toFixed(2) %></td>
+                            <td>$<%= Number(producto.subtotal_linea || 0).toFixed(2) %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<table class="table table-bordered align-middle">
-    <thead>
-        <tr>
-            <th>Producto</th>
-            <th>SKU</th>
-            <th>Cantidad</th>
-            <th>Precio</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        <% reserva.productos.forEach((producto) => { %>
-            <tr>
-                <td><%= producto.nombre_comercial || 'Producto sin nombre' %></td>
-                <td><%= producto.SKU %></td>
-                <td><%= producto.cantidad %></td>
-                <td>$<%= Number(producto.precio_aplicado || 0).toFixed(2) %></td>
-                <td>$<%= Number(producto.subtotal_linea || 0).toFixed(2) %></td>
-            </tr>
-        <% }); %>
-    </tbody>
-</table>
+<%- include('../includes/reservaInfoCard', {
+    items: [
+        {
+            label: 'Subtotal',
+            value: `$${Number(reserva.subtotal || 0).toFixed(2)}`
+        },
+        {
+            label: 'IVA',
+            value: `$${Number(reserva.iva || 0).toFixed(2)}`
+        },
+        {
+            label: 'Total',
+            value: `$${Number(reserva.total || 0).toFixed(2)}`,
+            valueClass: 'fw-bold'
+        }
+    ]
+}) %>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <small class="text-muted">Subtotal</small>
-                <div>$<%= Number(reserva.subtotal || 0).toFixed(2) %></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">IVA</small>
-                <div>$<%= Number(reserva.iva || 0).toFixed(2) %></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">Total</small>
-                <div><strong>$<%= Number(reserva.total || 0).toFixed(2) %></strong></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="d-flex gap-2">
+<div class="d-flex flex-column flex-sm-row gap-2">
     <% if (reserva.puedeCancelar) { %>
         <a href="/concesionario/cancelar-reserva?folio=<%= reserva.folio %>" class="btn btn-danger">
             Cancelar reserva
         </a>
     <% } %>
+    <a href="/concesionario/reserva/<%= reserva.folio %>/pdf" class="btn btn-outline-primary">
+        Descargar PDF
+    </a>
     <a href="/concesionario/reservas" class="btn btn-secondary">
         Volver
     </a>
