@@ -1,22 +1,229 @@
+<% function renderStars(puntaje) {
+    const valor = Number(puntaje || 0);
+    let html = '';
+    for (let index = 1; index <= 5; index += 1) {
+        html += index <= Math.round(valor) ? '★' : '☆';
+    }
+    return html;
+} %>
+
 <% if (mensaje) { %>
     <div class="alert alert-<%= mensaje.tipo %> mb-4" role="alert">
         <%= mensaje.texto %>
     </div>
 <% } %>
 
-<h2 class="mb-4">Productos más reservados</h2>
-<div class="row">
-    <% productos.forEach(p => { %>
-        <div class="col-md-4 mb-3">
-            <div class="card shadow p-3">
-
-                <h5><%= p.nombre %></h5>
-
-                <p class="text-muted">
-                    Reservas: <%= p.total %>
-                </p>
-
+<section class="dealer-home mb-4">
+    <div class="dealer-home-hero card border-0 shadow-sm overflow-hidden">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge text-bg-light text-uppercase fw-semibold mb-3">Inicio del concesionario</span>
+                    <h2 class="display-6 fw-bold mb-3">Hola, <%= saludo %>.</h2>
+                    <p class="lead mb-4">
+                        Aquí tienes un resumen rápido para operar con la cuenta activa, revisar tu actividad reciente y continuar con la preventa sin perder contexto.
+                    </p>
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <a href="/concesionario/catalogo" class="btn btn-primary px-4">
+                            <i class="bi bi-grid me-2"></i>Ir al catálogo
+                        </a>
+                        <a href="/concesionario/reservas" class="btn btn-outline-light px-4">
+                            <i class="bi bi-journal-check me-2"></i>Ver mis reservas
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="dealer-home-hero-panel">
+                        <div class="dealer-home-hero-item">
+                            <span>Cuenta activa</span>
+                            <strong><%= cuentaActiva ? cuentaActiva.nombre : 'Sin cuenta activa' %></strong>
+                        </div>
+                        <div class="dealer-home-hero-item">
+                            <span>Campaña vigente</span>
+                            <strong><%= campania ? campania.nombre : 'Sin campaña activa' %></strong>
+                        </div>
+                        <div class="dealer-home-hero-item">
+                            <span>Última actividad</span>
+                            <strong><%= resumen.ultimaReservaTexto %></strong>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    <% }) %>
-</div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <article class="card border-0 shadow-sm h-100 dealer-home-stat">
+            <div class="card-body">
+                <span class="dealer-home-stat-label">Reservas totales</span>
+                <strong class="dealer-home-stat-value"><%= resumen.totalReservas %></strong>
+                <p class="text-muted mb-0">Historial de la cuenta activa.</p>
+            </div>
+        </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <article class="card border-0 shadow-sm h-100 dealer-home-stat">
+            <div class="card-body">
+                <span class="dealer-home-stat-label">Confirmadas</span>
+                <strong class="dealer-home-stat-value text-success"><%= resumen.reservasConfirmadas %></strong>
+                <p class="text-muted mb-0">Reservas vigentes registradas.</p>
+            </div>
+        </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <article class="card border-0 shadow-sm h-100 dealer-home-stat">
+            <div class="card-body">
+                <span class="dealer-home-stat-label">Canceladas</span>
+                <strong class="dealer-home-stat-value text-secondary"><%= resumen.reservasCanceladas %></strong>
+                <p class="text-muted mb-0">Operaciones cerradas o anuladas.</p>
+            </div>
+        </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <article class="card border-0 shadow-sm h-100 dealer-home-stat">
+            <div class="card-body">
+                <span class="dealer-home-stat-label">Productos en carrito</span>
+                <strong class="dealer-home-stat-value text-primary"><%= resumen.productosEnCarrito %></strong>
+                <p class="text-muted mb-0">Listos para revisar o confirmar.</p>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+                    <div>
+                        <h3 class="h5 mb-1">Actividad reciente</h3>
+                        <p class="text-muted mb-0">Últimas reservas registradas con la cuenta activa.</p>
+                    </div>
+                    <a href="/concesionario/reservas" class="btn btn-outline-secondary btn-sm">
+                        Ver historial completo
+                    </a>
+                </div>
+
+                <% if (reservasRecientes.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Fecha</th>
+                                    <th>Sucursal</th>
+                                    <th>Total</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% reservasRecientes.forEach((reserva) => { %>
+                                    <tr>
+                                        <td>
+                                            <a href="/concesionario/reserva/<%= reserva.folio %>" class="fw-semibold text-decoration-none">
+                                                <%= reserva.folio %>
+                                            </a>
+                                        </td>
+                                        <td><%= reserva.fechaTexto %></td>
+                                        <td><%= reserva.nombre_sucursal || 'Sin sucursal' %></td>
+                                        <td><%= reserva.totalTexto %></td>
+                                        <td>
+                                            <span class="badge text-bg-<%= reserva.estatusClase %>">
+                                                <%= reserva.estatusTexto %>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="dealer-home-empty">
+                        <i class="bi bi-journal-x"></i>
+                        <h4 class="h6">Todavía no hay reservas para esta cuenta</h4>
+                        <p class="text-muted mb-3">Puedes comenzar desde el catálogo y confirmar tu primera preventa cuando estés listo.</p>
+                        <a href="/concesionario/catalogo" class="btn btn-primary btn-sm">Explorar catálogo</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h3 class="h5 mb-3">Acciones rápidas</h3>
+                <div class="d-grid gap-3">
+                    <a href="/concesionario/catalogo" class="dealer-home-action text-decoration-none">
+                        <div>
+                            <strong>Explorar catálogo</strong>
+                            <p class="mb-0">Consulta campañas y agrega productos al carrito.</p>
+                        </div>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="/concesionario/carrito" class="dealer-home-action text-decoration-none">
+                        <div>
+                            <strong>Revisar carrito</strong>
+                            <p class="mb-0">Ajusta cantidades y confirma tu reserva.</p>
+                        </div>
+                        <i class="bi bi-cart3"></i>
+                    </a>
+                    <a href="/concesionario/reservas" class="dealer-home-action text-decoration-none">
+                        <div>
+                            <strong>Consultar reservas</strong>
+                            <p class="mb-0">Da seguimiento, descarga PDF o cancela si aplica.</p>
+                        </div>
+                        <i class="bi bi-journal-check"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+            <div>
+                <h3 class="h5 mb-1">Productos más reservados</h3>
+                <p class="text-muted mb-0">Referencia rápida de los SKUs con mayor movimiento en preventa.</p>
+            </div>
+            <span class="badge text-bg-light">Top 5</span>
+        </div>
+        <div class="row g-3">
+            <% if (productosTop.length > 0) { %>
+                <% productosTop.forEach((producto) => { %>
+                    <div class="col-md-6 col-xl-4">
+                        <article class="dealer-home-top-card h-100">
+                            <div class="dealer-home-top-media">
+                                <img
+                                    src="<%= producto.imagen || '/img/ppg-logo.png' %>"
+                                    alt="<%= producto.nombre_comercial || producto.nombre || 'Producto' %>"
+                                    class="img-fluid"
+                                    onerror="this.onerror=null;this.src='/img/ppg-logo.png';">
+                            </div>
+                            <span class="dealer-home-top-rank">Reservas: <%= producto.total %></span>
+                            <h4><%= producto.nombre_comercial || producto.nombre %></h4>
+                            <div class="dealer-home-top-rating" aria-label="Calificación promedio de <%= Number(producto.promedio_estrellas || 0).toFixed(1) %> de 5">
+                                <span class="dealer-home-top-stars"><%- renderStars(producto.promedio_estrellas) %></span>
+                                <strong><%= Number(producto.promedio_estrellas || 0).toFixed(1) %></strong>
+                                <small>(<%= Number(producto.total_resenas || 0) %> reseñas)</small>
+                            </div>
+                            <p class="mb-0 text-muted">Producto con alta rotación dentro del sistema.</p>
+                        </article>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="col-12">
+                    <div class="dealer-home-empty dealer-home-empty-soft">
+                        <i class="bi bi-box-seam"></i>
+                        <h4 class="h6">Aún no hay suficiente historial</h4>
+                        <p class="text-muted mb-0">Cuando existan reservas confirmadas, aquí verás los productos con mayor demanda.</p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</section>

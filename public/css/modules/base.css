@@ -45,6 +45,28 @@ body.catalogo-returning .catalogo-product-card:not(.catalogo-product-card--added
     transition:opacity 0.6s ease, transform 0.6s ease, filter 0.6s ease;
 }
 
+.catalogo-product-rating{
+    display:flex;
+    align-items:center;
+    gap:0.4rem;
+    min-height:1.5rem;
+}
+
+.catalogo-product-stars{
+    color:#f59e0b;
+    letter-spacing:0.08em;
+    line-height:1;
+}
+
+.catalogo-product-rating strong{
+    font-size:0.92rem;
+    color:#0f172a;
+}
+
+.catalogo-product-rating small{
+    color:#64748b;
+}
+
 @keyframes catalogoProductoAgregado{
     0%{
         transform:scale(1.045);
@@ -72,4 +94,3 @@ html, body {
     margin-left:0;
     margin-right:0;
 }
-

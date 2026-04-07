@@ -1,3 +1,12 @@
+<% function renderStars(puntaje) {
+    const valor = Number(puntaje || 0);
+    let html = '';
+    for (let index = 1; index <= 5; index += 1) {
+        html += index <= Math.round(valor) ? '★' : '☆';
+    }
+    return html;
+} %>
+
 <h2 class="mb-3">Catálogo de Productos</h2>
 <% const alertMessage = pageMessage || mensaje || null; %>
 <% if (alertMessage) { %>
@@ -91,6 +100,11 @@
                         <p class="fw-bold text-primary">
                             $<%= p.precio_unitario %>
                         </p>
+                        <div class="catalogo-product-rating mb-3" aria-label="Calificación promedio de <%= Number(p.promedio_estrellas || 0).toFixed(1) %> de 5">
+                            <span class="catalogo-product-stars"><%- renderStars(p.promedio_estrellas) %></span>
+                            <strong><%= Number(p.promedio_estrellas || 0).toFixed(1) %></strong>
+                            <small>(<%= Number(p.total_resenas || 0) %>)</small>
+                        </div>
                         <div class="mt-auto">
                             <a href="/concesionario/producto/<%= p.SKU %>?return_to=<%= encodeURIComponent(buildQuery(paginacion.paginaActual)) %>"
                                class="btn btn-primary w-100 mb-2">
@@ -177,6 +191,15 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#39;");
     }
 
+    function renderStars(value) {
+        const numeric = Number(value || 0);
+        let stars = "";
+        for (let index = 1; index <= 5; index += 1) {
+            stars += index <= Math.round(numeric) ? "★" : "☆";
+        }
+        return stars;
+    }
+
     function buildQuery(page) {
         const params = new URLSearchParams();
         const q = searchInput.value.trim();
@@ -214,6 +237,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         <p class="fw-bold text-primary">
                             $${escapeHtml(p.precio_unitario)}
                         </p>
+                        <div class="catalogo-product-rating mb-3" aria-label="Calificación promedio de ${escapeHtml(Number(p.promedio_estrellas || 0).toFixed(1))} de 5">
+                            <span class="catalogo-product-stars">${renderStars(p.promedio_estrellas)}</span>
+                            <strong>${escapeHtml(Number(p.promedio_estrellas || 0).toFixed(1))}</strong>
+                            <small>(${escapeHtml(Number(p.total_resenas || 0))})</small>
+                        </div>
                         <div class="mt-auto">
                             <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}?return_to=${encodeURIComponent(buildQuery(1))}"
                                class="btn btn-primary w-100 mb-2">

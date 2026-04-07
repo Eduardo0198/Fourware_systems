@@ -90,4 +90,16 @@
     .cart-item-media{
         min-height:200px;
     }
+
+    .dealer-home-hero .lead{
+        font-size:1rem;
+    }
+
+    .dealer-home-hero-panel{
+        padding:1rem;
+    }
+
+    .dealer-home-stat-value{
+        font-size:1.7rem;
+    }
 }
