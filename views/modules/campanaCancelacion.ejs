@@ -1,18 +1,15 @@
 <section class="admin-shell">
-    <div class="admin-hero admin-hero-campaigns">
-        <div>
-            <span class="admin-eyebrow">Administrador</span>
-            <h2 class="admin-title">Ventana de Cancelación</h2>
-            <p class="admin-subtitle">
-                Define el temporizador operativo que controla cuántas horas tiene una reserva para cancelarse.
-            </p>
-        </div>
-        <div class="admin-hero-note">
-            <span>Configuración actual</span>
-            <strong><%= horasCancelacion || 24 %> horas</strong>
-            <small>Este valor se aplica al cálculo de la fecha límite de cancelación.</small>
-        </div>
-    </div>
+    <%- include('../includes/admin/hero', {
+        heroClass: 'admin-hero-campaigns',
+        eyebrow: 'Administrador',
+        title: 'Ventana de Cancelación',
+        subtitle: 'Define el temporizador operativo que controla cuántas horas tiene una reserva para cancelarse.',
+        note: {
+            label: 'Configuración actual',
+            value: `${horasCancelacion || 24} horas`,
+            help: 'Este valor se aplica al cálculo de la fecha límite de cancelación.'
+        }
+    }) %>
 
     <% if (pageMessage) { %>
         <div class="alert alert-<%= pageMessage.tipo %>" role="alert">
@@ -21,13 +18,11 @@
     <% } %>
 
     <div class="admin-table-card">
-        <div class="admin-table-head">
-            <div>
-                <h4>Configurar temporizador</h4>
-                <p>Indica cuántas horas estarán disponibles para cancelar una reserva después de su confirmación.</p>
-            </div>
-            <span class="admin-table-pill">Operación vigente</span>
-        </div>
+        <%- include('../includes/admin/tableHead', {
+            title: 'Configurar temporizador',
+            subtitle: 'Indica cuántas horas estarán disponibles para cancelar una reserva después de su confirmación.',
+            pillText: 'Operación vigente'
+        }) %>
 
         <form method="post" action="/admin/campanas/cancelacion" class="row g-3 align-items-end">
             <div class="col-md-6">

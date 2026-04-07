@@ -1,0 +1,13 @@
+<article class="admin-action-card">
+    <div class="admin-action-icon <%= iconVariantClass || '' %>">
+        <i class="bi <%= iconClass %>"></i>
+    </div>
+    <div class="admin-action-copy">
+        <span class="admin-action-tag"><%= tag %></span>
+        <h3><%= title %></h3>
+        <p><%= description %></p>
+    </div>
+    <a href="<%= href %>" class="btn admin-action-btn">
+        <%= buttonText %>
+    </a>
+</article>

@@ -1,15 +1,9 @@
-<h2 class="mb-4">
-Configurar Campaña
-</h2>
-<p class="text-muted">
-                El administrador configura campañas con nombre, fechas y banner. La activación exclusiva se gestiona en el módulo de estado.
-</p>
+<%- include('../includes/admin/pageIntro', {
+    title: 'Configurar Campaña',
+    subtitle: 'El administrador configura campañas con nombre, fechas y banner. La activación exclusiva se gestiona en el módulo de estado.'
+}) %>
 
-<% if (pageMessage) { %>
-    <div class="alert alert-<%= pageMessage.tipo %>">
-        <%= pageMessage.texto %>
-    </div>
-<% } %>
+<%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
 <div class="card p-4 mb-4">
     <form method="post" action="/admin/campanas/crear">
