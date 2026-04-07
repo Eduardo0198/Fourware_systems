@@ -1,5 +1,6 @@
 const reservaModel = require('../models/reserva.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
+const logger = require('../utils/logger');
 
 function formatearFechaInput(fecha) {
   return fecha.toISOString().slice(0, 10);
@@ -55,7 +56,7 @@ exports.reservasConfirmadas = (req, res) => {
 
   reservaModel.obtenerReservasConfirmadasPorPeriodo(fechaInicio, fechaFin, (err, reservas) => {
     if (err) {
-      console.error(err);
+      logger.error(err);
       return res.render('logistica/reservasConfirmadas', {
         pageMessage: {
           tipo: 'danger',

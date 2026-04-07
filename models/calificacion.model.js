@@ -1,5 +1,3 @@
-// inicio ---- lau ----- registrarCalificacion --
-
 const db = require('../config/db');
 
 exports.registrarCalificacion = (correo, sku, calificacion, comentario, callback) => {
@@ -9,10 +7,6 @@ exports.registrarCalificacion = (correo, sku, calificacion, comentario, callback
     `;
     db.query(query, [correo, sku, calificacion, comentario], callback);
 };
-
-// fin ---- lau----------
-
-// inicio ---- fabrizio ----- obtenerResumenCalificacionesPorSku --
 
 exports.obtenerResumenCalificacionesPorSku = (sku, callback) => {
     const query = `
@@ -48,10 +42,6 @@ exports.obtenerResumenCalificacionesPorSku = (sku, callback) => {
     });
 };
 
-// fin ---- fabrizio----------
-
-// inicio ---- fabrizio ----- obtenerResenasPorSku --
-
 exports.obtenerResenasPorSku = (sku, callback) => {
     const query = `
         SELECT
@@ -70,5 +60,3 @@ exports.obtenerResenasPorSku = (sku, callback) => {
 
     db.query(query, [sku], callback);
 };
-
-// fin ---- fabrizio----------

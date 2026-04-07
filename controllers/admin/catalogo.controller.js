@@ -1,5 +1,6 @@
 const path = require('path');
 const XLSX = require('xlsx');
+const logger = require('../../utils/logger');
 const {
     aNumeroDecimal,
     campaniaModel,
@@ -272,13 +273,13 @@ function construirResumenPreliminarCarga(lectura, skusExistentes = []) {
 function renderCatalogoRegistro(res, options = {}) {
     campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
         if (errCampanias) {
-            console.error(errCampanias);
+            logger.error(errCampanias);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
         productoModel.listarProductosCatalogo((errProductos, productos) => {
             if (errProductos) {
-                console.error(errProductos);
+                logger.error(errProductos);
                 return res.status(500).send('No fue posible cargar los productos.');
             }
 
@@ -295,13 +296,13 @@ function renderCatalogoRegistro(res, options = {}) {
 function renderCatalogoModificar(req, res, options = {}) {
     campaniaModel.obtenerTodas((errCampanias, campanias) => {
         if (errCampanias) {
-            console.error(errCampanias);
+            logger.error(errCampanias);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
         productoModel.listarProductosCatalogo((errProductos, productos) => {
             if (errProductos) {
-                console.error(errProductos);
+                logger.error(errProductos);
                 return res.status(500).send('No fue posible cargar los productos.');
             }
 
@@ -346,7 +347,7 @@ function renderCatalogoModificar(req, res, options = {}) {
 function renderCatalogoCargaMasiva(res, options = {}) {
     campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
         if (errCampanias) {
-            console.error(errCampanias);
+            logger.error(errCampanias);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
@@ -363,13 +364,13 @@ function renderCatalogoCargaMasiva(res, options = {}) {
 exports.catalogo = (req, res) => {
     productoModel.listarProductosCatalogo((errProductos, productos) => {
         if (errProductos) {
-            console.error(errProductos);
+            logger.error(errProductos);
             return res.status(500).send('No fue posible cargar el catalogo.');
         }
 
         campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
             if (errCampanias) {
-                console.error(errCampanias);
+                logger.error(errCampanias);
                 return res.status(500).send('No fue posible cargar el catalogo.');
             }
 
@@ -402,7 +403,7 @@ exports.registrarSKUPost = (req, res) => {
 
     productoModel.obtenerPorSku(validacion.producto.sku, (errSku, productoExistente) => {
         if (errSku) {
-            console.error(errSku);
+            logger.error(errSku);
             return renderCatalogoRegistro(res, {
                 pageMessage: {
                     tipo: 'danger',
@@ -424,7 +425,7 @@ exports.registrarSKUPost = (req, res) => {
 
         campaniaModel.obtenerPorId(validacion.producto.id_campania, (errCampania, campania) => {
             if (errCampania) {
-                console.error(errCampania);
+                logger.error(errCampania);
                 return renderCatalogoRegistro(res, {
                     pageMessage: {
                         tipo: 'danger',
@@ -449,7 +450,7 @@ exports.registrarSKUPost = (req, res) => {
 
             productoModel.registrar(validacion.producto, (errRegistro) => {
                 if (errRegistro) {
-                    console.error(errRegistro);
+                    logger.error(errRegistro);
                     registrarBitacora(req, `Error al registrar el producto ${validacion.producto.sku}`);
                     return renderCatalogoRegistro(res, {
                         pageMessage: {
@@ -486,7 +487,7 @@ exports.modificarSKU = (req, res) => {
 
     productoModel.obtenerPorSku(sku, (err, producto) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).send('No fue posible cargar el producto seleccionado.');
         }
 
@@ -529,7 +530,7 @@ exports.modificarSKUPost = (req, res) => {
 
     productoModel.obtenerPorSku(sku, (errProducto, productoExistente) => {
         if (errProducto) {
-            console.error(errProducto);
+            logger.error(errProducto);
             return renderCatalogoModificar(req, res, {
                 skuSeleccionado: sku,
                 formData: validacion.formData,
@@ -552,7 +553,7 @@ exports.modificarSKUPost = (req, res) => {
 
         campaniaModel.obtenerPorId(validacion.producto.id_campania, (errCampania, campania) => {
             if (errCampania) {
-                console.error(errCampania);
+                logger.error(errCampania);
                 return renderCatalogoModificar(req, res, {
                     skuSeleccionado: sku,
                     formData: validacion.formData,
@@ -583,7 +584,7 @@ exports.modificarSKUPost = (req, res) => {
 
             productoModel.actualizarPorSku(sku, validacion.producto, (errActualizacion) => {
                 if (errActualizacion) {
-                    console.error(errActualizacion);
+                    logger.error(errActualizacion);
                     registrarBitacora(req, `Error al actualizar la informacion del producto ${sku}`);
                     return renderCatalogoModificar(req, res, {
                         skuSeleccionado: sku,
@@ -662,7 +663,7 @@ exports.cargaMasivaPost = (req, res) => {
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
         if (errCampania) {
-            console.error(errCampania);
+            logger.error(errCampania);
             return renderCatalogoCargaMasiva(res, {
                 pageMessage: {
                     tipo: 'danger',
@@ -726,7 +727,7 @@ exports.cargaMasivaPost = (req, res) => {
 
             productoModel.obtenerPorSkus(skusArchivo, (errSkus, productosExistentes) => {
                 if (errSkus) {
-                    console.error(errSkus);
+                    logger.error(errSkus);
                     registrarBitacora(req, `Error al consultar SKUs existentes para carga masiva ${req.file.originalname}`);
                     return renderCatalogoCargaMasiva(res, {
                         pageMessage: {
@@ -761,7 +762,7 @@ exports.cargaMasivaPost = (req, res) => {
 
                 productoModel.registrarMultiples(resumen.productosParaInsertar, (errRegistro, resultado) => {
                     if (errRegistro) {
-                        console.error(errRegistro);
+                        logger.error(errRegistro);
                         registrarBitacora(req, `Error en carga masiva ${req.file.originalname}`);
 
                         return renderCatalogoCargaMasiva(res, {
@@ -795,7 +796,7 @@ exports.cargaMasivaPost = (req, res) => {
                 });
             });
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             registrarBitacora(req, `Error al leer archivo de carga masiva ${req.file.originalname}`);
             return renderCatalogoCargaMasiva(res, {
                 pageMessage: {

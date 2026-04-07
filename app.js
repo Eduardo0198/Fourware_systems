@@ -3,6 +3,7 @@ const path = require('path');
 const helmet = require('helmet');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
+const logger = require('./utils/logger');
 require('dotenv').config();
 const app = express();
 
@@ -61,5 +62,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    logger.info(`Servidor corriendo en http://localhost:${PORT}`);
 });

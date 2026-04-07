@@ -1,9 +1,14 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const logger = require('./logger');
 
-const nuevaPassword = 'Ppg2025!';
+const nuevaPassword = process.env.RESET_ALL_PASSWORD_TO;
 
 const actualizar = async () => {
+    if (!nuevaPassword) {
+        logger.error('Define RESET_ALL_PASSWORD_TO para ejecutar este script.');
+        process.exit(1);
+    }
 
     const hash = await bcrypt.hash(nuevaPassword, 10);
 
@@ -12,12 +17,11 @@ const actualizar = async () => {
         [hash],
         (err) => {
             if (err) {
-                console.log(err);
+                logger.error(err);
                 return;
             }
 
-            console.log('Contraseñas actualizadas');
-            console.log('Password para todos: Ppg2025!');
+            logger.info('Contrasenias actualizadas para todos los usuarios.');
         }
     );
 };

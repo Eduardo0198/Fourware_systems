@@ -3,6 +3,7 @@ const campaniaModel = require('../../models/campania.model');
 const cuentaModel = require('../../models/cuenta.model');
 const reservaModel = require('../../models/reserva.model');
 const usuarioModel = require('../../models/usuario.model');
+const logger = require('../../utils/logger');
 const {
     esFechaValida,
     normalizarCampania,
@@ -46,19 +47,19 @@ function normalizarReservasReporte(reservas) {
 function renderReportes(res, options = {}) {
     cuentaModel.obtenerTodas((errCuentas, cuentas) => {
         if (errCuentas) {
-            console.error(errCuentas);
+            logger.error(errCuentas);
             return res.status(500).send('No fue posible cargar las cuentas para el reporte.');
         }
 
         campaniaModel.obtenerTodas((errCampanias, campanias) => {
             if (errCampanias) {
-                console.error(errCampanias);
+                logger.error(errCampanias);
                 return res.status(500).send('No fue posible cargar las campanas para el reporte.');
             }
 
             usuarioModel.obtenerConcesionariosConReservasConfirmadas((errUsuarios, concesionarios) => {
                 if (errUsuarios) {
-                    console.error(errUsuarios);
+                    logger.error(errUsuarios);
                     return res.status(500).send('No fue posible cargar los concesionarios para el reporte.');
                 }
 
@@ -275,7 +276,7 @@ exports.reportesPost = (req, res) => {
         },
         (err, reservas) => {
             if (err) {
-                console.error(err);
+                logger.error(err);
                 registrarBitacora(
                     req,
                     `Error al generar reporte consolidado de preventas del ${formData.fecha_inicio} al ${formData.fecha_fin}`

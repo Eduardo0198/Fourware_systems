@@ -1,5 +1,6 @@
 const reservaModel = require('../../models/reserva.model');
 const { registrarEvento } = require('../../utils/auditoria.helper');
+const logger = require('../../utils/logger');
 const { generarPdfReserva } = require('../../services/pdf.service');
 const {
     MENSAJE_CANCELACION_EXITOSA,
@@ -17,7 +18,7 @@ const cancelacionModel = require('../../models/cancelacion.model');
 exports.reservas = (req, res) => {
     obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
         if (contextoErr) {
-            console.error(contextoErr);
+            logger.error(contextoErr);
             registrarEvento(req, 'Error al validar cuenta activa para historial de reservas');
             req.session.mensaje = {
                 tipo: 'danger',
@@ -38,7 +39,7 @@ exports.reservas = (req, res) => {
 
         cancelacionModel.obtener((configErr, configuracion) => {
             if (configErr) {
-                console.error(configErr);
+                logger.error(configErr);
                 registrarEvento(req, 'Error al consultar historial de reservas');
                 return renderHistorialReservas(res, [], {
                     tipo: 'danger',
@@ -48,7 +49,7 @@ exports.reservas = (req, res) => {
 
             reservaModel.obtenerReservasPorCorreoYCuenta(correo, idCuenta, (err, reservas) => {
                 if (err) {
-                    console.error(err);
+                    logger.error(err);
                     registrarEvento(req, 'Error al consultar historial de reservas');
                     return renderHistorialReservas(res, [], {
                         tipo: 'danger',
@@ -80,7 +81,7 @@ exports.detalleReserva = (req, res) => {
 
     obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
         if (contextoErr) {
-            console.error(contextoErr);
+            logger.error(contextoErr);
             registrarEvento(req, `Error al validar cuenta activa para detalle de reserva ${folio}`);
             req.session.mensaje = {
                 tipo: 'danger',
@@ -101,7 +102,7 @@ exports.detalleReserva = (req, res) => {
 
         obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
             if (err) {
-                console.error(err);
+                logger.error(err);
                 registrarEvento(req, `Error al consultar detalle de reserva ${folio}`);
                 req.session.mensaje = {
                     tipo: 'danger',
@@ -129,7 +130,7 @@ exports.descargarReservaPdf = (req, res) => {
 
     obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
         if (contextoErr) {
-            console.error(contextoErr);
+            logger.error(contextoErr);
             registrarEvento(req, `Error al validar cuenta activa para PDF de reserva ${folio}`);
             req.session.mensaje = {
                 tipo: 'danger',
@@ -150,7 +151,7 @@ exports.descargarReservaPdf = (req, res) => {
 
         obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
             if (err) {
-                console.error(err);
+                logger.error(err);
                 registrarEvento(req, `Error al consultar detalle para PDF de reserva ${folio}`);
                 req.session.mensaje = {
                     tipo: 'danger',
@@ -188,7 +189,7 @@ exports.cancelarReserva = (req, res) => {
 
     obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible consultar la reserva a cancelar.'
@@ -233,7 +234,7 @@ exports.cancelarReservaPost = (req, res) => {
 
     obtenerReservaNormalizada(folio, correo, idCuenta, (err, reserva) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible validar la reserva a cancelar.'
@@ -263,7 +264,7 @@ exports.cancelarReservaPost = (req, res) => {
 
         reservaModel.cancelarReserva(folio, correo, idCuenta, (cancelErr, result) => {
             if (cancelErr) {
-                console.error(cancelErr);
+                logger.error(cancelErr);
                 registrarEvento(req, 'Error al cancelar reserva');
                 req.session.mensaje = {
                     tipo: 'danger',
