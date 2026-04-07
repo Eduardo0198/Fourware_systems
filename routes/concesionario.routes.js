@@ -63,6 +63,12 @@ router.get('/reserva/:folio',
     concesionarioController.detalleReserva
 );
 
+router.get('/reserva/:folio/pdf',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    concesionarioController.descargarReservaPdf
+);
+
 router.get('/cancelar-reserva',
     protegerRuta,
     tieneRol(['Concesionario']),

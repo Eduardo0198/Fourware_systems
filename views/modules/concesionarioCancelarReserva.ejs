@@ -1,7 +1,7 @@
 <h2>Cancelar Reserva</h2>
 <hr>
 
-<div class="card mb-4 border-warning">
+<div class="card border-warning shadow-sm mb-4">
     <div class="card-body">
         <h5 class="card-title">Confirmación de cancelación</h5>
         <p class="mb-2">
@@ -22,28 +22,28 @@
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <small class="text-muted">Total</small>
-                <div><strong>$<%= Number(reserva.total || 0).toFixed(2) %></strong></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">Sucursal</small>
-                <div><%= reserva.fechaSucursalTexto %></div>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted">Estatus actual</small>
-                <div>
-                    <span class="badge text-bg-<%= reserva.estatusClase %>"><%= reserva.estatusTexto %></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<%- include('../includes/reservaInfoCard', {
+    items: [
+        {
+            label: 'Total',
+            value: `$${Number(reserva.total || 0).toFixed(2)}`,
+            valueClass: 'fw-bold'
+        },
+        {
+            label: 'Sucursal',
+            value: reserva.fechaSucursalTexto
+        },
+        {
+            label: 'Estatus actual',
+            badge: {
+                className: reserva.estatusClase,
+                text: reserva.estatusTexto
+            }
+        }
+    ]
+}) %>
 
-<div class="d-flex gap-2">
+<div class="d-flex flex-column flex-sm-row gap-2">
     <% if (reserva.puedeCancelar) { %>
         <form method="POST" action="/concesionario/cancelar-reserva">
             <input type="hidden" name="folio" value="<%= reserva.folio %>">

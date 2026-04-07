@@ -1,0 +1,23 @@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <% items.forEach((item) => { %>
+                <div class="<%= item.col || 'col-md-4' %>">
+                    <small class="text-muted"><%= item.label %></small>
+                    <div class="<%= item.valueClass || '' %>">
+                        <% if (item.badge) { %>
+                            <span class="badge text-bg-<%= item.badge.className %>">
+                                <%= item.badge.text %>
+                            </span>
+                        <% } else { %>
+                            <%= item.value %>
+                        <% } %>
+                    </div>
+                    <% if (item.extra) { %>
+                        <div class="<%= item.extra.className || 'text-muted' %>"><%= item.extra.text %></div>
+                    <% } %>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</div>

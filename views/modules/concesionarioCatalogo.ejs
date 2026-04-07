@@ -81,7 +81,7 @@
         <% } %>
         <% productos.forEach(p => { %>
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100">
+                <div class="card shadow-sm h-100 catalogo-product-card" id="producto-<%= p.SKU %>" data-sku="<%= p.SKU %>">
                     <img src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>"
                          class="card-img-top"
                          style="height:180px; object-fit:contain;"
@@ -92,7 +92,7 @@
                             $<%= p.precio_unitario %>
                         </p>
                         <div class="mt-auto">
-                            <a href="/concesionario/producto/<%= p.SKU %>"
+                            <a href="/concesionario/producto/<%= p.SKU %>?return_to=<%= encodeURIComponent(buildQuery(paginacion.paginaActual)) %>"
                                class="btn btn-primary w-100 mb-2">
                                 Seleccionar producto
                             </a>
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         resultados.innerHTML = productos.map((p) => `
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100">
+                <div class="card shadow-sm h-100 catalogo-product-card" id="producto-${escapeHtml(p.SKU)}" data-sku="${escapeHtml(p.SKU)}">
                     <img src="${escapeHtml(p.imagen || "/img/ppg-logo.png")}"
                          class="card-img-top"
                          style="height:180px; object-fit:contain;"
@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             $${escapeHtml(p.precio_unitario)}
                         </p>
                         <div class="mt-auto">
-                            <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}"
+                            <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}?return_to=${encodeURIComponent(buildQuery(1))}"
                                class="btn btn-primary w-100 mb-2">
                                 Seleccionar producto
                             </a>
@@ -224,6 +224,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             </div>
         `).join("");
+    }
+
+    function aplicarResaltadoProductoAgregado() {
+        const params = new URLSearchParams(window.location.search);
+        const agregado = params.get("agregado");
+        const sku = params.get("sku");
+
+        if (agregado !== "1" || !sku) {
+            return;
+        }
+
+        const target = document.getElementById(`producto-${sku}`);
+        if (!target) {
+            return;
+        }
+
+        target.classList.add("catalogo-product-card--added");
+        document.body.classList.add("catalogo-returning");
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        window.setTimeout(() => {
+            target.classList.remove("catalogo-product-card--added");
+            document.body.classList.remove("catalogo-returning");
+        }, 3200);
     }
 
     function renderPaginacion(paginacionData) {
@@ -319,5 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(ejecutarBusquedaPredictiva, 250);
     });
+
+    aplicarResaltadoProductoAgregado();
 });
 </script>
