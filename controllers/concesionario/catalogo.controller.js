@@ -1,13 +1,14 @@
 const concesionarioModel = require('../../models/concesionario.model');
 const campaniaModel = require('../../models/campania.model');
 const calificacionModel = require('../../models/calificacion.model');
+const logger = require('../../utils/logger');
 const { registrarEvento } = require('../../utils/auditoria.helper');
 const { obtenerDatosCatalogo } = require('./shared');
 
 exports.catalogo = (req, res) => {
     obtenerDatosCatalogo(req, concesionarioModel, (err, data) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             registrarEvento(req, 'Error al consultar catálogo de productos');
             return res.send('Error al obtener catálogo');
         }
@@ -43,7 +44,7 @@ exports.catalogoPredictivo = (req, res) => {
 
     obtenerDatosCatalogo(req, concesionarioModel, (err, data) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             registrarEvento(req, 'Error en búsqueda predictiva de catálogo');
             return res.status(500).json({
                 ok: false,
@@ -93,7 +94,7 @@ exports.producto = (req, res) => {
 
     campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
         if (campaniaErr) {
-            console.error(campaniaErr);
+            logger.error(campaniaErr);
             registrarEvento(req, 'Error al validar campaña vigente para detalle de producto');
             req.session.mensaje = {
                 tipo: 'danger',
@@ -120,7 +121,7 @@ exports.producto = (req, res) => {
             campaniaActiva.id_campania,
             (err, producto) => {
                 if (err) {
-                    console.error(err);
+                    logger.error(err);
                     registrarEvento(req, 'Error al consultar detalle técnico y logístico de producto');
                     req.session.mensaje = {
                         tipo: 'danger',
@@ -140,7 +141,7 @@ exports.producto = (req, res) => {
 
                 calificacionModel.obtenerResumenCalificacionesPorSku(sku, (errResumen, resumenCalificaciones) => {
                     if (errResumen) {
-                        console.error(errResumen);
+                        logger.error(errResumen);
                         registrarEvento(req, 'Error al consultar resumen de reseñas del producto');
                         req.session.mensaje = {
                             tipo: 'danger',
@@ -151,7 +152,7 @@ exports.producto = (req, res) => {
 
                     calificacionModel.obtenerResenasPorSku(sku, (errResenas, resenas) => {
                         if (errResenas) {
-                            console.error(errResenas);
+                            logger.error(errResenas);
                             registrarEvento(req, 'Error al consultar reseñas del producto');
                             req.session.mensaje = {
                                 tipo: 'danger',
@@ -215,7 +216,7 @@ exports.calificarProducto = (req, res) => {
 
     calificacionModel.registrarCalificacion(correo, sku, calificacion, comentario || '', (err) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             registrarEvento(req, 'Error al registrar calificación de producto');
             req.session.mensaje = {
                 tipo: 'danger',

@@ -1,6 +1,7 @@
 const cuentaModel = require('../../models/cuenta.model');
 const concesionarioModel = require('../../models/concesionario.model');
 const reservaModel = require('../../models/reserva.model');
+const logger = require('../../utils/logger');
 const { registrarEvento } = require('../../utils/auditoria.helper');
 const { obtenerContextoCuentaActiva, formatearFecha } = require('./shared');
 
@@ -20,7 +21,7 @@ exports.home = (req, res) => {
 
     obtenerContextoCuentaActiva(req, (contextoErr, contexto) => {
         if (contextoErr) {
-            console.error(contextoErr);
+            logger.error(contextoErr);
             registrarEvento(req, 'Error al validar cuenta activa para inicio de concesionario');
             req.session.mensaje = {
                 tipo: 'danger',
@@ -31,7 +32,7 @@ exports.home = (req, res) => {
 
         concesionarioModel.obtenerTopProductos((topErr, productosTop) => {
             if (topErr) {
-                console.error(topErr);
+                logger.error(topErr);
                 registrarEvento(req, 'Error al consultar inicio de concesionario');
                 req.session.mensaje = {
                     tipo: 'danger',
@@ -59,7 +60,7 @@ exports.home = (req, res) => {
 
             reservaModel.obtenerResumenPorCorreoYCuenta(contexto.correo, contexto.idCuenta, (resumenErr, resumenReserva) => {
                 if (resumenErr) {
-                    console.error(resumenErr);
+                    logger.error(resumenErr);
                     registrarEvento(req, 'Error al consultar resumen de reservas para inicio de concesionario');
                     req.session.mensaje = {
                         tipo: 'danger',
@@ -74,7 +75,7 @@ exports.home = (req, res) => {
                     5,
                     (recientesErr, reservasRecientes) => {
                         if (recientesErr) {
-                            console.error(recientesErr);
+                            logger.error(recientesErr);
                             registrarEvento(req, 'Error al consultar reservas recientes para inicio de concesionario');
                             req.session.mensaje = {
                                 tipo: 'danger',
@@ -134,7 +135,7 @@ exports.seleccionarCuentaActiva = (req, res) => {
 
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, idCuenta, (err, cuenta) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible actualizar la cuenta activa.'
@@ -165,7 +166,7 @@ exports.seleccionarCuentaActiva = (req, res) => {
 
         cuentaModel.obtenerCuentasPorCorreo(usuario.correo, (errCuentas, cuentas) => {
             if (errCuentas) {
-                console.error(errCuentas);
+                logger.error(errCuentas);
                 req.session.mensaje = {
                     tipo: 'danger',
                     texto: 'No fue posible actualizar la cuenta activa.'

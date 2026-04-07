@@ -1,6 +1,7 @@
 const usuarioModel = require('../models/usuario.model');
 const cuentaModel = require('../models/cuenta.model');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 const {
     registrarEvento,
     incrementarIntento,
@@ -101,7 +102,7 @@ exports.doLogin = (req, res) => {
 
                 cuentaModel.obtenerCuentasPorCorreo(rows[0].correo, (err4, cuentas) => {
                     if (err4) {
-                        console.error(err4);
+                        logger.error(err4);
                         req.session.usuario = usuarioSesion;
                         return redirigirSegunRol(roles, res);
                     }

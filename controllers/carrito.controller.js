@@ -4,6 +4,7 @@ const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
+const logger = require('../utils/logger');
 const { obtenerDetalleReservaParaCorreo } = require('../services/reservaDetalle.service');
 const { enviarCorreoReservaConfirmada } = require('../services/email.service');
 const {
@@ -20,7 +21,7 @@ function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
     setImmediate(() => {
         obtenerDetalleReservaParaCorreo({ folio, correo, idCuenta }, (detalleErr, reservaCorreo) => {
             if (detalleErr) {
-                console.error(detalleErr);
+                logger.error(detalleErr);
                 registrarEvento(req, `Error al preparar correo de confirmación para la reserva ${folio}`, correo);
                 return;
             }
@@ -38,7 +39,7 @@ function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
                     registrarEvento(req, `Correo de confirmación enviado para la reserva ${folio}`, correo);
                 })
                 .catch((emailErr) => {
-                    console.error(emailErr);
+                    logger.error(emailErr);
                     registrarEvento(req, `Error al enviar correo de confirmación para la reserva ${folio}`, correo);
                 });
         });
@@ -90,7 +91,7 @@ exports.agregarProducto = (req, res) => {
 
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
-                console.error(productoErr);
+                logger.error(productoErr);
                 registrarEvento(
                     req,
                     `Error al consultar producto ${sku} para agregar al carrito`,
@@ -174,7 +175,7 @@ exports.verCarrito = (req, res) => {
 
     cuentaModel.obtenerSucursalesActivasPorCuenta(cuentaActivaId, (err, sucursales) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'No fue posible cargar las sucursales disponibles.'
@@ -224,7 +225,7 @@ exports.eliminarProducto = (req, res) => {
         };
         return res.redirect('/concesionario/carrito');
     } catch (error) {
-        console.error(error);
+        logger.error(error);
         registrarEvento(req, `Error al eliminar producto ${sku || 'desconocido'} del carrito`);
         req.session.mensaje = {
             tipo: 'danger',
@@ -349,7 +350,7 @@ exports.confirmarReserva = (req, res) => {
 
     campaniaModel.obtenerCampaniaActiva((campaniaErr, campanias) => {
         if (campaniaErr) {
-            console.error(campaniaErr);
+            logger.error(campaniaErr);
             registrarEvento(req, 'Error al validar campaña durante confirmación de reserva', usuario.correo);
             req.session.mensaje = {
                 tipo: 'danger',
@@ -371,7 +372,7 @@ exports.confirmarReserva = (req, res) => {
 
         cuentaModel.obtenerSucursalesActivasPorCuenta(cuentaActivaId, (sucursalesErr, sucursales) => {
             if (sucursalesErr) {
-                console.error(sucursalesErr);
+                logger.error(sucursalesErr);
                 registrarEvento(req, 'Error al validar sucursal durante confirmación de reserva', usuario.correo);
                 req.session.mensaje = {
                     tipo: 'danger',
@@ -410,7 +411,7 @@ exports.confirmarReserva = (req, res) => {
 
                     if (productoErr) {
                         errorDisponibilidad = true;
-                        console.error(productoErr);
+                        logger.error(productoErr);
                         registrarEvento(req, `Error al validar disponibilidad del producto ${item.sku}`, usuario.correo);
                         req.session.mensaje = {
                             tipo: 'danger',
@@ -442,7 +443,7 @@ exports.confirmarReserva = (req, res) => {
 
                         cancelacionModel.obtener((configErr, configuracion) => {
                             if (configErr) {
-                                console.error(configErr);
+                                logger.error(configErr);
                                 registrarEvento(req, 'Error al obtener la ventana de cancelación configurada', usuario.correo);
                                 req.session.mensaje = {
                                     tipo: 'danger',
@@ -466,7 +467,7 @@ exports.confirmarReserva = (req, res) => {
                                 id_sucursal: sucursal
                             }, productosValidados, (reservaErr) => {
                                 if (reservaErr) {
-                                    console.error(reservaErr);
+                                    logger.error(reservaErr);
                                     registrarEvento(req, `Error al registrar la reserva ${folio}`, usuario.correo);
                                     req.session.mensaje = {
                                         tipo: 'danger',

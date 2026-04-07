@@ -6,11 +6,12 @@ const {
     registrarBitacora,
     registrarEvento
 } = require('./shared');
+const logger = require('../../utils/logger');
 
 function renderCampaniaCrear(res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
@@ -25,7 +26,7 @@ function renderCampaniaCrear(res, options = {}) {
 function renderCampaniaEditar(req, res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
@@ -89,7 +90,7 @@ function actualizarCampaniaValidada(req, res, idCampania, campaniaActual, valida
         idCampania,
         (errConflicto, existeConflicto) => {
             if (errConflicto) {
-                console.error(errConflicto);
+                logger.error(errConflicto);
                 return renderCampaniaEditar(req, res, {
                     idSeleccionado: idCampania,
                     pageMessage: {
@@ -125,7 +126,7 @@ function actualizarCampaniaValidada(req, res, idCampania, campaniaActual, valida
                 },
                 (err, result) => {
                     if (err || !result.affectedRows) {
-                        console.error(err);
+                        logger.error(err);
                         registrarBitacora(req, `Error al editar la campana ${idCampania}`);
                         return renderCampaniaEditar(req, res, {
                             idSeleccionado: idCampania,
@@ -157,7 +158,7 @@ function actualizarCampaniaValidada(req, res, idCampania, campaniaActual, valida
 exports.campanas = (req, res) => {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
@@ -195,7 +196,7 @@ exports.crearCampanaPost = (req, res) => {
         null,
         (errConflicto, existeConflicto) => {
             if (errConflicto) {
-                console.error(errConflicto);
+                logger.error(errConflicto);
                 return renderCampaniaCrear(res, {
                     pageMessage: {
                         tipo: 'danger',
@@ -220,7 +221,7 @@ exports.crearCampanaPost = (req, res) => {
                 estatus: 0
             }, (err) => {
                 if (err) {
-                    console.error(err);
+                    logger.error(err);
                     registrarBitacora(
                         req,
                         `Error al configurar la campana ${validacion.formData.nombre}`
@@ -280,7 +281,7 @@ exports.editarCampanaPost = (req, res) => {
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campaniaActual) => {
         if (errCampania || !campaniaActual) {
-            console.error(errCampania);
+            logger.error(errCampania);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'La campana seleccionada no existe.'
@@ -295,7 +296,7 @@ exports.editarCampanaPost = (req, res) => {
 exports.cancelacionCampana = (req, res) => {
     cancelacionModel.obtener((err, configuracion) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             return res.status(500).send('No fue posible cargar la configuracion de cancelacion.');
         }
 
@@ -322,7 +323,7 @@ exports.cancelacionCampanaPost = (req, res) => {
 
     cancelacionModel.actualizar(horas, (err, configuracion) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             registrarBitacora(req, 'Error al configurar la ventana de cancelacion de reservas');
             return res.render('modules/campanaCancelacion', {
                 pageMessage: {
@@ -365,7 +366,7 @@ exports.activarCampana = (req, res) => {
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
         if (errCampania || !campania) {
-            console.error(errCampania);
+            logger.error(errCampania);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'La campana seleccionada no existe.'
@@ -375,7 +376,7 @@ exports.activarCampana = (req, res) => {
 
         campaniaModel.existeOtraCampaniaActiva(idCampania, (errActiva, existeOtraActiva) => {
             if (errActiva) {
-                console.error(errActiva);
+                logger.error(errActiva);
                 req.session.mensaje = {
                     tipo: 'danger',
                     texto: 'No fue posible validar el estatus de las campanas.'
@@ -402,7 +403,7 @@ exports.activarCampana = (req, res) => {
                 },
                 (errActualizar) => {
                     if (errActualizar) {
-                        console.error(errActualizar);
+                        logger.error(errActualizar);
                         req.session.mensaje = {
                             tipo: 'danger',
                             texto: 'No fue posible activar la campana. Intente nuevamente.'
@@ -437,7 +438,7 @@ exports.desactivarCampana = (req, res) => {
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
         if (errCampania || !campania) {
-            console.error(errCampania);
+            logger.error(errCampania);
             req.session.mensaje = {
                 tipo: 'danger',
                 texto: 'La campana seleccionada no existe.'
@@ -447,7 +448,7 @@ exports.desactivarCampana = (req, res) => {
 
         campaniaModel.desactivar(idCampania, (errDesactivar) => {
             if (errDesactivar) {
-                console.error(errDesactivar);
+                logger.error(errDesactivar);
                 registrarBitacora(req, `Error al desactivar la campana ${idCampania}`);
                 req.session.mensaje = {
                     tipo: 'danger',

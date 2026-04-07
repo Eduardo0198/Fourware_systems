@@ -1,4 +1,5 @@
 const cuentaModel = require('../models/cuenta.model');
+const logger = require('../utils/logger');
 const {
     registrarEvento,
     incrementarIntento
@@ -100,7 +101,7 @@ exports.requiereCuentaActiva = (req, res, next) => {
 
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, usuario.cuentaActiva.id_cuenta, (err, cuenta) => {
         if (err) {
-            console.error(err);
+            logger.error(err);
             registrarEvento(req, 'Error al validar cuenta activa');
             req.session.mensaje = {
                 tipo: 'danger',
