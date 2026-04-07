@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmación de reserva</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:720px;margin:0 auto;padding:24px 16px;">
+        <div style="background:#123c73;border-radius:18px;padding:28px;color:#ffffff;">
+            <p style="margin:0 0 10px;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.8;">Fourware Systems</p>
+            <h1 style="margin:0;font-size:30px;line-height:1.2;">Reserva confirmada</h1>
+            <p style="margin:12px 0 0;font-size:16px;line-height:1.5;">
+                Tu reserva <strong><%= reserva.folio %></strong> fue registrada correctamente.
+            </p>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:24px;margin-top:18px;border:1px solid #e5e7eb;">
+            <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Resumen general</h2>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                <tr>
+                    <td style="padding:8px 0;color:#6b7280;">Folio</td>
+                    <td style="padding:8px 0;text-align:right;font-weight:700;"><%= reserva.folio %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;color:#6b7280;">Fecha</td>
+                    <td style="padding:8px 0;text-align:right;"><%= reserva.fechaTexto %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;color:#6b7280;">Sucursal</td>
+                    <td style="padding:8px 0;text-align:right;"><%= reserva.sucursalNombre %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;color:#6b7280;">Dirección</td>
+                    <td style="padding:8px 0;text-align:right;"><%= reserva.sucursalDireccion %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;color:#6b7280;">Límite de cancelación</td>
+                    <td style="padding:8px 0;text-align:right;"><%= reserva.fechaCancelacionTexto %></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:24px;margin-top:18px;border:1px solid #e5e7eb;">
+            <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Productos reservados</h2>
+            <% reserva.productos.forEach((producto) => { %>
+                <div style="border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:14px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                        <tr>
+                            <td style="width:110px;vertical-align:top;">
+                                <% if (producto.imagenSrc) { %>
+                                    <img src="<%= producto.imagenSrc %>" alt="<%= producto.nombre %>" style="display:block;width:96px;height:96px;object-fit:cover;border-radius:12px;border:1px solid #d1d5db;">
+                                <% } else { %>
+                                    <div style="width:96px;height:96px;border-radius:12px;background:#eef2ff;border:1px solid #d1d5db;text-align:center;line-height:96px;color:#6b7280;font-size:12px;">
+                                        Sin imagen
+                                    </div>
+                                <% } %>
+                            </td>
+                            <td style="vertical-align:top;">
+                                <h3 style="margin:0 0 8px;font-size:18px;color:#111827;"><%= producto.nombre %></h3>
+                                <p style="margin:0 0 6px;color:#6b7280;">SKU: <strong style="color:#374151;"><%= producto.sku %></strong></p>
+                                <p style="margin:0 0 6px;color:#6b7280;">Cantidad: <strong style="color:#374151;"><%= producto.cantidad %></strong></p>
+                                <p style="margin:0 0 6px;color:#6b7280;">Precio aplicado: <strong style="color:#374151;">$<%= producto.precioAplicado.toFixed(2) %></strong></p>
+                                <p style="margin:0;color:#6b7280;">Subtotal: <strong style="color:#111827;">$<%= producto.subtotalLinea.toFixed(2) %></strong></p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            <% }); %>
+        </div>
+
+        <div style="background:#111827;border-radius:18px;padding:24px;margin-top:18px;color:#ffffff;">
+            <h2 style="margin:0 0 14px;font-size:20px;">Totales</h2>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                <tr>
+                    <td style="padding:8px 0;opacity:.8;">Subtotal</td>
+                    <td style="padding:8px 0;text-align:right;">$<%= reserva.subtotal.toFixed(2) %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;opacity:.8;">IVA</td>
+                    <td style="padding:8px 0;text-align:right;">$<%= reserva.iva.toFixed(2) %></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;font-size:18px;font-weight:700;">Total</td>
+                    <td style="padding:8px 0;text-align:right;font-size:18px;font-weight:700;">$<%= reserva.total.toFixed(2) %></td>
+                </tr>
+            </table>
+        </div>
+
+        <p style="margin:18px 4px 0;color:#6b7280;font-size:13px;line-height:1.5;">
+            Este correo funciona como comprobante informativo de la reserva generada en el sistema de preventa.
+        </p>
+    </div>
+</body>
+</html>
