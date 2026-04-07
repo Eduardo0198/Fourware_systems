@@ -4,6 +4,8 @@ const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
+const { obtenerDetalleReservaParaCorreo } = require('../services/reservaDetalle.service');
+const { enviarCorreoReservaConfirmada } = require('../services/email.service');
 
 function generarFolioReserva() {
     const ahora = new Date();
@@ -52,6 +54,35 @@ function obtenerCarritoActivo(req) {
     }
 
     return req.session.carrito || [];
+}
+
+function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
+    setImmediate(() => {
+        obtenerDetalleReservaParaCorreo({ folio, correo, idCuenta }, (detalleErr, reservaCorreo) => {
+            if (detalleErr) {
+                console.error(detalleErr);
+                registrarEvento(req, `Error al preparar correo de confirmación para la reserva ${folio}`, correo);
+                return;
+            }
+
+            enviarCorreoReservaConfirmada({
+                destinatario: correo,
+                reserva: reservaCorreo
+            })
+                .then((resultado) => {
+                    if (resultado.omitido) {
+                        registrarEvento(req, `Correo de confirmación omitido para la reserva ${folio}`, correo);
+                        return;
+                    }
+
+                    registrarEvento(req, `Correo de confirmación enviado para la reserva ${folio}`, correo);
+                })
+                .catch((emailErr) => {
+                    console.error(emailErr);
+                    registrarEvento(req, `Error al enviar correo de confirmación para la reserva ${folio}`, correo);
+                });
+        });
+    });
 }
 
 exports.agregarProducto = (req, res) => {
@@ -495,6 +526,12 @@ exports.confirmarReserva = (req, res) => {
                                     tipo: 'success',
                                     texto: `Reserva confirmada exitosamente. Folio: ${folio}`
                                 };
+
+                                notificarReservaConfirmada(req, {
+                                    folio,
+                                    correo: usuario.correo,
+                                    idCuenta: cuentaActivaId
+                                });
 
                                 return res.redirect('/concesionario/carrito');
                             });
