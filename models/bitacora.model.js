@@ -23,7 +23,7 @@ function normalizarPayload(correoOrPayload, accion, ip) {
 exports.registrar = (correoOrPayload, accion, ip, callback = () => {}) => {
     const payload = normalizarPayload(correoOrPayload, accion, ip);
     const query = `
-        INSERT INTO BitacoraAuditoria (fecha, accion, ip_origen, correo)
+        INSERT INTO "BitacoraAuditoria" (fecha, accion, ip_origen, correo)
         VALUES (NOW(), ?, ?, ?)
     `;
 
@@ -33,7 +33,7 @@ exports.registrar = (correoOrPayload, accion, ip, callback = () => {}) => {
 exports.listarRecientes = (callback, limite = 100) => {
     const query = `
         SELECT id_log, fecha, accion, ip_origen, correo
-        FROM BitacoraAuditoria
+        FROM "BitacoraAuditoria"
         ORDER BY fecha DESC, id_log DESC
         LIMIT ?
     `;
@@ -66,8 +66,8 @@ exports.obtenerRegistrosFiltrados = (filtros, callback) => {
         : '';
 
     const query = `
-        SELECT id_log, DATE_FORMAT(fecha, '%Y-%m-%d %H:%i:%s') AS fecha, correo, accion, ip_origen
-        FROM BitacoraAuditoria
+        SELECT id_log, TO_CHAR(fecha, 'YYYY-MM-DD HH24:MI:SS') AS fecha, correo, accion, ip_origen
+        FROM "BitacoraAuditoria"
         ${where}
         ORDER BY fecha DESC, id_log DESC
     `;

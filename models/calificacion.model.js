@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 exports.registrarCalificacion = (correo, sku, calificacion, comentario, callback) => {
     const query = `
-        INSERT INTO Calificacion (correo, SKU, estrellas, comentario, fecha)
+        INSERT INTO "Calificacion" (correo, "SKU", estrellas, comentario, fecha)
         VALUES (?, ?, ?, ?, NOW())
     `;
     db.query(query, [correo, sku, calificacion, comentario], callback);
@@ -12,14 +12,14 @@ exports.obtenerResumenCalificacionesPorSku = (sku, callback) => {
     const query = `
         SELECT
             COUNT(*) AS total_resenas,
-            ROUND(AVG(estrellas), 1) AS promedio_general,
+            ROUND(AVG(estrellas)::numeric, 1) AS promedio_general,
             SUM(CASE WHEN estrellas = 5 THEN 1 ELSE 0 END) AS cinco_estrellas,
             SUM(CASE WHEN estrellas = 4 THEN 1 ELSE 0 END) AS cuatro_estrellas,
             SUM(CASE WHEN estrellas = 3 THEN 1 ELSE 0 END) AS tres_estrellas,
             SUM(CASE WHEN estrellas = 2 THEN 1 ELSE 0 END) AS dos_estrellas,
             SUM(CASE WHEN estrellas = 1 THEN 1 ELSE 0 END) AS una_estrella
-        FROM Calificacion
-        WHERE SKU = ?
+        FROM "Calificacion"
+        WHERE "SKU" = ?
     `;
 
     db.query(query, [sku], (err, rows) => {
@@ -51,9 +51,9 @@ exports.obtenerResenasPorSku = (sku, callback) => {
             c.fecha,
             c.correo,
             u.nombre
-        FROM Calificacion c
-        LEFT JOIN Usuario u ON u.correo = c.correo
-        WHERE c.SKU = ?
+        FROM "Calificacion" c
+        LEFT JOIN "Usuario" u ON u.correo = c.correo
+        WHERE c."SKU" = ?
         ORDER BY c.fecha DESC, c.id_calificacion DESC
         LIMIT 8
     `;
