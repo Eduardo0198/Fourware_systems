@@ -3,7 +3,7 @@ const db = require('../config/db');
 exports.obtenerCampaniaActiva = (callback) => {
     const query = `
         SELECT *
-        FROM Campania
+        FROM "Campania"
         WHERE estatus = 1
         ORDER BY fecha_inicio ASC, id_campania ASC
         LIMIT 1
@@ -15,7 +15,7 @@ exports.obtenerCampaniaActiva = (callback) => {
 exports.obtenerTodas = (callback) => {
     const query = `
         SELECT *
-        FROM Campania
+        FROM "Campania"
         ORDER BY fecha_inicio DESC, id_campania DESC
     `;
 
@@ -25,7 +25,7 @@ exports.obtenerTodas = (callback) => {
 exports.obtenerPorId = (idCampania, callback) => {
     const query = `
         SELECT *
-        FROM Campania
+        FROM "Campania"
         WHERE id_campania = ?
         LIMIT 1
     `;
@@ -42,8 +42,8 @@ exports.obtenerPorId = (idCampania, callback) => {
 exports.obtenerSeleccionablesParaCatalogo = (callback) => {
     const query = `
         SELECT *
-        FROM Campania
-        WHERE fecha_fin >= CURDATE()
+        FROM "Campania"
+        WHERE fecha_fin >= CURRENT_DATE
         ORDER BY estatus DESC, fecha_inicio DESC, id_campania DESC
     `;
 
@@ -52,7 +52,7 @@ exports.obtenerSeleccionablesParaCatalogo = (callback) => {
 
 exports.crear = (campania, callback) => {
     const query = `
-        INSERT INTO Campania (nombre, fecha_inicio, fecha_fin, banner, estatus)
+        INSERT INTO "Campania" (nombre, fecha_inicio, fecha_fin, banner, estatus)
         VALUES (?, ?, ?, ?, ?)
     `;
 
@@ -67,7 +67,7 @@ exports.crear = (campania, callback) => {
 
 exports.actualizar = (idCampania, campania, callback) => {
     const query = `
-        UPDATE Campania
+        UPDATE "Campania"
         SET nombre = ?, fecha_inicio = ?, fecha_fin = ?, banner = ?, estatus = ?
         WHERE id_campania = ?
     `;
@@ -85,7 +85,7 @@ exports.actualizar = (idCampania, campania, callback) => {
 exports.existeOtraCampaniaActiva = (idCampania, callback) => {
     const query = `
         SELECT COUNT(*) AS total
-        FROM Campania
+        FROM "Campania"
         WHERE estatus = 1 AND id_campania <> ?
     `;
 
@@ -102,7 +102,7 @@ exports.existeConflictoPeriodo = (fechaInicio, fechaFin, idCampaniaExcluir, call
     const excluir = Number.isInteger(idCampaniaExcluir) ? idCampaniaExcluir : 0;
     const query = `
         SELECT COUNT(*) AS total
-        FROM Campania
+        FROM "Campania"
         WHERE id_campania <> ?
           AND estatus = 1
           AND fecha_inicio <= ?
@@ -119,44 +119,51 @@ exports.existeConflictoPeriodo = (fechaInicio, fechaFin, idCampaniaExcluir, call
 };
 
 exports.activarExclusiva = (idCampania, callback) => {
-    db.beginTransaction((err) => {
-        if (err) {
-            return callback(err);
+    db.connect((connectErr, client, done) => {
+        if (connectErr) {
+            return callback(connectErr);
         }
 
-        db.query(
-            'UPDATE Campania SET estatus = 0 WHERE id_campania <> ? AND estatus = 1',
-            [idCampania],
-            (errReset) => {
-                if (errReset) {
-                    return db.rollback(() => callback(errReset));
-                }
+        const rollback = (err) => {
+            client.query('ROLLBACK', () => {
+                done();
+                callback(err);
+            });
+        };
 
-                db.query(
-                    'UPDATE Campania SET estatus = 1 WHERE id_campania = ?',
-                    [idCampania],
-                    (errActivate, result) => {
-                        if (errActivate) {
-                            return db.rollback(() => callback(errActivate));
+        client.query('BEGIN', (beginErr) => {
+            if (beginErr) return rollback(beginErr);
+
+            client.query(
+                'UPDATE "Campania" SET estatus = 0 WHERE id_campania <> $1 AND estatus = 1',
+                [idCampania],
+                (errReset) => {
+                    if (errReset) return rollback(errReset);
+
+                    client.query(
+                        'UPDATE "Campania" SET estatus = 1 WHERE id_campania = $1',
+                        [idCampania],
+                        (errActivate, pgResult) => {
+                            if (errActivate) return rollback(errActivate);
+
+                            client.query('COMMIT', (errCommit) => {
+                                if (errCommit) return rollback(errCommit);
+                                done();
+                                const result = [];
+                                result.affectedRows = pgResult.rowCount || 0;
+                                callback(null, result);
+                            });
                         }
-
-                        db.commit((errCommit) => {
-                            if (errCommit) {
-                                return db.rollback(() => callback(errCommit));
-                            }
-
-                            callback(null, result);
-                        });
-                    }
-                );
-            }
-        );
+                    );
+                }
+            );
+        });
     });
 };
 
 exports.desactivar = (idCampania, callback) => {
     const query = `
-        UPDATE Campania
+        UPDATE "Campania"
         SET estatus = 0
         WHERE id_campania = ?
     `;
