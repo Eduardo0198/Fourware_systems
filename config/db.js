@@ -1,29 +1,57 @@
 require('dotenv').config();
-const mysql = require('mysql2');
+const dns = require('dns');
+const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
-const dbConfig = {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || '',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || ''
-};
+// Forzar resolución IPv4 (Supabase resuelve a IPv6 por defecto en algunos sistemas)
+dns.setDefaultResultOrder('ipv4first');
 
-const conexion = mysql.createConnection(dbConfig);
-
-conexion.connect((err) => {
-    if (err) {
-        logger.error('Error de conexion a MySQL:', err.message);
-        logger.error(
-            `Configuracion usada: ${dbConfig.user}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`
-        );
-        return;
-    }
-
-    logger.info(
-        `Conectado a MySQL en ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`
-    );
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
 
-module.exports = conexion;
+pool.on('connect', () => {
+    logger.info('Conectado a PostgreSQL (Supabase)');
+});
+
+pool.on('error', (err) => {
+    logger.error('Error en pool de PostgreSQL:', err.message);
+});
+
+const db = {
+    /**
+     * Ejecuta una consulta SQL.
+     * Convierte placeholders ? de MySQL al estilo $1, $2, ... de PostgreSQL.
+     * El callback recibe (err, rows) donde rows es un array.
+     * Para INSERT/UPDATE/DELETE, rows.affectedRows contiene el número de filas afectadas.
+     */
+    query(sql, params, callback) {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+
+        // Convertir ? al estilo $n de PostgreSQL
+        let idx = 0;
+        const pgSql = sql.replace(/\?/g, () => `$${++idx}`);
+
+        pool.query(pgSql, params || [], (err, result) => {
+            if (err) return callback(err);
+
+            const rows = result.rows || [];
+            rows.affectedRows = result.rowCount || 0;
+            callback(null, rows);
+        });
+    },
+
+    /**
+     * Obtiene un cliente dedicado del pool para manejar transacciones.
+     * callback(err, client, done) — llama a done() al terminar.
+     */
+    connect(callback) {
+        pool.connect(callback);
+    }
+};
+
+module.exports = db;
