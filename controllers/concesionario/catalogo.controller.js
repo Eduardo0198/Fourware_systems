@@ -23,7 +23,7 @@ exports.catalogo = (req, res) => {
                 }
             });
         }
-
+ 
         registrarEvento(
             req,
             data.query
