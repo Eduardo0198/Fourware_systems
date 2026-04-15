@@ -36,7 +36,7 @@ exports.protegerRuta = (req, res, next) => {
     }
     next();
 };
-
+ 
 exports.tieneRol = (rolesPermitidos) => {
     return (req, res, next) => {
         const usuario = req.session.usuario;
