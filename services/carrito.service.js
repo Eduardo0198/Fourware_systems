@@ -3,12 +3,9 @@ function generarFolioReserva() {
     const yy = String(ahora.getFullYear()).slice(-2);
     const mm = String(ahora.getMonth() + 1).padStart(2, '0');
     const dd = String(ahora.getDate()).padStart(2, '0');
-    const hh = String(ahora.getHours()).padStart(2, '0');
-    const mi = String(ahora.getMinutes()).padStart(2, '0');
-    const ss = String(ahora.getSeconds()).padStart(2, '0');
     const random = Math.random().toString(36).slice(2, 6).toUpperCase();
 
-    return `R${yy}${mm}${dd}${hh}${mi}${ss}${random}`;
+    return `PPG-${yy}${mm}${dd}-${random}`;
 }
 
 function calcularFechaLimiteCancelacion(horas = 24) {
