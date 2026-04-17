@@ -57,6 +57,7 @@ async function enviarCorreoReservaConfirmada({ destinatario, reserva }) {
         html
     });
 
+    console.log('[EMAIL] Correo enviado exitosamente');
     return {
         enviado: true,
         omitido: false
