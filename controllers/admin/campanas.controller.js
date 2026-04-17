@@ -303,25 +303,25 @@ exports.cancelacionCampana = (req, res) => {
         registrarEvento(req, 'Consulta de configuracion de cancelacion de reservas');
         res.render('modules/campanaCancelacion', {
             pageMessage: res.locals.mensaje || null,
-            horasCancelacion: configuracion.horas_cancelacion
+            minutosCancelacion: configuracion.minutos_cancelacion
         });
     });
 };
 
 exports.cancelacionCampanaPost = (req, res) => {
-    const horas = parseInt(req.body.horas_cancelacion, 10);
+    const minutos = parseInt(req.body.minutos_cancelacion, 10);
 
-    if (Number.isNaN(horas) || horas <= 0) {
+    if (Number.isNaN(minutos) || minutos <= 0) {
         return res.render('modules/campanaCancelacion', {
             pageMessage: {
                 tipo: 'danger',
-                texto: 'Debes capturar una cantidad valida de horas para cancelar reservas.'
+                texto: 'Debes capturar una cantidad válida de minutos para cancelar reservas.'
             },
-            horasCancelacion: req.body.horas_cancelacion
+            minutosCancelacion: req.body.minutos_cancelacion
         });
     }
 
-    cancelacionModel.actualizar(horas, (err, configuracion) => {
+    cancelacionModel.actualizar(minutos, (err, configuracion) => {
         if (err) {
             logger.error(err);
             registrarBitacora(req, 'Error al configurar la ventana de cancelacion de reservas');
@@ -330,13 +330,13 @@ exports.cancelacionCampanaPost = (req, res) => {
                     tipo: 'danger',
                     texto: 'No fue posible guardar la ventana de cancelacion. Intente nuevamente.'
                 },
-                horasCancelacion: req.body.horas_cancelacion
+                minutosCancelacion: req.body.minutos_cancelacion
             });
         }
 
         registrarBitacora(
             req,
-            `Configuracion de ventana de cancelacion a ${configuracion.horas_cancelacion} horas`
+            `Configuracion de ventana de cancelacion a ${configuracion.minutos_cancelacion} minutos`
         );
 
         req.session.mensaje = {

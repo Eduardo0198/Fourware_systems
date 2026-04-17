@@ -3,10 +3,10 @@
         heroClass: 'admin-hero-campaigns',
         eyebrow: 'Administrador',
         title: 'Ventana de Cancelación',
-        subtitle: 'Define el temporizador operativo que controla cuántas horas tiene una reserva para cancelarse.',
+        subtitle: 'Define cuántos minutos tiene una reserva para cancelarse después de ser confirmada.',
         note: {
             label: 'Configuración actual',
-            value: `${horasCancelacion || 24} horas`,
+            value: `${minutosCancelacion || 15} minutos`,
             help: 'Este valor se aplica al cálculo de la fecha límite de cancelación.'
         }
     }) %>
@@ -20,20 +20,20 @@
     <div class="admin-table-card">
         <%- include('../includes/admin/tableHead', {
             title: 'Configurar temporizador',
-            subtitle: 'Indica cuántas horas estarán disponibles para cancelar una reserva después de su confirmación.',
+            subtitle: 'Indica cuántos minutos estarán disponibles para cancelar una reserva después de su confirmación.',
             pillText: 'Operación vigente'
         }) %>
 
         <form method="post" action="/admin/campanas/cancelacion" class="row g-3 align-items-end">
             <div class="col-md-6">
-                <label class="form-label">Horas permitidas para cancelar reservas</label>
+                <label class="form-label">Minutos permitidos para cancelar reservas</label>
                 <input
                     type="number"
                     min="1"
                     step="1"
-                    name="horas_cancelacion"
+                    name="minutos_cancelacion"
                     class="form-control"
-                    value="<%= horasCancelacion || 24 %>"
+                    value="<%= minutosCancelacion || 15 %>"
                     required>
             </div>
             <div class="col-md-6 d-flex gap-2">
