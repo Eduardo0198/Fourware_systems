@@ -324,66 +324,7 @@ body.sidebar-hidden .footer-ppg {
     color:#ffffff;
 }
 
-/* ================= BANNER ================= */
-
-.promo-bar{
-    height:200px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    position:relative;
-    margin-left:250px;
-    width: calc(100% - 250px);
-    transition:all 0.3s ease;
-}
-
-.promo-bar::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,0.5);
-}
-
-.promo-content{
-    width:90%;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    position:relative;
-    z-index:2;
-}
-
-.promo-left{
-    font-size:24px;
-    font-weight:bold;
-}
-
-/* TIMER PRO */
-.promo-timer-box{
-    display:flex;
-    gap:12px;
-}
-
-.time-box{
-    background:white;
-    color:#111;
-    padding:12px 18px;
-    border-radius:14px;
-    text-align:center;
-    min-width:80px;
-    box-shadow:0 6px 16px rgba(0,0,0,0.3);
-}
-
-.time-box span{
-    font-size:20px;
-    font-weight:bold;
-}
-
-.time-box small{
-    font-size:10px;
-    color:#555;
-}
+/* ================= BANNER (ver sección PROMO BAR más abajo) ================= */
 
 /* ================= CONTENT ================= */
 
@@ -455,29 +396,28 @@ body.sidebar-hidden .footer-ppg {
 /* ================= PROMO BAR ================= */
 
 .promo-bar {
-    width: 100%;
-    padding: 10px 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    overflow: hidden;
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 12px 28px;
+    color: white;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .promo-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    max-width: 100%;
-    margin: 0 auto;
-    overflow: hidden;
+    gap: 16px;
+    width: 100%;
 }
 
 .promo-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 10px;
     min-width: 0;
     flex: 1 1 auto;
     overflow: hidden;
