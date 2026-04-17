@@ -271,7 +271,7 @@ exports.crearReservaConProductos = (data, productos, callback) => {
             const reservaQuery = `
                 INSERT INTO "Reserva"
                 (folio, estatus, fecha, subtotal, iva, total, fecha_cancelacion_reserva, correo, id_cuenta, id_sucursal)
-                VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, $6, $7, $8, $9)
+                VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9)
             `;
 
             client.query(reservaQuery, [

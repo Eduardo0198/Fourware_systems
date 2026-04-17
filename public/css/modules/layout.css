@@ -398,13 +398,13 @@ body.sidebar-hidden .footer-ppg {
 .promo-bar {
     margin-left: 250px;
     width: calc(100% - 250px);
-    padding: 18px 28px;
+    padding: 22px 32px;
     color: white;
-    border-radius: 0 0 14px 14px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
     box-sizing: border-box;
     transition: all 0.3s ease;
-    min-height: 80px;
+    min-height: 110px;
     display: flex;
     align-items: center;
 }
@@ -440,7 +440,7 @@ body.sidebar-hidden .footer-ppg {
 
 .promo-name {
     color: #fff;
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 600;
     letter-spacing: 0.3px;
 }
@@ -476,15 +476,15 @@ body.sidebar-hidden .footer-ppg {
     align-items: center;
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 6px;
-    padding: 3px 7px;
-    min-width: 40px;
+    border-radius: 8px;
+    padding: 6px 12px;
+    min-width: 52px;
     backdrop-filter: blur(4px);
 }
 
 .time-value {
     color: #fff;
-    font-size: 17px;
+    font-size: 22px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;

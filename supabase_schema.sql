@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS "Sucursal" (
 CREATE TABLE IF NOT EXISTS "Reserva" (
   "folio"                     VARCHAR(20) NOT NULL,
   "estatus"                   SMALLINT,
-  "fecha"                     DATE,
+  "fecha"                     TIMESTAMP,
   "subtotal"                  DECIMAL(10,2),
   "iva"                       DECIMAL(10,2),
   "total"                     DECIMAL(10,2),

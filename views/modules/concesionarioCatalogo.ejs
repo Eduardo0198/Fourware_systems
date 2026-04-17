@@ -394,8 +394,27 @@ document.addEventListener("DOMContentLoaded", () => {
     aplicarResaltadoProductoAgregado();
 });
 
-/* ── Animación fly-to-cart ── */
+/* ── Animación fly-to-cart + AJAX sin recarga ── */
 (function () {
+    function actualizarBadgeCarrito(count) {
+        const cartIcon = document.getElementById("cartHeaderIcon");
+        if (!cartIcon) return;
+        let badge = cartIcon.querySelector(".badge");
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger";
+                badge.style.cssText = "font-size:0.6rem;min-width:18px";
+                cartIcon.appendChild(badge);
+            }
+            badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+        cartIcon.classList.add("cart-icon-pulse");
+        setTimeout(() => cartIcon.classList.remove("cart-icon-pulse"), 550);
+    }
+
     function animarAlCarrito(imgEl, onDone) {
         const cartIcon = document.getElementById("cartHeaderIcon");
         if (!imgEl || !cartIcon) { onDone(); return; }
@@ -426,22 +445,45 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }));
 
-        setTimeout(() => {
-            clone.remove();
-            cartIcon.classList.add("cart-icon-pulse");
-            setTimeout(() => cartIcon.classList.remove("cart-icon-pulse"), 550);
-            onDone();
-        }, 640);
+        setTimeout(() => { clone.remove(); onDone(); }, 640);
     }
 
     document.addEventListener("submit", function (e) {
         const form = e.target;
         if (!form.matches("form[action*='carrito/agregar']")) return;
-
         e.preventDefault();
+
         const card = form.closest(".catalogo-product-card");
         const img = card ? card.querySelector("img") : null;
-        animarAlCarrito(img, () => form.submit());
+        const btn = form.querySelector("button[type='submit']");
+
+        if (btn) btn.disabled = true;
+
+        animarAlCarrito(img, async () => {
+            try {
+                const body = new URLSearchParams(new FormData(form));
+                const resp = await fetch("/concesionario/carrito/agregar", {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: body.toString()
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    actualizarBadgeCarrito(data.carritoCount);
+                    if (card) {
+                        card.classList.add("catalogo-product-card--added");
+                        setTimeout(() => card.classList.remove("catalogo-product-card--added"), 3200);
+                    }
+                }
+            } catch (_) {
+                form.submit();
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        });
     });
 })();
 </script>

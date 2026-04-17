@@ -51,37 +51,32 @@ exports.agregarProducto = (req, res) => {
     const cantidadNumerica = parseInt(req.body.cantidad, 10);
     const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
     const redirectCatalogo = construirRedirectCatalogo(req.body.return_to, sku);
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
+
+    const respError = (tipo, texto, statusCode) => {
+        if (esAjax) return res.status(statusCode || 400).json({ ok: false, mensaje: texto });
+        req.session.mensaje = { tipo, texto };
+        return res.redirect('back');
+    };
 
     if (!sku || !Number.isInteger(cantidadNumerica) || cantidadNumerica <= 0) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'La cantidad ingresada no es válida. Ingrese un valor mayor a cero.'
-        };
-        return res.redirect('back');
+        return respError('danger', 'La cantidad ingresada no es válida. Ingrese un valor mayor a cero.');
     }
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
         if (err) {
             registrarEvento(req, 'Error al agregar producto al carrito');
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
-            };
-            return res.redirect('back');
+            return respError('danger', 'No fue posible agregar el producto al carrito. Intente nuevamente.', 500);
         }
 
         if (!result || result.length === 0) {
             registrarEvento(req, 'Intento de agregar producto al carrito sin campaña activa');
-            req.session.mensaje = {
-                tipo: 'warning',
-                texto: 'La campaña de preventa no se encuentra disponible en este momento.'
-            };
+            if (esAjax) return res.status(409).json({ ok: false, mensaje: 'La campaña de preventa no está disponible.' });
+            req.session.mensaje = { tipo: 'warning', texto: 'La campaña de preventa no se encuentra disponible en este momento.' };
             return res.redirect('/concesionario/catalogo');
         }
 
-        if (!req.session.carrito) {
-            req.session.carrito = [];
-        }
+        if (!req.session.carrito) req.session.carrito = [];
 
         if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
             req.session.carrito = [];
@@ -92,28 +87,14 @@ exports.agregarProducto = (req, res) => {
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
                 logger.error(productoErr);
-                registrarEvento(
-                    req,
-                    `Error al consultar producto ${sku} para agregar al carrito`,
-                    req.session.usuario?.correo || null
-                );
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
-                };
-                return res.redirect('back');
+                registrarEvento(req, `Error al consultar producto ${sku} para agregar al carrito`, req.session.usuario?.correo || null);
+                return respError('danger', 'No fue posible agregar el producto al carrito. Intente nuevamente.', 500);
             }
 
             if (!producto) {
-                registrarEvento(
-                    req,
-                    `Intento de agregar producto inexistente ${sku} al carrito`,
-                    req.session.usuario?.correo || null
-                );
-                req.session.mensaje = {
-                    tipo: 'warning',
-                    texto: 'El producto seleccionado ya no se encuentra disponible.'
-                };
+                registrarEvento(req, `Intento de agregar producto inexistente ${sku} al carrito`, req.session.usuario?.correo || null);
+                if (esAjax) return res.status(404).json({ ok: false, mensaje: 'El producto ya no se encuentra disponible.' });
+                req.session.mensaje = { tipo: 'warning', texto: 'El producto seleccionado ya no se encuentra disponible.' };
                 return res.redirect('/concesionario/catalogo');
             }
 
@@ -129,15 +110,12 @@ exports.agregarProducto = (req, res) => {
 
             req.session.carrito = carrito;
 
-            const correo = req.session.usuario?.correo
-                     || req.session.usuario?.usuario?.correo;
+            const correo = req.session.usuario?.correo || req.session.usuario?.usuario?.correo;
             registrarEvento(req, `Agregó producto ${sku} al carrito`, correo);
 
-            req.session.mensaje = {
-                tipo: 'success',
-                texto: 'Producto agregado correctamente al carrito.'
-            };
+            if (esAjax) return res.json({ ok: true, carritoCount: carrito.length, sku });
 
+            req.session.mensaje = { tipo: 'success', texto: 'Producto agregado correctamente al carrito.' };
             return res.redirect(redirectCatalogo);
         });
     });
