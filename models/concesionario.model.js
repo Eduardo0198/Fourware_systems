@@ -33,6 +33,7 @@ exports.obtenerProductosPaginados = (
             peso_unitario,
             volumen_unitario,
             medida_primaria,
+            unidad_venta,
             imagen
         FROM Producto
         WHERE activo = 1

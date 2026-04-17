@@ -281,12 +281,59 @@ function renderCatalogoRegistro(res, options = {}) {
                 console.error(errProductos);
                 return res.status(500).send('No fue posible cargar los productos.');
             }
+            campaniaModel.obtenerCampaniaActiva((errCampaniaActiva, campaniasActivas) => {
+                if (errCampaniaActiva) {
+                    console.error(errCampaniaActiva);
+                    return res.status(500).send('No fue posible cargar la campana activa.');
+                }
 
-            res.render('modules/catalogoRegistrar', {
-                pageMessage: options.pageMessage || res.locals.mensaje || null,
-                formData: options.formData || {},
-                campanias: campanias.map(normalizarCampania),
-                productos: productos.map(normalizarProducto)
+                const campaniaActiva = Array.isArray(campaniasActivas) && campaniasActivas.length > 0
+                    ? normalizarCampania(campaniasActivas[0])
+                    : null;
+
+                const skuDestacado = String(options.skuDestacado || '').trim().toUpperCase();
+                const productosNormalizados = productos
+                    .map(normalizarProducto)
+                    .sort((a, b) => {
+                        if (a.SKU === skuDestacado) return -1;
+                        if (b.SKU === skuDestacado) return 1;
+                        return String(b.SKU).localeCompare(String(a.SKU));
+                    });
+
+                const renderConActiva = (productosCampaniaActiva = []) => {
+                    res.render('modules/catalogoRegistrar', {
+                        pageMessage: options.pageMessage || res.locals.mensaje || null,
+                        formData: options.formData || {},
+                        campanias: campanias.map(normalizarCampania),
+                        productos: productosNormalizados,
+                        campaniaActiva,
+                        productosCampaniaActiva: productosCampaniaActiva.map(normalizarProducto)
+                    });
+                };
+
+                if (!campaniaActiva) {
+                    return renderConActiva([]);
+                }
+
+                productoModel.listarProductosPorCampania(campaniaActiva.id_campania, (errCampaniaProductos, productosCampaniaActiva) => {
+                    if (errCampaniaProductos) {
+                        console.error(errCampaniaProductos);
+                        return res.status(500).send('No fue posible cargar los productos de la campana activa.');
+                    }
+
+                    const productosActivosOrdenados = (productosCampaniaActiva || [])
+                        .map(normalizarProducto)
+                        .sort((a, b) => {
+                            if (a.SKU === skuDestacado) return -1;
+                            if (b.SKU === skuDestacado) return 1;
+                            if (Number(a.activo) !== Number(b.activo)) {
+                                return Number(b.activo) - Number(a.activo);
+                            }
+                            return String(b.SKU).localeCompare(String(a.SKU));
+                        });
+
+                    return renderConActiva(productosActivosOrdenados);
+                });
             });
         });
     });
@@ -384,7 +431,9 @@ exports.catalogo = (req, res) => {
 
 exports.registrarSKU = (req, res) => {
     registrarEvento(req, 'Consulta de registro de producto de catalogo');
-    renderCatalogoRegistro(res);
+    renderCatalogoRegistro(res, {
+        skuDestacado: req.query.sku
+    });
 };
 
 exports.registrarSKUPost = (req, res) => {
@@ -434,8 +483,9 @@ exports.registrarSKUPost = (req, res) => {
                 });
             }
 
+            const hoy = new Date(new Date().toDateString());
             const campaniaInvalida =
-                !campania || new Date(campania.fecha_fin) < new Date(new Date().toDateString());
+                !campania || new Date(campania.fecha_fin) < hoy;
 
             if (campaniaInvalida) {
                 return renderCatalogoRegistro(res, {
@@ -447,10 +497,20 @@ exports.registrarSKUPost = (req, res) => {
                 });
             }
 
-            productoModel.registrar(validacion.producto, (errRegistro) => {
+            const campaniaActivaVigente =
+                Number(campania.estatus) === 1
+                && new Date(campania.fecha_inicio) <= hoy
+                && new Date(campania.fecha_fin) >= hoy;
+
+            const productoARegistrar = {
+                ...validacion.producto,
+                activo: campaniaActivaVigente ? 1 : 0
+            };
+
+            productoModel.registrar(productoARegistrar, (errRegistro) => {
                 if (errRegistro) {
                     console.error(errRegistro);
-                    registrarBitacora(req, `Error al registrar el producto ${validacion.producto.sku}`);
+                    registrarBitacora(req, `Error al registrar el producto ${productoARegistrar.sku}`);
                     return renderCatalogoRegistro(res, {
                         pageMessage: {
                             tipo: 'danger',
@@ -462,15 +522,141 @@ exports.registrarSKUPost = (req, res) => {
 
                 registrarBitacora(
                     req,
-                    `Registro de producto ${validacion.producto.sku} en catalogo para campania ${campania.id_campania}`
+                    `Registro de producto ${productoARegistrar.sku} en catalogo para campania ${campania.id_campania}`
                 );
 
                 req.session.mensaje = {
                     tipo: 'success',
-                    texto: 'Producto registrado correctamente en el catalogo.'
+                    texto: campaniaActivaVigente
+                        ? 'Producto registrado y activado correctamente en la campana activa.'
+                        : 'Producto registrado correctamente en el catalogo.'
                 };
 
-                res.redirect('/admin/catalogo/registrar');
+                res.redirect(`/admin/catalogo/registrar?sku=${encodeURIComponent(productoARegistrar.sku)}`);
+            });
+        });
+    });
+};
+
+exports.activarProducto = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    campaniaModel.obtenerCampaniaActiva((errCampania, campanias) => {
+        if (errCampania) {
+            console.error(errCampania);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible validar la campana activa.'
+            };
+            return res.redirect('/admin/catalogo/registrar');
+        }
+
+        const campaniaActiva = Array.isArray(campanias) && campanias.length > 0 ? campanias[0] : null;
+
+        if (!campaniaActiva) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'No existe una campana activa para administrar productos.'
+            };
+            return res.redirect('/admin/catalogo/registrar');
+        }
+
+        productoModel.obtenerPorSku(sku, (errProducto, producto) => {
+            if (errProducto) {
+                console.error(errProducto);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible validar el producto seleccionado.'
+                };
+                return res.redirect('/admin/catalogo/registrar');
+            }
+
+            if (!producto || Number(producto.id_campania) !== Number(campaniaActiva.id_campania)) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'Solo puedes activar productos de la campana activa.'
+                };
+                return res.redirect('/admin/catalogo/registrar');
+            }
+
+            productoModel.actualizarEstatusPorSku(sku, 1, (errActualizar) => {
+                if (errActualizar) {
+                    console.error(errActualizar);
+                    req.session.mensaje = {
+                        tipo: 'danger',
+                        texto: 'No fue posible activar el producto.'
+                    };
+                    return res.redirect('/admin/catalogo/registrar');
+                }
+
+                registrarBitacora(req, `Activacion de producto ${sku} en campana activa`);
+                req.session.mensaje = {
+                    tipo: 'success',
+                    texto: `Producto ${sku} activado correctamente.`
+                };
+                return res.redirect(`/admin/catalogo/registrar?sku=${encodeURIComponent(sku)}`);
+            });
+        });
+    });
+};
+
+exports.desactivarProducto = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    campaniaModel.obtenerCampaniaActiva((errCampania, campanias) => {
+        if (errCampania) {
+            console.error(errCampania);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible validar la campana activa.'
+            };
+            return res.redirect('/admin/catalogo/registrar');
+        }
+
+        const campaniaActiva = Array.isArray(campanias) && campanias.length > 0 ? campanias[0] : null;
+
+        if (!campaniaActiva) {
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'No existe una campana activa para administrar productos.'
+            };
+            return res.redirect('/admin/catalogo/registrar');
+        }
+
+        productoModel.obtenerPorSku(sku, (errProducto, producto) => {
+            if (errProducto) {
+                console.error(errProducto);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible validar el producto seleccionado.'
+                };
+                return res.redirect('/admin/catalogo/registrar');
+            }
+
+            if (!producto || Number(producto.id_campania) !== Number(campaniaActiva.id_campania)) {
+                req.session.mensaje = {
+                    tipo: 'warning',
+                    texto: 'Solo puedes desactivar productos de la campana activa.'
+                };
+                return res.redirect('/admin/catalogo/registrar');
+            }
+
+            productoModel.actualizarEstatusPorSku(sku, 0, (errActualizar) => {
+                if (errActualizar) {
+                    console.error(errActualizar);
+                    req.session.mensaje = {
+                        tipo: 'danger',
+                        texto: 'No fue posible desactivar el producto.'
+                    };
+                    return res.redirect('/admin/catalogo/registrar');
+                }
+
+                registrarBitacora(req, `Desactivacion de producto ${sku} en campana activa`);
+                req.session.mensaje = {
+                    tipo: 'success',
+                    texto: `Producto ${sku} desactivado correctamente.`
+                };
+                return res.redirect(`/admin/catalogo/registrar?sku=${encodeURIComponent(sku)}`);
             });
         });
     });

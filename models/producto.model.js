@@ -23,6 +23,30 @@ exports.listarProductosCatalogo = (callback) => {
     db.query(query, callback);
 };
 
+exports.listarProductosPorCampania = (idCampania, callback) => {
+    const query = `
+        SELECT
+            p.SKU,
+            p.nombre_comercial,
+            p.descripcion,
+            p.precio_unitario,
+            p.peso_unitario,
+            p.volumen_unitario,
+            p.medida_primaria,
+            p.unidad_venta,
+            p.imagen,
+            p.activo,
+            p.id_campania,
+            c.nombre AS nombre_campania
+        FROM Producto p
+        LEFT JOIN Campania c ON c.id_campania = p.id_campania
+        WHERE p.id_campania = ?
+        ORDER BY p.activo DESC, p.SKU DESC
+    `;
+
+    db.query(query, [idCampania], callback);
+};
+
 exports.obtenerPorSku = (sku, callback) => {
     const query = `
         SELECT *
@@ -159,4 +183,14 @@ exports.actualizarPorSku = (sku, producto, callback) => {
         producto.id_campania,
         sku
     ], callback);
+};
+
+exports.actualizarEstatusPorSku = (sku, activo, callback) => {
+    const query = `
+        UPDATE Producto
+        SET activo = ?
+        WHERE SKU = ?
+    `;
+
+    db.query(query, [activo, sku], callback);
 };

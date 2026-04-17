@@ -37,6 +37,20 @@ router.post('/catalogo/registrar',
     adminController.registrarSKUPost
 );
 
+router.post('/catalogo/estado/:sku/activar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.activarProducto
+);
+
+router.post('/catalogo/estado/:sku/desactivar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.desactivarProducto
+);
+
 router.get('/catalogo/modificar',
     protegerRuta,
     tieneRol(['Administrador']),

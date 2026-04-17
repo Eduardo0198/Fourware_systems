@@ -1,8 +1,6 @@
-<h2 class="mb-4">
-Registrar Producto
-</h2>
+<h2 class="mb-4">Registrar Producto</h2>
 <p class="text-muted">
-CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida y el sistema lo deja inicialmente inactivo.
+CU-06. El administrador registra un nuevo SKU y, si lo asocia a la campana activa vigente, el sistema lo deja activo para preventa.
 </p>
 
 <% if (pageMessage) { %>
@@ -23,10 +21,12 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                 <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" required>
             </div>
         </div>
+
         <div class="mb-3">
-            <label class="form-label">Descripción</label>
+            <label class="form-label">Descripcion</label>
             <textarea name="descripcion" class="form-control" rows="3" required><%= formData.descripcion || '' %></textarea>
         </div>
+
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Unidad de venta</label>
@@ -37,6 +37,7 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                 <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" required>
             </div>
         </div>
+
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">Precio unitario</label>
@@ -51,15 +52,16 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                 <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" required>
             </div>
         </div>
+
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Ruta de imagen</label>
                 <input type="text" name="imagen" class="form-control" value="<%= formData.imagen || '' %>" placeholder="/img/productos/nuevo-producto.png" required>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Campaña asociada</label>
+                <label class="form-label">Campana asociada</label>
                 <select name="id_campania" class="form-select" required>
-                    <option value="">Selecciona una campaña</option>
+                    <option value="">Selecciona una campana</option>
                     <% campanias.forEach((campania) => { %>
                         <option
                             value="<%= campania.id_campania %>"
@@ -70,28 +72,40 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                 </select>
             </div>
         </div>
+
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
                 Registrar producto
             </button>
             <a href="/admin/catalogo" class="btn btn-outline-secondary">
-                Volver al catálogo
+                Volver al catalogo
             </a>
         </div>
     </form>
 </div>
 
-<div class="card p-4">
-    <h4 class="mb-3">
-    Productos registrados
-    </h4>
-    <div class="table-responsive">
+<div class="card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h4 class="mb-1">Productos registrados</h4>
+            <p class="text-muted mb-0">El producto mas recientemente registrado se muestra primero.</p>
+        </div>
+        <% if (campaniaActiva) { %>
+            <span class="badge bg-success fs-6">
+                Campana activa: <%= campaniaActiva.nombre %>
+            </span>
+        <% } else { %>
+            <span class="badge bg-secondary fs-6">No hay campana activa</span>
+        <% } %>
+    </div>
+
+    <div class="table-responsive mt-3">
         <table class="table align-middle mb-0">
             <thead>
                 <tr>
                     <th>SKU</th>
                     <th>Nombre</th>
-                    <th>Campaña</th>
+                    <th>Campana</th>
                     <th>Estatus</th>
                 </tr>
             </thead>
@@ -100,7 +114,7 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                     <tr>
                         <td><strong><%= producto.SKU %></strong></td>
                         <td><%= producto.nombre_comercial %></td>
-                        <td><%= producto.nombre_campania || 'Sin campaña' %></td>
+                        <td><%= producto.nombre_campania || 'Sin campana' %></td>
                         <td>
                             <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
                                 <%= producto.estatusTexto %>
@@ -111,4 +125,71 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
             </tbody>
         </table>
     </div>
+</div>
+
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">Activar o desactivar productos</h4>
+            <p class="text-muted mb-0">Solo se pueden administrar productos ligados a la campana activa actual.</p>
+        </div>
+        <% if (campaniaActiva) { %>
+            <span class="badge bg-primary fs-6">
+                <%= campaniaActiva.fecha_inicio_texto %> - <%= campaniaActiva.fecha_fin_texto %>
+            </span>
+        <% } %>
+    </div>
+
+    <% if (!campaniaActiva) { %>
+        <div class="alert alert-warning mb-0">
+            No existe una campana activa para administrar productos en preventa.
+        </div>
+    <% } else if (!productosCampaniaActiva || productosCampaniaActiva.length === 0) { %>
+        <div class="alert alert-info mb-0">
+            Aun no hay productos asociados a la campana activa.
+        </div>
+    <% } else { %>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Estatus</th>
+                        <th class="text-end">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% productosCampaniaActiva.forEach((producto) => { %>
+                        <tr>
+                            <td><strong><%= producto.SKU %></strong></td>
+                            <td><%= producto.nombre_comercial %></td>
+                            <td>$<%= Number(producto.precio_unitario || 0).toFixed(2) %></td>
+                            <td>
+                                <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= producto.estatusTexto %>
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <% if (producto.activo) { %>
+                                    <form method="post" action="/admin/catalogo/estado/<%= encodeURIComponent(producto.SKU) %>/desactivar" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            Desactivar
+                                        </button>
+                                    </form>
+                                <% } else { %>
+                                    <form method="post" action="/admin/catalogo/estado/<%= encodeURIComponent(producto.SKU) %>/activar" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            Activar
+                                        </button>
+                                    </form>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
 </div>

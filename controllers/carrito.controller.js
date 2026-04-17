@@ -33,14 +33,16 @@ function construirItemCarrito(producto, cantidad) {
         precio: Number(producto.precio_unitario) || 0,
         cantidad,
         peso_unitario: Number(producto.peso_unitario) || 0,
-        volumen_unitario: Number(producto.volumen_unitario) || 0
+        volumen_unitario: Number(producto.volumen_unitario) || 0,
+        added_at: Date.now()
     };
 }
 
 function sincronizarCarritoConProducto(itemActual, producto) {
     return {
         ...itemActual,
-        ...construirItemCarrito(producto, itemActual.cantidad)
+        ...construirItemCarrito(producto, itemActual.cantidad),
+        added_at: itemActual.added_at || Date.now()
     };
 }
 
@@ -48,13 +50,17 @@ exports.agregarProducto = (req, res) => {
     const sku = String(req.body.sku || '').trim();
     const cantidadNumerica = parseInt(req.body.cantidad, 10);
     const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+    const redirectTo = String(req.body.redirect_to || '').trim();
+    const destinoExito = redirectTo.startsWith('/concesionario/')
+        ? redirectTo
+        : '/concesionario/carrito';
 
     if (!sku || !Number.isInteger(cantidadNumerica) || cantidadNumerica <= 0) {
         req.session.mensaje = {
             tipo: 'danger',
             texto: 'La cantidad ingresada no es válida. Ingrese un valor mayor a cero.'
         };
-        return res.redirect('back');
+        return res.redirect(destinoExito);
     }
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
@@ -66,7 +72,7 @@ exports.agregarProducto = (req, res) => {
                 tipo: 'danger',
                 texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
             };
-            return res.redirect('back');
+            return res.redirect(destinoExito);
         }
 
         if (!result || result.length === 0) {
@@ -102,7 +108,7 @@ exports.agregarProducto = (req, res) => {
                     tipo: 'danger',
                     texto: 'No fue posible agregar el producto al carrito. Intente nuevamente.'
                 };
-                return res.redirect('back');
+                return res.redirect(destinoExito);
             }
 
             if (!producto) {
@@ -122,10 +128,13 @@ exports.agregarProducto = (req, res) => {
             const index = carrito.findIndex(p => p.sku === sku);
 
             if (index !== -1) {
-                carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
-                carrito[index].cantidad += cantidadNumerica;
+                const itemActualizado = sincronizarCarritoConProducto(carrito[index], producto);
+                itemActualizado.cantidad += cantidadNumerica;
+                itemActualizado.added_at = Date.now();
+                carrito.splice(index, 1);
+                carrito.unshift(itemActualizado);
             } else {
-                carrito.push(construirItemCarrito(producto, cantidadNumerica));
+                carrito.unshift(construirItemCarrito(producto, cantidadNumerica));
             }
 
             req.session.carrito = carrito;
@@ -143,7 +152,7 @@ exports.agregarProducto = (req, res) => {
                 texto: 'Producto agregado correctamente al carrito.'
             };
 
-            return res.redirect('/concesionario/carrito');
+            return res.redirect(destinoExito);
         });
     });
 };
@@ -156,7 +165,9 @@ exports.verCarrito = (req, res) => {
         req.session.carritoCuentaId = cuentaActivaId;
     }
 
-    const carrito = req.session.carrito || [];
+    const carrito = (req.session.carrito || [])
+        .slice()
+        .sort((a, b) => Number(b.added_at || 0) - Number(a.added_at || 0));
     const subtotal = carrito.reduce((acc, p) => {
         return acc + (p.precio * p.cantidad);
     }, 0);

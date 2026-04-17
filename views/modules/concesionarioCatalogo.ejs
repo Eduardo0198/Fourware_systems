@@ -1,145 +1,192 @@
-<h2 class="mb-3">Catálogo de Productos</h2>
-<% const alertMessage = pageMessage || mensaje || null; %>
-<% if (alertMessage) { %>
-    <div class="alert alert-<%= alertMessage.tipo %> mb-3" role="alert">
-        <%= alertMessage.texto %>
-    </div>
-<% } %>
-<hr>
-<div class="d-flex align-items-center mb-3 gap-2">
-    <div class="flex-grow-1">
-        <form method="GET" action="/concesionario/catalogo" id="catalogoSearchForm">
-            <div class="input-group shadow-sm">
-                <span class="input-group-text">
-                    <i class="bi bi-search"></i>
-                </span>
-                <input type="text"
-                       id="catalogoSearchInput"
-                       class="form-control"
-                       name="q"
-                       autocomplete="off"
-                       placeholder="Buscar producto..."
-                       value="<%= typeof query !== 'undefined' ? query : '' %>">
-            </div>
-        </form>
-    </div>
-    <button id="toggleFiltersBtn" class="btn btn-outline-primary">
-        <i class="bi bi-funnel"></i> Filtros
-    </button>
-</div>
-<div id="filtersContainer" style="display:none;">
-    <form method="GET" action="/concesionario/catalogo"
-          id="catalogoFiltersForm"
-          class="row g-3 align-items-end mb-4">
-        <input type="hidden" name="q"
-               id="catalogoFiltersQuery"
-               value="<%= typeof query !== 'undefined' ? query : '' %>">
-        <div class="col-md-2">
-            <label class="form-label">Precio min</label>
-            <input type="number" name="precio_min"
-                   id="catalogoPrecioMin"
-                   class="form-control"
-                   value="<%= typeof precio_min !== 'undefined' ? precio_min : 0 %>">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Precio max</label>
-            <input type="number" name="precio_max"
-                   id="catalogoPrecioMax"
-                   class="form-control"
-                   value="<%= typeof precio_max !== 'undefined' ? precio_max : 10000 %>">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Unidad</label>
-            <select name="unidad_venta" id="catalogoUnidadVenta" class="form-select">
-                <option value="">Todas</option>
-                <% if (Array.isArray(unidadesVenta)) { %>
-                    <% unidadesVenta.forEach(u => { %>
-                        <option value="<%= u %>"
-                        <%= (unidad_venta_seleccionada === u) ? 'selected' : '' %>>
-                            <%= u %>
-                        </option>
-                    <% }) %>
-                <% } %>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-primary">Filtrar</button>
-            <a href="/concesionario/catalogo" class="btn btn-secondary">Limpiar</a>
-        </div>
-
-    </form>
-</div>
-<p id="catalogoStatus" class="text-muted small mb-3">
-    Busca por SKU, nombre o descripción.
-</p>
-<div class="container-fluid">
-    <div class="row g-3" id="catalogoResultados">
-        <% if (productos.length === 0) { %>
-            <div class="col-12 text-center mt-5">
-                <h5><%= hayBusquedaOFiltros ? 'Búsqueda sin resultados' : 'No se encontraron productos' %></h5>
-            </div>
-        <% } %>
-        <% productos.forEach(p => { %>
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100">
-                    <img src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>"
-                         class="card-img-top"
-                         style="height:180px; object-fit:contain;"
-                         onerror="this.src='/img/ppg-logo.png'">
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title"><%= p.nombre %></h6>
-                        <p class="fw-bold text-primary">
-                            $<%= p.precio_unitario %>
-                        </p>
-                        <div class="mt-auto">
-                            <a href="/concesionario/producto/<%= p.SKU %>"
-                               class="btn btn-primary w-100 mb-2">
-                                Seleccionar producto
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <% }) %>
-    </div>
-</div>
 <%
+const alertMessage = pageMessage || mensaje || null;
+const queryValue = typeof query !== 'undefined' ? query : '';
+const precioMinValue = typeof precio_min !== 'undefined' ? precio_min : 0;
+const precioMaxValue = typeof precio_max !== 'undefined' ? precio_max : 10000;
+const currentCatalogUrl = buildQuery(paginacion?.paginaActual || 1);
+
 function buildQuery(page) {
     let url = '?page=' + page;
 
     if (query) url += '&q=' + encodeURIComponent(query);
     if (precio_min) url += '&precio_min=' + precio_min;
     if (precio_max) url += '&precio_max=' + precio_max;
-    if (unidad_venta_seleccionada)
+    if (unidad_venta_seleccionada) {
         url += '&unidad_venta=' + encodeURIComponent(unidad_venta_seleccionada);
+    }
+
     return url;
 }
+
+function truncateText(value, length) {
+    const text = String(value || '').trim();
+    if (text.length <= length) {
+        return text;
+    }
+    return text.slice(0, length).trim() + '...';
+}
 %>
-<nav id="catalogoPaginacionWrapper">
-    <ul class="pagination justify-content-center mt-4 flex-wrap" id="catalogoPaginacion">
-        <% if (paginacion.paginaActual > 1) { %>
-            <li class="page-item">
-                <a class="page-link"
-                   href="<%= buildQuery(paginacion.paginaActual - 1) %>">
-                    Anterior
-                </a>
-            </li>
+
+<section class="catalogo-showcase">
+
+    <% if (alertMessage) { %>
+        <div class="alert alert-<%= alertMessage.tipo %> mb-4" role="alert">
+            <%= alertMessage.texto %>
+        </div>
+    <% } %>
+
+    <div class="catalogo-toolbar">
+        <div class="catalogo-toolbar__search">
+            <form method="GET" action="/concesionario/catalogo" id="catalogoSearchForm">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text"
+                           id="catalogoSearchInput"
+                           class="form-control"
+                           name="q"
+                           autocomplete="off"
+                           placeholder="Buscar por SKU, nombre o descripcion"
+                           value="<%= queryValue %>">
+                </div>
+            </form>
+        </div>
+        <button id="toggleFiltersBtn" class="btn btn-outline-primary catalogo-toolbar__filters-btn" type="button">
+            <i class="bi bi-sliders"></i> Filtros avanzados
+        </button>
+    </div>
+
+    <div id="filtersContainer" class="catalogo-filters" style="display:none;">
+        <form method="GET"
+              action="/concesionario/catalogo"
+              id="catalogoFiltersForm"
+              class="row g-3 align-items-end">
+            <input type="hidden" name="q" id="catalogoFiltersQuery" value="<%= queryValue %>">
+
+            <div class="col-md-3">
+                <label class="form-label">Precio minimo</label>
+                <input type="number"
+                       name="precio_min"
+                       id="catalogoPrecioMin"
+                       class="form-control"
+                       value="<%= precioMinValue %>">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Precio maximo</label>
+                <input type="number"
+                       name="precio_max"
+                       id="catalogoPrecioMax"
+                       class="form-control"
+                       value="<%= precioMaxValue %>">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Unidad de venta</label>
+                <select name="unidad_venta" id="catalogoUnidadVenta" class="form-select">
+                    <option value="">Todas</option>
+                    <% if (Array.isArray(unidadesVenta)) { %>
+                        <% unidadesVenta.forEach((u) => { %>
+                            <option value="<%= u %>" <%= unidad_venta_seleccionada === u ? 'selected' : '' %>>
+                                <%= u %>
+                            </option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary">Aplicar</button>
+                <a href="/concesionario/catalogo" class="btn btn-light border">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <p id="catalogoStatus" class="catalogo-status">
+        Busca por SKU, nombre o descripcion y agrega productos directamente desde la tarjeta.
+    </p>
+
+    <div class="row g-4" id="catalogoResultados">
+        <% if (productos.length === 0) { %>
+            <div class="col-12">
+                <div class="catalogo-empty-state">
+                    <h5><%= hayBusquedaOFiltros ? 'No encontramos coincidencias para tu busqueda' : 'No hay productos disponibles en esta campana' %></h5>
+                    <p>Prueba ajustando el termino o los filtros para encontrar mas opciones.</p>
+                </div>
+            </div>
         <% } %>
-        <% for (let i = 1; i <= paginacion.totalPaginas; i++) { %>
-            <li class="page-item <%= i === paginacion.paginaActual ? 'active' : '' %>">
-                <a class="page-link" href="<%= buildQuery(i) %>"><%= i %></a>
-            </li>
-        <% } %>
-        <% if (paginacion.paginaActual < paginacion.totalPaginas) { %>
-            <li class="page-item">
-                <a class="page-link"
-                   href="<%= buildQuery(paginacion.paginaActual + 1) %>">
-                    Siguiente
-                </a>
-            </li>
-        <% } %>
-    </ul>
-</nav>
+
+        <% productos.forEach((p) => { %>
+            <div class="col-12 col-md-6 col-xl-4">
+                <article class="catalogo-card">
+                    <div class="catalogo-card__media">
+                        <img src="<%= p.imagen ? p.imagen : '/img/ppg-logo.png' %>"
+                             alt="<%= p.nombre %>"
+                             onerror="this.src='/img/ppg-logo.png'">
+                    </div>
+
+                    <div class="catalogo-card__body">
+                        <div class="catalogo-card__meta">
+                            <span class="catalogo-chip">SKU <%= p.SKU %></span>
+                            <span class="catalogo-chip catalogo-chip--soft"><%= p.unidad_venta || 'Unidad no definida' %></span>
+                        </div>
+
+                        <div>
+                            <h3 class="catalogo-card__title"><%= p.nombre %></h3>
+                            <p class="catalogo-card__description">
+                                <%= truncateText(p.descripcion || 'Producto sin descripcion disponible.', 120) %>
+                            </p>
+                        </div>
+
+                        <div class="catalogo-card__footer">
+                            <div>
+                                <span class="catalogo-card__price-label">Precio unitario</span>
+                                <strong class="catalogo-card__price">$<%= Number(p.precio_unitario || 0).toFixed(2) %></strong>
+                            </div>
+
+                            <div class="catalogo-card__actions">
+                                <a href="/concesionario/producto/<%= encodeURIComponent(p.SKU) %>"
+                                   class="btn btn-outline-primary">
+                                    Ver mas
+                                </a>
+
+                                <form method="POST" action="/concesionario/carrito/agregar" class="catalogo-card__add-form">
+                                    <input type="hidden" name="sku" value="<%= p.SKU %>">
+                                    <input type="hidden" name="cantidad" value="1">
+                                    <input type="hidden" name="redirect_to" value="/concesionario/catalogo<%= currentCatalogUrl %>">
+                                    <button class="btn btn-primary" type="submit">
+                                        Agregar al carrito
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        <% }) %>
+    </div>
+
+    <nav id="catalogoPaginacionWrapper">
+        <ul class="pagination justify-content-center mt-4 flex-wrap" id="catalogoPaginacion">
+            <% if (paginacion.paginaActual > 1) { %>
+                <li class="page-item">
+                    <a class="page-link" href="<%= buildQuery(paginacion.paginaActual - 1) %>">Anterior</a>
+                </li>
+            <% } %>
+            <% for (let i = 1; i <= paginacion.totalPaginas; i++) { %>
+                <li class="page-item <%= i === paginacion.paginaActual ? 'active' : '' %>">
+                    <a class="page-link" href="<%= buildQuery(i) %>"><%= i %></a>
+                </li>
+            <% } %>
+            <% if (paginacion.paginaActual < paginacion.totalPaginas) { %>
+                <li class="page-item">
+                    <a class="page-link" href="<%= buildQuery(paginacion.paginaActual + 1) %>">Siguiente</a>
+                </li>
+            <% } %>
+        </ul>
+    </nav>
+</section>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -156,8 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btn && filters) {
         btn.addEventListener("click", () => {
-            filters.style.display =
-                filters.style.display === "none" ? "block" : "none";
+            filters.style.display = filters.style.display === "none" ? "block" : "none";
         });
     }
 
@@ -175,6 +221,14 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    }
+
+    function truncateText(value, length) {
+        const text = String(value ?? "").trim();
+        if (text.length <= length) {
+            return text;
+        }
+        return `${text.slice(0, length).trim()}...`;
     }
 
     function buildQuery(page) {
@@ -195,33 +249,56 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderResultados(productos, hayBusquedaOFiltros) {
         if (!Array.isArray(productos) || productos.length === 0) {
             resultados.innerHTML = `
-                <div class="col-12 text-center mt-5">
-                    <h5>${hayBusquedaOFiltros ? "Búsqueda sin resultados" : "No se encontraron productos"}</h5>
+                <div class="col-12">
+                    <div class="catalogo-empty-state">
+                        <h5>${hayBusquedaOFiltros ? "No encontramos coincidencias para tu busqueda" : "No hay productos disponibles en esta campana"}</h5>
+                        <p>Prueba ajustando el termino o los filtros para encontrar mas opciones.</p>
+                    </div>
                 </div>
             `;
             return;
         }
 
+        const redirectTo = `/concesionario/catalogo${buildQuery(1)}`;
+
         resultados.innerHTML = productos.map((p) => `
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100">
-                    <img src="${escapeHtml(p.imagen || "/img/ppg-logo.png")}"
-                         class="card-img-top"
-                         style="height:180px; object-fit:contain;"
-                         onerror="this.src='/img/ppg-logo.png'">
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title">${escapeHtml(p.nombre)}</h6>
-                        <p class="fw-bold text-primary">
-                            $${escapeHtml(p.precio_unitario)}
-                        </p>
-                        <div class="mt-auto">
-                            <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}"
-                               class="btn btn-primary w-100 mb-2">
-                                Seleccionar producto
-                            </a>
+            <div class="col-12 col-md-6 col-xl-4">
+                <article class="catalogo-card">
+                    <div class="catalogo-card__media">
+                        <img src="${escapeHtml(p.imagen || "/img/ppg-logo.png")}"
+                             alt="${escapeHtml(p.nombre)}"
+                             onerror="this.src='/img/ppg-logo.png'">
+                    </div>
+                    <div class="catalogo-card__body">
+                        <div class="catalogo-card__meta">
+                            <span class="catalogo-chip">SKU ${escapeHtml(p.SKU)}</span>
+                            <span class="catalogo-chip catalogo-chip--soft">${escapeHtml(p.unidad_venta || "Unidad no definida")}</span>
+                        </div>
+                        <div>
+                            <h3 class="catalogo-card__title">${escapeHtml(p.nombre)}</h3>
+                            <p class="catalogo-card__description">${escapeHtml(truncateText(p.descripcion || "Producto sin descripcion disponible.", 120))}</p>
+                        </div>
+                        <div class="catalogo-card__footer">
+                            <div>
+                                <span class="catalogo-card__price-label">Precio unitario</span>
+                                <strong class="catalogo-card__price">$${escapeHtml(Number(p.precio_unitario || 0).toFixed(2))}</strong>
+                            </div>
+                            <div class="catalogo-card__actions">
+                                <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}" class="btn btn-outline-primary">
+                                    Ver mas
+                                </a>
+                                <form method="POST" action="/concesionario/carrito/agregar" class="catalogo-card__add-form">
+                                    <input type="hidden" name="sku" value="${escapeHtml(p.SKU)}">
+                                    <input type="hidden" name="cantidad" value="1">
+                                    <input type="hidden" name="redirect_to" value="${escapeHtml(redirectTo)}">
+                                    <button class="btn btn-primary" type="submit">
+                                        Agregar al carrito
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </article>
             </div>
         `).join("");
     }
@@ -271,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         estado.textContent = termino
             ? "Buscando coincidencias..."
-            : "Busca por SKU, nombre o descripción sin presionar Enter.";
+            : "Explora productos activos de la campana vigente.";
 
         const params = new URLSearchParams({
             q: termino,
@@ -295,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (!response.ok || !data.ok) {
-                throw new Error(data.mensaje || "No fue posible realizar la búsqueda.");
+                throw new Error(data.mensaje || "No fue posible realizar la busqueda.");
             }
 
             renderResultados(data.productos, data.hayBusquedaOFiltros);
@@ -303,15 +380,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             estado.textContent = termino
                 ? `${data.productos.length} coincidencia(s) encontradas.`
-                : "Mostrando productos activos de la campaña vigente.";
+                : "Explora productos activos de la campana vigente.";
         } catch (error) {
             resultados.innerHTML = `
-                <div class="col-12 text-center mt-5">
-                    <h5>${escapeHtml(error.message)}</h5>
+                <div class="col-12">
+                    <div class="catalogo-empty-state">
+                        <h5>${escapeHtml(error.message)}</h5>
+                        <p>Intenta nuevamente dentro de unos segundos.</p>
+                    </div>
                 </div>
             `;
             paginacion.innerHTML = "";
-            estado.textContent = "Ocurrió un error al consultar el catálogo.";
+            estado.textContent = "Ocurrio un error al consultar el catalogo.";
         }
     }
 

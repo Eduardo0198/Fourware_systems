@@ -10,17 +10,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
+    <% function getBannerUrl(banner) {
+        if (!banner) return '/img/banner_mundial2026.jpg';
+        if (/^https?:\/\//i.test(banner)) return banner;
+        if (banner.startsWith('/')) return banner;
+        return `/img/${banner}`;
+    } %>
     <%- include('../includes/header') %>
     <div class="layout">
         <%- include('../includes/sidebar') %>
         <div class="main-wrapper">
             <% if (usuario && usuario.roles.includes('Concesionario') && campania) { %>
-                <div class="promo-bar"
-                    style="
-                    background:
-                    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                    url('/img/<%= campania.banner %>') center/cover no-repeat;
-                    ">
+                <div class="promo-bar">
+                    <img
+                        src="<%= getBannerUrl(campania.banner) %>"
+                        alt="Banner de <%= campania.nombre %>"
+                        class="promo-bar__bg"
+                        onerror="this.onerror=null; this.src='/img/banner_mundial2026.jpg';">
                     <div class="promo-content">
                         <div class="promo-left">
                             🎉 <%= campania.nombre %>
