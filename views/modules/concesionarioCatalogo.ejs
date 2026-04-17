@@ -349,6 +349,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
             if (!response.ok || !data.ok) {
                 throw new Error(data.mensaje || "No fue posible realizar la búsqueda.");
             }

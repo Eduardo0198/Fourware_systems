@@ -14,6 +14,9 @@ router.post('/agregar',
 router.get('/',
     protegerRuta,
     tieneRol(['Concesionario']),
+    //CU03-Paso 10:
+    //El carrito es un ejemplo de ruta operativa que pasa por
+    //requiereCuentaActiva antes de llegar al controlador.
     requiereCuentaActiva,
     carritoController.verCarrito
 );

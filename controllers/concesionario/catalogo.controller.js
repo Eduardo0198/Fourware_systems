@@ -5,6 +5,8 @@ const logger = require('../../utils/logger');
 const { registrarEvento } = require('../../utils/auditoria.helper');
 const { obtenerDatosCatalogo } = require('./shared');
 
+const MENSAJE_CAMPANIA_INACTIVA = 'Campaña inactiva.';
+
 exports.catalogo = (req, res) => {
     obtenerDatosCatalogo(req, concesionarioModel, (err, data) => {
         if (err) {
@@ -15,13 +17,11 @@ exports.catalogo = (req, res) => {
 
         if (!data.campaniaActiva) {
             registrarEvento(req, 'Intento de consulta de catálogo sin campaña vigente');
-            return res.render('modules/concesionarioCatalogo', {
-                ...data,
-                pageMessage: {
-                    tipo: 'warning',
-                    texto: 'No existe una campaña de preventa vigente.'
-                }
-            });
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: MENSAJE_CAMPANIA_INACTIVA
+            };
+            return res.redirect('/concesionario/home');
         }
 
         registrarEvento(
@@ -54,9 +54,14 @@ exports.catalogoPredictivo = (req, res) => {
 
         if (!data.campaniaActiva) {
             registrarEvento(req, 'Intento de búsqueda predictiva sin campaña vigente');
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: MENSAJE_CAMPANIA_INACTIVA
+            };
             return res.status(409).json({
                 ok: false,
-                mensaje: 'No existe una campaña de preventa vigente.',
+                mensaje: MENSAJE_CAMPANIA_INACTIVA,
+                redirect: '/concesionario/home',
                 productos: [],
                 paginacion: {
                     paginaActual: 1,

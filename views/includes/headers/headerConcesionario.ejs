@@ -25,6 +25,9 @@
             <i class="bi bi-cart3"></i>
         </a>
 
+        <%#CU03-Paso 1:
+           Esta vista muestra la cuenta activa actual y despliega el selector
+           desde el que el concesionario puede elegir otra cuenta.%>
         <div class="dropdown">
             <button class="btn btn-light account-trigger" data-bs-toggle="dropdown">
                 <span class="account-trigger-avatar"><%= getInitials(cuentaActiva?.nombre || usuario?.nombre) %></span>
@@ -57,6 +60,9 @@
 
                 <% cuentas.forEach(cuenta => { %>
                     <li>
+                        <%#CU03-Paso 2:
+                           Cada opción del selector envía el id_cuenta al endpoint
+                           POST /concesionario/cuenta-activa para que el controlador procese el cambio.%>
                         <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
                             <input type="hidden" name="id_cuenta" value="<%= cuenta.id_cuenta %>">
                             <button

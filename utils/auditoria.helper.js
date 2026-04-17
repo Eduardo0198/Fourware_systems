@@ -14,6 +14,9 @@ function normalizarIp(ip) {
 }
 
 function registrarEvento(req, accion, correo = null) {
+    //CU03-Paso 9 /Paso 14 /Flujos alternativos:
+    //Este helper centraliza el envío del evento de auditoría hacia el modelo
+    //tanto en el cambio de cuenta como en la validación antes de operar.
     bitacoraModel.registrar(
         correo || obtenerCorreo(req),
         accion,

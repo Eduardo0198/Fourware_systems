@@ -120,6 +120,9 @@ exports.home = (req, res) => {
 };
 
 exports.seleccionarCuentaActiva = (req, res) => {
+    //CU03-Paso 4:
+    //El controlador recibe el id_cuenta seleccionado desde la vista
+    //y coordina la validación, actualización de sesión y auditoría.
     const usuario = req.session.usuario;
     const idCuenta = parseInt(req.body.id_cuenta, 10);
     const destino = req.get('referer') || '/concesionario/home';
@@ -133,6 +136,9 @@ exports.seleccionarCuentaActiva = (req, res) => {
         return res.redirect(destino);
     }
 
+    //CU03-Paso 5:
+    //Primero valida que la cuenta elegida pertenezca al usuario
+    //y consulta su estado actual en la base de datos.
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, idCuenta, (err, cuenta) => {
         if (err) {
             logger.error(err);
@@ -152,6 +158,9 @@ exports.seleccionarCuentaActiva = (req, res) => {
         }
 
         if (!cuenta.activo) {
+            //CU03-Flujo alternativo malo 2:
+            //Si la cuenta está inactiva, se registra el intento y se mantiene
+            //la cuenta activa anterior sin aplicar cambios.
             registrarEvento(
                 req,
                 `Intento de seleccionar cuenta inactiva ${cuenta.id_cuenta} - ${cuenta.nombre}`,
@@ -164,6 +173,9 @@ exports.seleccionarCuentaActiva = (req, res) => {
             return res.redirect(destino);
         }
 
+        //CU03-Paso 6:
+        //Si la cuenta es válida, se recarga el listado completo de cuentas
+        //para sincronizar la sesión con la información actualizada del usuario.
         cuentaModel.obtenerCuentasPorCorreo(usuario.correo, (errCuentas, cuentas) => {
             if (errCuentas) {
                 logger.error(errCuentas);
@@ -174,15 +186,23 @@ exports.seleccionarCuentaActiva = (req, res) => {
                 return res.redirect(destino);
             }
 
+            //CU03-Paso 7:
+            //Se actualizan en sesión las cuentas disponibles, la nueva cuenta activa
+            //y el id de la cuenta activa para que el carrito opere en el contexto correcto.
             req.session.usuario.cuentas = cuentas;
             req.session.usuario.cuentaActiva =
                 cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
             req.session.carritoCuentaId = cuenta.id_cuenta;
 
             if (cuentaAnteriorId && cuentaAnteriorId !== cuenta.id_cuenta) {
+                //CU03-Paso 8:
+                //Si se cambió la cuenta activa, el carrito se limpia para no mezclar
+                //productos capturados bajo otra cuenta.
                 req.session.carrito = [];
             }
 
+            //CU03-Paso 9:
+            //El cambio exitoso de cuenta se registra en bitácora antes de redirigir.
             registrarEvento(
                 req,
                 `Seleccionó la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,

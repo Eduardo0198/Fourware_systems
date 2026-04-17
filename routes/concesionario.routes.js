@@ -18,6 +18,9 @@ router.get('/home',
 router.get('/catalogo',
     protegerRuta,
     tieneRol(['Concesionario']),
+    //CU03-Paso 10:
+    //Esta ruta representa uno de los accesos que requieren validar
+    //la cuenta activa antes de permitir la operación del concesionario.
     requiereCuentaActiva,
     concesionarioController.catalogo
 );
@@ -40,6 +43,9 @@ router.get('/producto/:sku',
 router.post('/cuenta-activa',
     protegerRuta,
     tieneRol(['Concesionario']),
+    //CU03-Paso 3:
+    //La ruta recibe el POST del selector de cuentas y delega el cambio
+    //a seleccionarCuentaActiva(req, res).
     concesionarioController.seleccionarCuentaActiva
 );
 

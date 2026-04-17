@@ -80,6 +80,9 @@ exports.tienePrivilegio = (privilegiosPermitidos) => {
 };
 
 exports.requiereCuentaActiva = (req, res, next) => {
+    //CU03-Paso 11:
+    //Antes de entrar a un módulo operativo, el middleware comprueba si la sesión
+    //del concesionario contiene una cuentaActiva definida.
     const usuario = req.session.usuario;
 
     if (!usuario || !Array.isArray(usuario.roles) || !usuario.roles.includes('Concesionario')) {
@@ -87,6 +90,9 @@ exports.requiereCuentaActiva = (req, res, next) => {
     }
 
     if (!usuario.cuentaActiva || !usuario.cuentaActiva.id_cuenta) {
+        //CU03-Flujo alternativo malo 5:
+        //Si no existe cuenta activa en la sesión, se registra el intento
+        //y se redirige al home para seleccionar una cuenta.
         const numeroIntento = incrementarIntento(req, 'operacion_sin_cuenta_activa');
         registrarEvento(
             req,
@@ -99,6 +105,9 @@ exports.requiereCuentaActiva = (req, res, next) => {
         return res.redirect('/concesionario/home');
     }
 
+    //CU03-Paso 12:
+    //Si sí existe cuenta activa en sesión, el middleware consulta al modelo
+    //para verificar en BD que siga asociada al usuario y permanezca activa.
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, usuario.cuentaActiva.id_cuenta, (err, cuenta) => {
         if (err) {
             logger.error(err);
@@ -111,6 +120,9 @@ exports.requiereCuentaActiva = (req, res, next) => {
         }
 
         if (!cuenta) {
+            //CU03-Flujo alternativo malo 3:
+            //Si la cuenta ya no está asociada al usuario, se elimina de la sesión,
+            //se registra el evento y se bloquea el acceso al módulo.
             req.session.usuario.cuentaActiva = null;
             registrarEvento(req, 'Cuenta activa no asociada al usuario');
             req.session.mensaje = {
@@ -121,6 +133,9 @@ exports.requiereCuentaActiva = (req, res, next) => {
         }
 
         if (!cuenta.activo) {
+            //CU03-Flujo alternativo malo 4:
+            //Si la cuenta existe pero está inactiva, se limpia de la sesión,
+            //se registra el intento y se obliga a elegir otra cuenta.
             req.session.usuario.cuentaActiva = null;
             const numeroIntento = incrementarIntento(req, 'operacion_con_cuenta_inactiva');
             registrarEvento(
@@ -134,6 +149,9 @@ exports.requiereCuentaActiva = (req, res, next) => {
             return res.redirect('/concesionario/home');
         }
 
+        //CU03-Paso 13:
+        //En el camino exitoso, la cuenta válida se refresca en sesión
+        //y el middleware prepara la continuación del flujo.
         req.session.usuario.cuentaActiva = cuenta;
 
         if (Array.isArray(req.session.usuario.cuentas)) {
@@ -142,6 +160,10 @@ exports.requiereCuentaActiva = (req, res, next) => {
             );
         }
 
+        //CU03-Paso 14:
+        //Antes de llamar a next(), el acceso exitoso también se registra
+        //en la bitácora de auditoría.
+        registrarEvento(req, 'Acceso autorizado con cuenta activa válida');
         next();
     });
 };

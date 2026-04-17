@@ -3,11 +3,11 @@ const mysql = require('mysql2');
 const logger = require('../utils/logger');
 
 const dbConfig = {
-    host: process.env.DB_HOST || '127.0.0.1',
+    host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || '',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || ''
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'feFOfe43?',
+    database: process.env.DB_NAME || 'ElAvance4'
 };
 
 const conexion = mysql.createConnection(dbConfig);

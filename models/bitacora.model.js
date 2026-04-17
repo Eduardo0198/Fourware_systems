@@ -21,6 +21,8 @@ function normalizarPayload(correoOrPayload, accion, ip) {
 }
 
 exports.registrar = (correoOrPayload, accion, ip, callback = () => {}) => {
+    //CU03-Paso 9 /Paso 14 /Flujos alternativos:
+    //Inserta en BitacoraAuditoria el evento recibido desde registrarEvento(...).
     const payload = normalizarPayload(correoOrPayload, accion, ip);
     const query = `
         INSERT INTO BitacoraAuditoria (fecha, accion, ip_origen, correo)

@@ -15,6 +15,9 @@ function normalizarCuenta(row) {
 }
 
 exports.obtenerCuentasPorCorreo = (correo, callback) => {
+    //CU03-Paso 6:
+    //Esta consulta recarga las cuentas asociadas al concesionario para actualizar
+    //la sesión después de seleccionar una nueva cuenta activa.
     const query = `
         SELECT
             c.id_cuenta,
@@ -73,6 +76,9 @@ exports.obtenerTodas = (callback) => {
 };
 
 exports.obtenerCuentaPorCorreoYId = (correo, idCuenta, callback) => {
+    //CU03-Paso 5 /Paso 12:
+    //Esta consulta valida en BD que la cuenta indicada pertenezca al usuario
+    //y devuelve su estado actual, tanto para cambiar la cuenta como para operar.
     const query = `
         SELECT
             c.id_cuenta,
