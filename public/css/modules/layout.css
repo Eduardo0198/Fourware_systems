@@ -452,3 +452,107 @@ body.sidebar-hidden .footer-ppg {
     font-size:12px;
 }
 
+/* ================= PROMO BAR ================= */
+
+.promo-bar {
+    width: 100%;
+    padding: 10px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.promo-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.promo-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.promo-badge {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.promo-name {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* ================= COUNTDOWN TIMER ================= */
+
+.promo-timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.promo-timer-label {
+    color: rgba(255,255,255,0.65);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.promo-timer-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.time-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 6px;
+    padding: 4px 10px;
+    min-width: 48px;
+    backdrop-filter: blur(4px);
+}
+
+.time-value {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+}
+
+.time-label {
+    color: rgba(255,255,255,0.6);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.time-sep {
+    color: rgba(255,255,255,0.5);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+

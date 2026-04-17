@@ -16,20 +16,35 @@
         <div class="main-wrapper">
             <% if (usuario && usuario.roles.includes('Concesionario') && campania) { %>
                 <div class="promo-bar"
-                    style="
-                    background:
-                    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                    url('/img/<%= campania.banner %>') center/cover no-repeat;
-                    ">
+                     style="background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('<%= campania.banner %>') center/cover no-repeat;">
                     <div class="promo-content">
                         <div class="promo-left">
-                            🎉 <%= campania.nombre %>
+                            <span class="promo-badge">CAMPAÑA ACTIVA</span>
+                            <span class="promo-name"><%= campania.nombre %></span>
                         </div>
-                        <div class="promo-timer-box">
-                            <div class="time-box"><span id="d">00</span><small>DÍAS</small></div>
-                            <div class="time-box"><span id="h">00</span><small>HORAS</small></div>
-                            <div class="time-box"><span id="m">00</span><small>MIN</small></div>
-                            <div class="time-box"><span id="s">00</span><small>SEG</small></div>
+                        <div class="promo-timer-wrap">
+                            <span class="promo-timer-label">Tiempo restante</span>
+                            <div class="promo-timer-box">
+                                <div class="time-unit">
+                                    <span class="time-value" id="d">00</span>
+                                    <span class="time-label">DÍAS</span>
+                                </div>
+                                <span class="time-sep">:</span>
+                                <div class="time-unit">
+                                    <span class="time-value" id="h">00</span>
+                                    <span class="time-label">HRS</span>
+                                </div>
+                                <span class="time-sep">:</span>
+                                <div class="time-unit">
+                                    <span class="time-value" id="m">00</span>
+                                    <span class="time-label">MIN</span>
+                                </div>
+                                <span class="time-sep">:</span>
+                                <div class="time-unit">
+                                    <span class="time-value" id="s">00</span>
+                                    <span class="time-label">SEG</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -45,18 +60,17 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const endDate = new Date("<%= campania.fecha_fin %>").getTime();
+            function pad(n) { return String(n).padStart(2, "0"); }
             function updateTimer() {
-                const now = new Date().getTime();
-                const distance = endDate - now;
-                if (distance <= 0) return;
-                document.getElementById("d").innerText =
-                    Math.floor(distance / (1000 * 60 * 60 * 24));
-                document.getElementById("h").innerText =
-                    Math.floor((distance / (1000 * 60 * 60)) % 24);
-                document.getElementById("m").innerText =
-                    Math.floor((distance / (1000 * 60)) % 60);
-                document.getElementById("s").innerText =
-                    Math.floor((distance / 1000) % 60);
+                const distance = endDate - Date.now();
+                if (distance <= 0) {
+                    ["d","h","m","s"].forEach(id => { document.getElementById(id).textContent = "00"; });
+                    return;
+                }
+                document.getElementById("d").textContent = pad(Math.floor(distance / 86400000));
+                document.getElementById("h").textContent = pad(Math.floor((distance / 3600000) % 24));
+                document.getElementById("m").textContent = pad(Math.floor((distance / 60000) % 60));
+                document.getElementById("s").textContent = pad(Math.floor((distance / 1000) % 60));
             }
             updateTimer();
             setInterval(updateTimer, 1000);
