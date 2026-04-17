@@ -398,13 +398,13 @@ body.sidebar-hidden .footer-ppg {
 .promo-bar {
     margin-left: 250px;
     width: calc(100% - 250px);
-    padding: 24px 36px;
+    padding: 36px 40px;
     color: white;
     border-radius: 0 0 16px 16px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.4);
     box-sizing: border-box;
     transition: all 0.3s ease;
-    min-height: 170px;
+    min-height: 220px;
     display: flex;
     align-items: center;
 }
