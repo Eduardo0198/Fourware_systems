@@ -15,12 +15,26 @@
         <%- include('../includes/sidebar') %>
         <div class="main-wrapper">
             <% if (usuario && usuario.roles.includes('Concesionario') && campania) { %>
+                <%
+                    let fechaFinTexto = '';
+                    if (campania.fecha_fin) {
+                        try {
+                            const d = new Date(campania.fecha_fin + (String(campania.fecha_fin).includes('T') ? '' : 'T12:00:00'));
+                            fechaFinTexto = d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+                        } catch(e) { fechaFinTexto = ''; }
+                    }
+                %>
                 <div class="promo-bar"
-                     style="background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('<%= campania.banner %>') center/cover no-repeat;">
+                     style="background: linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.65) 100%), url('<%= campania.banner %>') center/cover no-repeat;">
                     <div class="promo-content">
                         <div class="promo-left">
                             <span class="promo-badge">CAMPAÑA ACTIVA</span>
-                            <span class="promo-name"><%= campania.nombre %></span>
+                            <h3 class="promo-name"><%= campania.nombre %></h3>
+                            <% if (fechaFinTexto) { %>
+                                <span class="promo-fecha">
+                                    <i class="bi bi-calendar3 me-1"></i>Termina el <%= fechaFinTexto %>
+                                </span>
+                            <% } %>
                         </div>
                         <div class="promo-timer-wrap">
                             <span class="promo-timer-label">Tiempo restante</span>
