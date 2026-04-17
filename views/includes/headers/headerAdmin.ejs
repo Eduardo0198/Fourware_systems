@@ -1,19 +1,50 @@
-<header class="topbar d-flex justify-content-between align-items-center px-4">
-    <div class="d-flex align-items-center gap-3">
-        <img src="/img/ppg-logo.png" class="logo">
-        <span class="fw-bold text-white">Panel Administrativo</span>
+<header class="topbar">
+    <% function getInitialsAdmin(nombre) {
+        if (!nombre) return 'A';
+        return nombre
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(parte => parte.charAt(0).toUpperCase())
+            .join('');
+    } %>
+    <div class="left-section">
+        <button id="toggleSidebar" class="btn btn-light px-2" title="Menú">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+        <div class="d-flex align-items-center gap-2">
+            <img src="/img/ppg-logo.png" class="logo">
+            <span class="fw-bold">PPG Preventa</span>
+        </div>
     </div>
-    <div class="d-flex align-items-center gap-3">
-        <span class="text-white small">👨‍💼 <%= usuario.nombre %></span>
+    <div class="actions">
         <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle"
-                    data-bs-toggle="dropdown">
-                Cuenta
+            <button class="btn btn-light account-trigger" data-bs-toggle="dropdown">
+                <span class="account-trigger-avatar" style="background: linear-gradient(135deg, #1d4ed8, #38bdf8);">
+                    <%= getInitialsAdmin(usuario?.nombre) %>
+                </span>
+                <span class="account-trigger-text">
+                    <strong><%= usuario?.nombre %></strong>
+                    <small>Administrador</small>
+                </span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu dropdown-menu-end account-dropdown">
+                <li class="account-dropdown-header">
+                    <div class="account-current-card">
+                        <span class="account-avatar account-avatar-current">
+                            <%= getInitialsAdmin(usuario?.nombre) %>
+                        </span>
+                        <div class="account-current-copy">
+                            <strong><%= usuario?.nombre %></strong>
+                            <small>Panel Administrativo</small>
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item text-danger" href="/logout">
-                        Cerrar sesión
+                    <a href="/logout" class="dropdown-item logout-account-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Cerrar sesión</span>
                     </a>
                 </li>
             </ul>

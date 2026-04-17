@@ -11,20 +11,20 @@ const {
 
 router.get('/home',
     protegerRuta,
-    tieneRol(['Concesionario']),
+    tieneRol(['Concesionario', 'Administrador']),
     concesionarioController.home
 );
 
 router.get('/catalogo',
     protegerRuta,
-    tieneRol(['Concesionario']),
+    tieneRol(['Concesionario', 'Administrador']),
     requiereCuentaActiva,
     concesionarioController.catalogo
 );
 
 router.get('/catalogo/buscar',
     protegerRuta,
-    tieneRol(['Concesionario']),
+    tieneRol(['Concesionario', 'Administrador']),
     requiereCuentaActiva,
     concesionarioController.catalogoPredictivo
 );
@@ -32,7 +32,7 @@ router.get('/catalogo/buscar',
 
 router.get('/producto/:sku',
     protegerRuta,
-    tieneRol(['Concesionario']),
+    tieneRol(['Concesionario', 'Administrador']),
     requiereCuentaActiva,
     concesionarioController.producto
 );
