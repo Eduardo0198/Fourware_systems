@@ -31,6 +31,7 @@ const campaniaModel = require('./models/campania.model');
 app.use((req, res, next) => {
     res.locals.usuario = req.session.usuario || null;
     res.locals.mensaje = req.session.mensaje || null;
+    res.locals.carritoCount = Array.isArray(req.session.carrito) ? req.session.carrito.length : 0;
     delete req.session.mensaje;
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {

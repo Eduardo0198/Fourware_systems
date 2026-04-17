@@ -8,9 +8,9 @@ function generarFolioReserva() {
     return `PPG-${yy}${mm}${dd}-${random}`;
 }
 
-function calcularFechaLimiteCancelacion(horas = 24) {
+function calcularFechaLimiteCancelacion(minutos = 15) {
     const fecha = new Date();
-    fecha.setHours(fecha.getHours() + horas);
+    fecha.setMinutes(fecha.getMinutes() + minutos);
     return fecha;
 }
 

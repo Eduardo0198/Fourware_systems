@@ -3,16 +3,16 @@ const path = require('path');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config', 'cancelacion.config.json');
 const DEFAULT_CONFIG = {
-    horas_cancelacion: 24
+    minutos_cancelacion: 15
 };
 
-function normalizarHoras(valor) {
-    const horas = parseInt(valor, 10);
-    if (Number.isNaN(horas) || horas <= 0) {
+function normalizarMinutos(valor) {
+    const minutos = parseInt(valor, 10);
+    if (Number.isNaN(minutos) || minutos <= 0) {
         return null;
     }
 
-    return horas;
+    return minutos;
 }
 
 function leerConfig(callback) {
@@ -27,10 +27,10 @@ function leerConfig(callback) {
 
         try {
             const parsed = JSON.parse(contenido);
-            const horas = normalizarHoras(parsed.horas_cancelacion);
+            const minutos = normalizarMinutos(parsed.minutos_cancelacion);
 
             callback(null, {
-                horas_cancelacion: horas || DEFAULT_CONFIG.horas_cancelacion
+                minutos_cancelacion: minutos || DEFAULT_CONFIG.minutos_cancelacion
             });
         } catch (parseErr) {
             callback(parseErr);
@@ -42,15 +42,15 @@ exports.obtener = (callback) => {
     leerConfig(callback);
 };
 
-exports.actualizar = (horasCancelacion, callback) => {
-    const horas = normalizarHoras(horasCancelacion);
+exports.actualizar = (minutosCancelacion, callback) => {
+    const minutos = normalizarMinutos(minutosCancelacion);
 
-    if (!horas) {
-        return callback(new Error('Horas de cancelación inválidas.'));
+    if (!minutos) {
+        return callback(new Error('Minutos de cancelación inválidos.'));
     }
 
     const contenido = JSON.stringify({
-        horas_cancelacion: horas
+        minutos_cancelacion: minutos
     }, null, 2);
 
     fs.writeFile(CONFIG_PATH, contenido, 'utf8', (err) => {
@@ -59,7 +59,7 @@ exports.actualizar = (horasCancelacion, callback) => {
         }
 
         callback(null, {
-            horas_cancelacion: horas
+            minutos_cancelacion: minutos
         });
     });
 };

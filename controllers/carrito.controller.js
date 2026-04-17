@@ -452,8 +452,8 @@ exports.confirmarReserva = (req, res) => {
                                 return res.redirect('/concesionario/carrito');
                             }
 
-                            const horasCancelacion = configuracion?.horas_cancelacion || 24;
-                            const fechaLimiteCancelacion = calcularFechaLimiteCancelacion(horasCancelacion);
+                            const minutosCancelacion = configuracion?.minutos_cancelacion || 15;
+                            const fechaLimiteCancelacion = calcularFechaLimiteCancelacion(minutosCancelacion);
 
                             reservaModel.crearReservaConProductos({
                                 folio,

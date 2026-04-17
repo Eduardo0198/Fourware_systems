@@ -393,4 +393,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
     aplicarResaltadoProductoAgregado();
 });
+
+/* ── Animación fly-to-cart ── */
+(function () {
+    function animarAlCarrito(imgEl, onDone) {
+        const cartIcon = document.getElementById("cartHeaderIcon");
+        if (!imgEl || !cartIcon) { onDone(); return; }
+
+        const ir = imgEl.getBoundingClientRect();
+        const cr = cartIcon.getBoundingClientRect();
+
+        const clone = document.createElement("img");
+        clone.src = imgEl.src;
+        clone.className = "fly-clone";
+        Object.assign(clone.style, {
+            left: ir.left + "px",
+            top: ir.top + "px",
+            width: ir.width + "px",
+            height: ir.height + "px",
+            opacity: "1"
+        });
+        document.body.appendChild(clone);
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            Object.assign(clone.style, {
+                left: (cr.left + cr.width / 2 - 18) + "px",
+                top: (cr.top + cr.height / 2 - 18) + "px",
+                width: "36px",
+                height: "36px",
+                opacity: "0",
+                borderRadius: "50%"
+            });
+        }));
+
+        setTimeout(() => {
+            clone.remove();
+            cartIcon.classList.add("cart-icon-pulse");
+            setTimeout(() => cartIcon.classList.remove("cart-icon-pulse"), 550);
+            onDone();
+        }, 640);
+    }
+
+    document.addEventListener("submit", function (e) {
+        const form = e.target;
+        if (!form.matches("form[action*='carrito/agregar']")) return;
+
+        e.preventDefault();
+        const card = form.closest(".catalogo-product-card");
+        const img = card ? card.querySelector("img") : null;
+        animarAlCarrito(img, () => form.submit());
+    });
+})();
 </script>
