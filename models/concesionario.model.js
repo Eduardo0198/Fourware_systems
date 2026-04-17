@@ -3,30 +3,29 @@ const db = require('../config/db');
 exports.obtenerTopProductos = (callback) => {
     const query = `
         SELECT
-            p.SKU,
+            p."SKU",
             p.nombre_comercial,
             p.imagen,
-            COUNT(r.SKU) AS total,
+            COUNT(r."SKU") AS total,
             COALESCE(cal.promedio_estrellas, 0) AS promedio_estrellas,
             COALESCE(cal.total_resenas, 0) AS total_resenas
-        FROM Producto p
-        JOIN Reserva_Producto r ON p.SKU = r.SKU
+        FROM "Producto" p
+        JOIN "Reserva_Producto" r ON p."SKU" = r."SKU"
         LEFT JOIN (
             SELECT
-                SKU,
-                ROUND(AVG(estrellas), 1) AS promedio_estrellas,
+                "SKU",
+                ROUND(AVG(estrellas)::numeric, 1) AS promedio_estrellas,
                 COUNT(*) AS total_resenas
-            FROM Calificacion
-            GROUP BY SKU
-        ) cal ON cal.SKU = p.SKU
-        GROUP BY p.SKU, p.nombre_comercial, p.imagen, cal.promedio_estrellas, cal.total_resenas
+            FROM "Calificacion"
+            GROUP BY "SKU"
+        ) cal ON cal."SKU" = p."SKU"
+        GROUP BY p."SKU", p.nombre_comercial, p.imagen, cal.promedio_estrellas, cal.total_resenas
         ORDER BY total DESC
         LIMIT 5
     `;
     db.query(query, callback);
 };
 
-// Obtener productos con paginación y filtros del catálogo de la campaña activa
 exports.obtenerProductosPaginados = (
     page,
     limit,
@@ -40,7 +39,7 @@ exports.obtenerProductosPaginados = (
     const offset = (page - 1) * limit;
     let query = `
         SELECT
-            p.SKU,
+            p."SKU",
             p.nombre_comercial AS nombre,
             p.descripcion,
             p.precio_unitario,
@@ -50,15 +49,15 @@ exports.obtenerProductosPaginados = (
             p.imagen,
             COALESCE(cal.promedio_estrellas, 0) AS promedio_estrellas,
             COALESCE(cal.total_resenas, 0) AS total_resenas
-        FROM Producto p
+        FROM "Producto" p
         LEFT JOIN (
             SELECT
-                SKU,
-                ROUND(AVG(estrellas), 1) AS promedio_estrellas,
+                "SKU",
+                ROUND(AVG(estrellas)::numeric, 1) AS promedio_estrellas,
                 COUNT(*) AS total_resenas
-            FROM Calificacion
-            GROUP BY SKU
-        ) cal ON cal.SKU = p.SKU
+            FROM "Calificacion"
+            GROUP BY "SKU"
+        ) cal ON cal."SKU" = p."SKU"
         WHERE p.activo = 1
           AND p.id_campania = ?
     `;
@@ -66,9 +65,9 @@ exports.obtenerProductosPaginados = (
 
     if (searchTerm) {
         query += ` AND (
-            p.SKU LIKE ?
-            OR p.nombre_comercial LIKE ?
-            OR p.descripcion LIKE ?
+            p."SKU" ILIKE ?
+            OR p.nombre_comercial ILIKE ?
+            OR p.descripcion ILIKE ?
         )`;
         params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
@@ -96,7 +95,7 @@ exports.obtenerProductosPaginados = (
 
         let countQuery = `
             SELECT COUNT(*) AS total
-            FROM Producto
+            FROM "Producto"
             WHERE activo = 1
               AND id_campania = ?
         `;
@@ -104,9 +103,9 @@ exports.obtenerProductosPaginados = (
 
         if (searchTerm) {
             countQuery += ` AND (
-                SKU LIKE ?
-                OR nombre_comercial LIKE ?
-                OR descripcion LIKE ?
+                "SKU" ILIKE ?
+                OR nombre_comercial ILIKE ?
+                OR descripcion ILIKE ?
             )`;
             countParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
         }
@@ -126,19 +125,18 @@ exports.obtenerProductosPaginados = (
             countParams.push(unidadVenta);
         }
 
-        db.query(countQuery, countParams, (err, countResult) => {
-            if (err) return callback(err);
-            const total = countResult[0].total;
+        db.query(countQuery, countParams, (err2, countResult) => {
+            if (err2) return callback(err2);
+            const total = Number(countResult[0].total);
             callback(null, { productos, total });
         });
     });
 };
 
-// Obtener unidades de venta únicas de la campaña activa
 exports.obtenerUnidadesVenta = (idCampania, callback) => {
     const query = `
         SELECT DISTINCT unidad_venta
-        FROM Producto
+        FROM "Producto"
         WHERE activo = 1
           AND id_campania = ?
           AND unidad_venta IS NOT NULL
@@ -154,10 +152,10 @@ exports.obtenerUnidadesVenta = (idCampania, callback) => {
 
 exports.obtenerProductoPorSku = (sku, callback) => {
     const query = `
-        SELECT SKU, nombre_comercial AS nombre, precio_unitario, peso_unitario, 
+        SELECT "SKU", nombre_comercial AS nombre, precio_unitario, peso_unitario,
                medida_primaria, imagen, descripcion, unidad_venta, volumen_unitario, activo, id_campania
-        FROM Producto
-        WHERE SKU = ?
+        FROM "Producto"
+        WHERE "SKU" = ?
     `;
     db.query(query, [sku], (err, results) => {
         if (err) return callback(err);
@@ -168,7 +166,7 @@ exports.obtenerProductoPorSku = (sku, callback) => {
 exports.obtenerProductoActivoPorSkuYCampania = (sku, idCampania, callback) => {
     const query = `
         SELECT
-            SKU,
+            "SKU",
             nombre_comercial AS nombre,
             precio_unitario,
             peso_unitario,
@@ -179,8 +177,8 @@ exports.obtenerProductoActivoPorSkuYCampania = (sku, idCampania, callback) => {
             volumen_unitario,
             activo,
             id_campania
-        FROM Producto
-        WHERE SKU = ?
+        FROM "Producto"
+        WHERE "SKU" = ?
           AND activo = 1
           AND id_campania = ?
         LIMIT 1

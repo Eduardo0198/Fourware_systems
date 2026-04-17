@@ -380,7 +380,7 @@ exports.confirmarReserva = (req, res) => {
                 };
                 return res.redirect('/concesionario/carrito');
             }
-
+ 
             const sucursalValida = Array.isArray(sucursales) && sucursales.some(item => item.id_sucursal === sucursal);
 
             if (!sucursalValida) {

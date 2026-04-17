@@ -36,7 +36,7 @@ router.get('/producto/:sku',
     requiereCuentaActiva,
     concesionarioController.producto
 );
-
+ 
 router.post('/cuenta-activa',
     protegerRuta,
     tieneRol(['Concesionario']),
