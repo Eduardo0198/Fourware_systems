@@ -23,7 +23,7 @@ app.use(session({
         secure: isProduction
     }
 }));
-
+ 
 const campaniaModel = require('./models/campania.model');
 
 app.use((req, res, next) => {

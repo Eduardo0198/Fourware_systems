@@ -6,7 +6,7 @@ function normalizarCuenta(row) {
     return {
         id_cuenta: row.id_cuenta,
         nombre: row.nombre,
-        codigo: row.RFC || `CTA-${row.id_cuenta}`,
+        codigo: row["RFC"] || `CTA-${row.id_cuenta}`,
         razon_social: row.razon_social,
         direccion: row.direccion || 'Sin direccion registrada',
         activo: activa,
@@ -19,18 +19,18 @@ exports.obtenerCuentasPorCorreo = (correo, callback) => {
         SELECT
             c.id_cuenta,
             c.nombre,
-            c.RFC,
+            c."RFC",
             c.razon_social,
             c.activo,
             (
                 SELECT CONCAT_WS(', ', s.direccion, s.municipio, s.estado)
-                FROM Sucursal s
+                FROM "Sucursal" s
                 WHERE s.id_cuenta = c.id_cuenta
                 ORDER BY s.activo DESC, s.id_sucursal ASC
                 LIMIT 1
             ) AS direccion
-        FROM Usuario_Cuenta uc
-        JOIN Cuenta c ON c.id_cuenta = uc.id_cuenta
+        FROM "Usuario_Cuenta" uc
+        JOIN "Cuenta" c ON c.id_cuenta = uc.id_cuenta
         WHERE uc.correo = ?
         ORDER BY c.id_cuenta ASC
     `;
@@ -49,17 +49,17 @@ exports.obtenerTodas = (callback) => {
         SELECT
             c.id_cuenta,
             c.nombre,
-            c.RFC,
+            c."RFC",
             c.razon_social,
             c.activo,
             (
                 SELECT CONCAT_WS(', ', s.direccion, s.municipio, s.estado)
-                FROM Sucursal s
+                FROM "Sucursal" s
                 WHERE s.id_cuenta = c.id_cuenta
                 ORDER BY s.activo DESC, s.id_sucursal ASC
                 LIMIT 1
             ) AS direccion
-        FROM Cuenta c
+        FROM "Cuenta" c
         ORDER BY c.nombre ASC, c.id_cuenta ASC
     `;
 
@@ -77,18 +77,18 @@ exports.obtenerCuentaPorCorreoYId = (correo, idCuenta, callback) => {
         SELECT
             c.id_cuenta,
             c.nombre,
-            c.RFC,
+            c."RFC",
             c.razon_social,
             c.activo,
             (
                 SELECT CONCAT_WS(', ', s.direccion, s.municipio, s.estado)
-                FROM Sucursal s
+                FROM "Sucursal" s
                 WHERE s.id_cuenta = c.id_cuenta
                 ORDER BY s.activo DESC, s.id_sucursal ASC
                 LIMIT 1
             ) AS direccion
-        FROM Usuario_Cuenta uc
-        JOIN Cuenta c ON c.id_cuenta = uc.id_cuenta
+        FROM "Usuario_Cuenta" uc
+        JOIN "Cuenta" c ON c.id_cuenta = uc.id_cuenta
         WHERE uc.correo = ? AND c.id_cuenta = ?
         LIMIT 1
     `;
@@ -118,7 +118,7 @@ exports.obtenerSucursalesActivasPorCuenta = (idCuenta, callback) => {
             direccion,
             municipio,
             estado
-        FROM Sucursal
+        FROM "Sucursal"
         WHERE id_cuenta = ? AND activo = 1
         ORDER BY nombre ASC, id_sucursal ASC
     `;
