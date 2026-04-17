@@ -17,13 +17,14 @@ exports.catalogo = (req, res) => {
             registrarEvento(req, 'Intento de consulta de catálogo sin campaña vigente');
             return res.render('modules/concesionarioCatalogo', {
                 ...data,
+                mostrarBanner: true,
                 pageMessage: {
                     tipo: 'warning',
                     texto: 'No existe una campaña de preventa vigente.'
                 }
             });
         }
- 
+
         registrarEvento(
             req,
             data.query
@@ -33,6 +34,7 @@ exports.catalogo = (req, res) => {
 
         return res.render('modules/concesionarioCatalogo', {
             ...data,
+            mostrarBanner: true,
             pageMessage: null
         });
     });

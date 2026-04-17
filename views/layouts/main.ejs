@@ -14,7 +14,7 @@
     <div class="layout">
         <%- include('../includes/sidebar') %>
         <div class="main-wrapper">
-            <% if (usuario && usuario.roles.includes('Concesionario') && campania) { %>
+            <% if (campania && (usuario && (usuario.roles.includes('Concesionario') || (typeof mostrarBanner !== 'undefined' && mostrarBanner)))) { %>
                 <%
                     let fechaFinTexto = '';
                     if (campania.fecha_fin) {

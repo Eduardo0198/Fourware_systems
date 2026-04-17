@@ -46,6 +46,7 @@ exports.home = (req, res) => {
                 return res.render('modules/concesionarioHome', {
                     saludo: obtenerPrimerNombre(usuario.nombre),
                     cuentaActiva,
+                    mostrarBanner: true,
                     resumen: {
                         totalReservas: 0,
                         reservasConfirmadas: 0,
@@ -100,6 +101,7 @@ exports.home = (req, res) => {
                         return res.render('modules/concesionarioHome', {
                             saludo: obtenerPrimerNombre(usuario.nombre),
                             cuentaActiva,
+                            mostrarBanner: true,
                             resumen: {
                                 totalReservas: Number(resumenReserva.total_reservas || 0),
                                 reservasConfirmadas: Number(resumenReserva.reservas_confirmadas || 0),
