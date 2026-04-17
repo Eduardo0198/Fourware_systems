@@ -130,27 +130,35 @@
                 </div>
             </div>
 
-            <form method="POST" action="/concesionario/carrito/confirmar" class="d-flex flex-column gap-3">
-                <label for="sucursal" class="form-label">Sucursal</label>
-                <select name="sucursal"
-                        id="sucursal"
-                        class="form-select"
-                        <%= carrito.length === 0 || !sucursales || sucursales.length === 0 ? 'disabled' : 'required' %>>
-                    <option value="">Selecciona una sucursal</option>
-                    <% (sucursales || []).forEach(sucursal => { %>
-                        <option value="<%= sucursal.id_sucursal %>">
-                            <%= sucursal.nombre %><%= sucursal.municipio ? ' - ' + sucursal.municipio : '' %>
-                        </option>
-                    <% }) %>
-                </select>
+            <form method="POST" action="/concesionario/carrito/confirmar" class="d-flex flex-column gap-3" id="formConfirmar" novalidate>
+                <div>
+                    <label for="sucursal" class="form-label fw-semibold">Sucursal de entrega</label>
+                    <select name="sucursal"
+                            id="sucursal"
+                            class="form-select"
+                            <%= carrito.length === 0 || !sucursales || sucursales.length === 0 ? 'disabled' : '' %>>
+                        <option value="">— Selecciona una sucursal —</option>
+                        <% (sucursales || []).forEach(sucursal => { %>
+                            <option value="<%= sucursal.id_sucursal %>">
+                                <%= sucursal.nombre %><%= sucursal.municipio ? ' - ' + sucursal.municipio : '' %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <div id="sucursalError" class="alert alert-warning d-none mt-2 py-2 px-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Debes seleccionar una sucursal antes de confirmar la reserva.
+                    </div>
+                </div>
 
                 <% if (!sucursales || sucursales.length === 0) { %>
-                    <small class="text-danger">
-                        No hay sucursales activas disponibles para la cuenta seleccionada.
-                    </small>
+                    <div class="alert alert-danger py-2 px-3 mb-0" role="alert">
+                        <i class="bi bi-x-circle-fill me-1"></i>
+                        No hay sucursales activas para la cuenta seleccionada.
+                    </div>
                 <% } %>
 
                 <button id="btnConfirmar"
+                        type="submit"
                         class="btn btn-primary cart-checkout-btn"
                         <%= carrito.length === 0 || !sucursales || sucursales.length === 0 ? 'disabled' : '' %>>
                     Confirmar reserva
@@ -163,13 +171,26 @@
 </section>
 
 <script>
-const select = document.querySelector('select[name="sucursal"]');
-const btn = document.getElementById('btnConfirmar');
+(function () {
+    const form = document.getElementById('formConfirmar');
+    const select = document.getElementById('sucursal');
+    const btn = document.getElementById('btnConfirmar');
+    const errorMsg = document.getElementById('sucursalError');
 
-if (select && btn && !select.disabled) {
-    btn.disabled = !select.value;
+    if (!form || !select || !btn) return;
+
     select.addEventListener('change', () => {
-        btn.disabled = !select.value;
+        errorMsg.classList.add('d-none');
     });
-}
+
+    form.addEventListener('submit', (e) => {
+        if (!select.value) {
+            e.preventDefault();
+            errorMsg.classList.remove('d-none');
+            select.focus();
+            select.classList.add('is-invalid');
+            setTimeout(() => select.classList.remove('is-invalid'), 2000);
+        }
+    });
+})();
 </script>
