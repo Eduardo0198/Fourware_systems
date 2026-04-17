@@ -106,9 +106,17 @@
                             <small>(<%= Number(p.total_resenas || 0) %>)</small>
                         </div>
                         <div class="mt-auto">
+                            <form method="POST" action="/concesionario/carrito/agregar" class="mb-2">
+                                <input type="hidden" name="sku" value="<%= p.SKU %>">
+                                <input type="hidden" name="cantidad" value="1">
+                                <input type="hidden" name="return_to" value="<%= buildQuery(paginacion.paginaActual) %>">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
+                                </button>
+                            </form>
                             <a href="/concesionario/producto/<%= p.SKU %>?return_to=<%= encodeURIComponent(buildQuery(paginacion.paginaActual)) %>"
-                               class="btn btn-primary w-100 mb-2">
-                                Seleccionar producto
+                               class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-eye me-1"></i>Ver detalle
                             </a>
                         </div>
                     </div>
@@ -243,9 +251,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             <small>(${escapeHtml(Number(p.total_resenas || 0))})</small>
                         </div>
                         <div class="mt-auto">
+                            <form method="POST" action="/concesionario/carrito/agregar" class="mb-2">
+                                <input type="hidden" name="sku" value="${escapeHtml(p.SKU)}">
+                                <input type="hidden" name="cantidad" value="1">
+                                <input type="hidden" name="return_to" value="${buildQuery(1)}">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
+                                </button>
+                            </form>
                             <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}?return_to=${encodeURIComponent(buildQuery(1))}"
-                               class="btn btn-primary w-100 mb-2">
-                                Seleccionar producto
+                               class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-eye me-1"></i>Ver detalle
                             </a>
                         </div>
                     </div>
