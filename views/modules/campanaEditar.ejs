@@ -4,6 +4,19 @@
 }) %>
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
+<div id="avisoActivar" class="alert alert-warning d-flex align-items-center gap-2 d-none">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+    <span>Ya hay una campaña activa. Desactívala primero para poder activar esta.</span>
+</div>
+
+<% const hayUnaActiva = campanias.some(c => c.estatus); %>
+
+<% if (hayUnaActiva && !(pageMessage && pageMessage.tipo === 'success')) { %>
+    <div class="alert alert-info d-flex align-items-center gap-2 mb-4 py-2">
+        <i class="bi bi-info-circle-fill flex-shrink-0"></i>
+        <span>Ya hay una campaña activa. Para activar otra, primero desactiva la que está vigente.</span>
+    </div>
+<% } %>
 
 <div class="card p-4 mb-4">
     <div class="table-responsive">
@@ -45,13 +58,13 @@
                                     <span class="badge bg-success">Activa</span>
                                 </form>
                             <% } else { %>
-                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar" class="m-0 d-flex align-items-center gap-2">
+                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar" class="m-0 d-flex align-items-center gap-2 form-activar-campana" data-hay-activa="<%= hayUnaActiva %>">
                                     <div class="form-check form-switch m-0">
                                         <input
                                             class="form-check-input"
                                             type="checkbox"
                                             role="switch"
-                                            onchange="this.form.submit()">
+                                            onchange="intentarActivar(this)">
                                     </div>
                                     <span class="badge bg-secondary">Inactiva</span>
                                 </form>
@@ -78,6 +91,7 @@
                         name="nombre"
                         class="form-control"
                         value="<%= formData && formData.nombre ? formData.nombre : campaniaSeleccionada.nombre %>"
+                        placeholder="Ej. Preventa Primavera 2025"
                         required>
                 </div>
                 <div class="col-md-3 mb-3">
@@ -106,6 +120,7 @@
                     name="banner"
                     class="form-control"
                     value="<%= formData && formData.banner ? formData.banner : campaniaSeleccionada.banner %>"
+                    placeholder="Ej. https://dominio.com/img/banner-primavera.jpg"
                     required>
             </div>
             <button class="btn btn-primary" type="submit">
@@ -114,3 +129,18 @@
         </form>
     </div>
 <% } %>
+
+<script>
+function intentarActivar(checkbox) {
+    const form = checkbox.closest('.form-activar-campana');
+    const hayActiva = form.dataset.hayActiva === 'true';
+    if (hayActiva) {
+        checkbox.checked = false;
+        const aviso = document.getElementById('avisoActivar');
+        aviso.classList.remove('d-none');
+        setTimeout(() => aviso.classList.add('d-none'), 2500);
+        return;
+    }
+    form.submit();
+}
+</script>

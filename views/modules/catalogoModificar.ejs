@@ -111,38 +111,38 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre comercial</label>
-                    <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" required>
+                    <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" placeholder="Ej. Pintura Látex Interior Blanco" required>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Descripción</label>
-                <textarea name="descripcion" class="form-control" rows="3" required><%= formData.descripcion || '' %></textarea>
+                <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej. Pintura de alta cobertura para interiores, resistente a la humedad." required><%= formData.descripcion || '' %></textarea>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Unidad de venta</label>
-                    <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" required>
+                    <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" placeholder="Ej. Cubeta 19L" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Unidad de medida primaria</label>
-                    <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" required>
+                    <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" placeholder="Ej. Litro" required>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Precio unitario</label>
-                    <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" required>
+                    <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" placeholder="Ej. 450.00" required>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Peso unitario</label>
-                    <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" required>
+                    <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" placeholder="Ej. 22.50" required>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Volumen unitario</label>
-                    <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" required>
+                    <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" placeholder="Ej. 19.00" required>
                 </div>
             </div>
 
