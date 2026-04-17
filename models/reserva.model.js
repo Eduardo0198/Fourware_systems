@@ -334,3 +334,32 @@ exports.crearReservaConProductos = (data, productos, callback) => {
         });
     });
 };
+
+exports.obtenerResumenAdministrativo = (callback) => {
+    const query = `
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN estatus = 1 THEN 1 ELSE 0 END) AS confirmadas,
+            SUM(CASE WHEN estatus = 0 THEN 1 ELSE 0 END) AS canceladas
+        FROM "Reserva"
+    `;
+    db.query(query, callback);
+};
+
+exports.obtenerReservasRecientesAdmin = (limite, callback) => {
+    const query = `
+        SELECT
+            r.folio,
+            r.fecha,
+            r.total,
+            r.estatus,
+            u.nombre AS concesionario,
+            c.nombre AS cuenta
+        FROM "Reserva" r
+        JOIN "Usuario" u ON u.correo = r.correo
+        JOIN "Cuenta"  c ON c.id_cuenta = r.id_cuenta
+        ORDER BY r.fecha DESC, r.folio DESC
+        LIMIT ?
+    `;
+    db.query(query, [limite], callback);
+};
