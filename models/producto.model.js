@@ -164,3 +164,7 @@ exports.actualizarPorSku = (sku, producto, callback) => {
         sku
     ], callback);
 };
+
+exports.contarProductos = (callback) => {
+    db.query(`SELECT COUNT(*) AS total FROM "Producto"`, callback);
+};

@@ -17,6 +17,12 @@ router.get('/dashboard',
     adminController.dashboard
 );
 
+router.get('/inicio',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    adminController.inicio
+);
+
 router.get('/catalogo',
     protegerRuta,
     tieneRol(['Administrador']),
