@@ -1,10 +1,15 @@
 require('dotenv').config();
 const dns = require('dns');
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const logger = require('../utils/logger');
 
 // Forzar resolución IPv4 (Supabase resuelve a IPv6 por defecto en algunos sistemas)
 dns.setDefaultResultOrder('ipv4first');
+
+// Devolver DATE como string "YYYY-MM-DD" en vez de Date object (evita desfases de zona horaria)
+types.setTypeParser(1082, (val) => val);
+// Devolver TIMESTAMP como string en vez de Date object
+types.setTypeParser(1114, (val) => val);
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
