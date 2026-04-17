@@ -398,13 +398,13 @@ body.sidebar-hidden .footer-ppg {
 .promo-bar {
     margin-left: 250px;
     width: calc(100% - 250px);
-    padding: 22px 32px;
+    padding: 24px 36px;
     color: white;
     border-radius: 0 0 16px 16px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
     box-sizing: border-box;
     transition: all 0.3s ease;
-    min-height: 110px;
+    min-height: 170px;
     display: flex;
     align-items: center;
 }
@@ -413,36 +413,45 @@ body.sidebar-hidden .footer-ppg {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 24px;
     width: 100%;
 }
 
 .promo-left {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     min-width: 0;
     flex: 1 1 auto;
-    overflow: hidden;
 }
 
 .promo-badge {
-    background: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.2);
     color: #fff;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 1.2px;
-    padding: 3px 8px;
+    letter-spacing: 1.4px;
+    padding: 4px 10px;
     border-radius: 4px;
     text-transform: uppercase;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.35);
 }
 
 .promo-name {
     color: #fff;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin: 0;
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.promo-fecha {
+    color: rgba(255,255,255,0.75);
+    font-size: 13px;
+    font-weight: 400;
 }
 
 /* ================= COUNTDOWN TIMER ================= */
@@ -451,22 +460,22 @@ body.sidebar-hidden .footer-ppg {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 2px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
 .promo-timer-label {
     color: rgba(255,255,255,0.65);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
 }
 
 .promo-timer-box {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     flex-wrap: nowrap;
 }
 
@@ -475,59 +484,67 @@ body.sidebar-hidden .footer-ppg {
     flex-direction: column;
     align-items: center;
     background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px;
-    padding: 6px 12px;
-    min-width: 52px;
-    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 10px 16px;
+    min-width: 64px;
+    backdrop-filter: blur(6px);
 }
 
 .time-value {
     color: #fff;
-    font-size: 22px;
+    font-size: 30px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .time-label {
-    color: rgba(255,255,255,0.6);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    margin-top: 2px;
+    color: rgba(255,255,255,0.65);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin-top: 4px;
+    text-transform: uppercase;
 }
 
 .time-sep {
-    color: rgba(255,255,255,0.5);
-    font-size: 16px;
+    color: rgba(255,255,255,0.55);
+    font-size: 22px;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
     flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .promo-bar {
+        padding: 18px 20px;
+        min-height: 130px;
+    }
+    .promo-name {
+        font-size: 20px;
+    }
+    .time-value {
+        font-size: 22px;
+    }
+    .time-unit {
+        min-width: 50px;
+        padding: 7px 10px;
+    }
 }
 
 @media (max-width: 640px) {
     .promo-bar {
-        padding: 8px 12px;
+        padding: 14px 14px;
+        min-height: 110px;
     }
-    .promo-timer-label {
-        display: none;
-    }
-    .time-unit {
-        min-width: 32px;
-        padding: 2px 5px;
-    }
-    .time-value {
-        font-size: 14px;
-    }
-    .time-sep {
-        font-size: 13px;
-        margin-bottom: 8px;
-    }
-    .promo-name {
-        font-size: 12px;
-    }
+    .promo-timer-label { display: none; }
+    .promo-fecha { display: none; }
+    .promo-name { font-size: 15px; }
+    .time-unit { min-width: 38px; padding: 5px 6px; }
+    .time-value { font-size: 16px; }
+    .time-sep { font-size: 14px; margin-bottom: 10px; }
 }
 
