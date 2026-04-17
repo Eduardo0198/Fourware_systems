@@ -24,10 +24,17 @@ function correoDisponible() {
 }
 
 async function renderizarPlantillaReserva(reserva) {
-    const productosCorreo = reserva.productos.map((producto) => ({
-        ...producto,
-        imagenSrc: producto.imagen?.startsWith('http') ? producto.imagen : null
-    }));
+    const appBaseUrl = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
+    const productosCorreo = reserva.productos.map((producto) => {
+        const img = producto.imagen;
+        let imagenSrc = null;
+        if (img?.startsWith('http')) {
+            imagenSrc = img;
+        } else if (img?.startsWith('/') && appBaseUrl) {
+            imagenSrc = `${appBaseUrl}${img}`;
+        }
+        return { ...producto, imagenSrc };
+    });
 
     const html = await ejs.renderFile(templatePath, {
         reserva: { ...reserva, productos: productosCorreo }
@@ -57,7 +64,6 @@ async function enviarCorreoReservaConfirmada({ destinatario, reserva }) {
         html
     });
 
-    console.log('[EMAIL] Correo enviado exitosamente');
     return {
         enviado: true,
         omitido: false
