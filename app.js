@@ -11,6 +11,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const sessionSecret = process.env.SESSION_SECRET || 'dev-only-change-me';
 const PORT = Number(process.env.PORT || 3000);
 
+if (isProduction) app.set('trust proxy', 1);
+
 app.use(session({
     secret: sessionSecret,
     resave: false,
