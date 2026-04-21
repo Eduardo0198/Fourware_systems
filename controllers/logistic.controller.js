@@ -84,8 +84,8 @@ function construirFiltrosVista(filtros) {
 }
 
 // lau y eduardo inicio helpers reporte operativo
-function obtenerFiltrosReporte(query) {
-  const { fechaInicio, fechaFin } = obtenerRangoFechas(query);
+function obtenerFiltrosReporte(query) {  // aqui uso la funcion de obtener rango de fechas para no repetir codigo
+  const { fechaInicio, fechaFin } = obtenerRangoFechas(query); // aqui normalizo los filtros de campaña y cuenta para que si no vienen o son invalidos, se guarden como null
 
   return { // aqui regreso todos los filtros juntos
     fechaInicio, // fecha desde donde empieza la busqueda
@@ -132,6 +132,48 @@ function construirResumenReporte(detalle) {
 
   // aqui regreso el resumen final
   return resumen;
+}
+
+function escaparValorCsv(valor) { // aqui convierto cualquier valor a texto
+  let texto = String(valor || ''); // aqui reemplazo comillas dobles para que no se rompa el csv
+  texto = texto.replace(/"/g, '""');  // aqui regreso el texto entre comillas
+  return `"${texto}"`;
+}
+
+function convertirReporteACsv(detalle) { // aqui pongo los titulos del archivo csv
+  const lineas = [
+    [
+      'Folio',
+      'Fecha',
+      'Cuenta',
+      'Distribuidor',
+      'Campania',
+      'Producto',
+      'Cantidad',
+      'Direccion'
+    ].join(',')
+  ];
+  // si no hay detalle, regreso solo los encabezados
+  detalle = detalle || [];
+  
+  // aqui recorro cada fila y la convierto a texto csv
+  detalle.forEach((item) => {
+    const fila = [
+      escaparValorCsv(item.folio),
+      escaparValorCsv(item.fecha),
+      escaparValorCsv(item.cuenta),
+      escaparValorCsv(item.distribuidor),
+      escaparValorCsv(item.campania),
+      escaparValorCsv(item.producto),
+      escaparValorCsv(item.cantidad),
+      escaparValorCsv(item.direccion_entrega)
+    ];
+
+    lineas.push(fila.join(','));
+  });
+
+  // aqui uno todas las lineas para formar el csv final
+  return lineas.join('\n');
 }
 // lau y eduardo final helpers reporte operativo
 
@@ -263,23 +305,27 @@ exports.reporteOperativo = (req, res) => {
 // lau y eduardo inicio exportar reporte operativo cu-18
 exports.exportarReporteOperativo = (req, res) => {
   // aqui leo las fechas que llegan del formulario
-  const fecha_inicio = String(req.body.fecha_inicio || '').trim();
+  const fecha_inicio = String(req.body.fecha_inicio || '').trim(); // aqui normalizo las fechas para que si no vienen o son invalidas, se guarden como vacias
   const fecha_fin = String(req.body.fecha_fin || '').trim();
 
   // aqui leo la campaña, la cuenta y el formato
   const id_campania = req.body.id_campania;
   const id_cuenta = req.body.id_cuenta;
-  const formato = String(req.body.formato || '').trim().toLowerCase();
+  // aqui leo el formato que llega del formulario
+  let formato = req.body.formato || '';
+  // aqui le quito espacios por si viene algo raro
+  formato = String(formato).trim();
+  // aqui lo paso a minusculas para compararlo mas facil
+  formato = formato.toLowerCase();
 
   
   // aqui junto todo en un solo objeto para usarlo mas facil
   const filtros = {};
-    filtros.fechaInicio = fecha_inicio;
-    filtros.fechaFin = fecha_fin;
-    filtros.idCampania = normalizarIdFiltro(id_campania);
-    filtros.idCuenta = normalizarIdFiltro(id_cuenta);
-    filtros.formato = formato;
-  };
+  filtros.fechaInicio = fecha_inicio;
+  filtros.fechaFin = fecha_fin;
+  filtros.idCampania = normalizarIdFiltro(id_campania);
+  filtros.idCuenta = normalizarIdFiltro(id_cuenta);
+  filtros.formato = formato;
 
   // aqui valido que las fechas si tengan un valor correcto
   if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
@@ -293,9 +339,18 @@ exports.exportarReporteOperativo = (req, res) => {
       return res.status(500).send('No se pudo consultar la informacion para exportar.');
     }
 
-    // por ahora solo confirmo que la consulta salio bien
-    registrarEvento(req, 'Consulta de datos para exportar reporte operativo logístico');
-    return res.send(`Se consultaron ${detalle.length} registros para exportar en formato ${filtros.formato}.`);
+    // aqui convierto el detalle a formato csv
+    const csv = convertirReporteACsv(detalle);
+    // aqui guardo un nombre sencillo para el archivo
+    const nombreArchivo = `reporte_operativo_${filtros.fechaInicio}_${filtros.fechaFin}.csv`;
+
+    // aqui registro que si se genero la exportacion
+    registrarEvento(req, 'Exportacion de reporte operativo logístico en csv');
+
+    // aqui mando el archivo para que se descargue
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    return res.send('\uFEFF' + csv);
   });
 };
 // lau y eduardo final exportar reporte operativo cu-18
