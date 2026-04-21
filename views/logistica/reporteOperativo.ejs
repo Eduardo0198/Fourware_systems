@@ -6,7 +6,7 @@
             Filtros
         </div>
         <div class="card-body">
-            <!-- lau inicio formulario cu-18 -->
+            <!-- lau y eduardo inicio formulario cu-18 -->
             <!-- aqui empieza el formulario que manda los filtros al controlador -->
             <form method="GET" action="/logistica/reporte-operativo">
                 <div class="row g-3">
@@ -34,9 +34,9 @@
                                 Seleccionar campaña
                             </option>
                             <% campanias.forEach((campania) => { %>
-                                <option value="<%= campania.id_campania %>" <%= String(filtros.id_campania) === String(campania.id_campania) ? 'selected' : '' %>>
-                                    <%= campania.nombre %>
-                                </option>
+                                <option value="<%= campania.id_campania %>" <% if (filtros.id_campania == campania.id_campania) { %>selected<% } %>>
+                                 <%= campania.nombre %>
+                                    </option>
                             <% }); %>
                         </select>
                     </div>
@@ -48,19 +48,22 @@
                     </button>
                 </div>
             </form>
-            <!-- lau final formulario cu-18 -->
+            <!-- lau y eduardo final formulario cu-18 -->
         </div>
     </div>
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="card text-center">
                             <div class="card-body">
+                                <!-- lau inicio resumen cu-18 -->
                                 <h6>
                                     Total Reservas
                                 </h6>
                                 <h2>
-                                ---
+                                <!-- aqui muestro el total de reservas que mando el controlador -->
+                                <%= resumen.totalReservas %>
                                 </h2>
+                                <!-- lau final resumen cu-18 -->
                             </div>
                         </div>
                     </div>
