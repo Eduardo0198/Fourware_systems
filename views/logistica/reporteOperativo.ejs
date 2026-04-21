@@ -6,37 +6,51 @@
             Filtros
         </div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">
-                        Fecha inicio
-                    </label>
-                    <input type="date" class="form-control">
+            <!-- lau inicio formulario cu-18 -->
+            <!-- aqui empieza el formulario que manda los filtros al controlador -->
+            <form method="GET" action="/logistica/reporte-operativo">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            Fecha inicio
+                        </label>
+                        <!-- aqui guardo la fecha inicial seleccionada -->
+                        <input type="date" name="fecha_inicio" class="form-control" value="<%= filtros.fecha_inicio %>">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">
                             Fecha fin
                         </label>
-                        <input type="date" class="form-control">
-                        </div>
-                            <div class="col-md-4">
-                                <label class="form-label">
-                                    Campaña
-                                </label>
-                                <select class="form-select">
-                                    <option>
-                                        Seleccionar campaña
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <button class="btn btn-primary">
-                                Generar reporte
-                            </button>
-                        </div>
+                        <!-- aqui guardo la fecha final seleccionada -->
+                        <input type="date" name="fecha_fin" class="form-control" value="<%= filtros.fecha_fin %>">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            Campaña
+                        </label>
+                        <!-- aqui muestro las campañas que vienen del controlador -->
+                        <select name="id_campania" class="form-select">
+                            <option value="">
+                                Seleccionar campaña
+                            </option>
+                            <% campanias.forEach((campania) => { %>
+                                <option value="<%= campania.id_campania %>" <%= String(filtros.id_campania) === String(campania.id_campania) ? 'selected' : '' %>>
+                                    <%= campania.nombre %>
+                                </option>
+                            <% }); %>
+                        </select>
                     </div>
                 </div>
+                <div class="mt-3">
+                    <!-- aqui se manda el formulario para consultar el reporte -->
+                    <button class="btn btn-primary">
+                        Generar reporte
+                    </button>
+                </div>
+            </form>
+            <!-- lau final formulario cu-18 -->
+        </div>
+    </div>
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="card text-center">
