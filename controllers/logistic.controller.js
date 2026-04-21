@@ -148,10 +148,11 @@ exports.reservasConfirmadas = (req, res) => {
 exports.metricas = (req, res) => {
   const filtros = obtenerFiltrosMetricas(req.query);
 
-  const renderMetricas = (pageMessage, metricas, catalogos) => res.render('logistica/metricas', {
+  const renderMetricas = (pageMessage, metricas, serieTiempo, catalogos) => res.render('logistica/metricas', {
     pageMessage,
     filtros: construirFiltrosVista(filtros),
     metricas: metricas || [],
+    serieTiempo: serieTiempo || [],
     resumen: construirResumenMetricas(metricas),
     campanias: catalogos.campanias,
     cuentas: catalogos.cuentas
@@ -165,14 +166,14 @@ exports.metricas = (req, res) => {
       return renderMetricas({
         tipo: 'danger',
         texto: 'No fue posible cargar los filtros de campaña y cuenta.'
-      }, [], catalogosVista);
+      }, [], [], catalogosVista);
     }
 
     if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
       return renderMetricas({
         tipo: 'danger',
         texto: 'Debes seleccionar un periodo válido para consultar métricas logísticas.'
-      }, [], catalogosVista);
+      }, [], [], catalogosVista);
     }
 
     reservaModel.obtenerMetricasLogisticasConsolidadas(filtros, (err, metricas) => {
@@ -181,14 +182,24 @@ exports.metricas = (req, res) => {
         return renderMetricas({
           tipo: 'danger',
           texto: 'No fue posible consultar las métricas logísticas consolidadas.'
-        }, [], catalogosVista);
+        }, [], [], catalogosVista);
       }
 
-      registrarEvento(req, 'Consulta de métricas logísticas consolidadas');
-      renderMetricas(metricas.length === 0 ? {
-        tipo: 'warning',
-        texto: 'No existen reservas confirmadas con los filtros seleccionados.'
-      } : null, metricas, catalogosVista);
+      reservaModel.obtenerSerieTiempoMetricasLogisticas(filtros, (serieErr, serieTiempo) => {
+        if (serieErr) {
+          logger.error(serieErr);
+          return renderMetricas({
+            tipo: 'danger',
+            texto: 'No fue posible consultar la serie temporal de metricas logisticas.'
+          }, metricas || [], [], catalogosVista);
+        }
+
+        registrarEvento(req, 'Consulta de metricas logisticas consolidadas');
+        renderMetricas(metricas.length === 0 ? {
+          tipo: 'warning',
+          texto: 'No existen reservas confirmadas con los filtros seleccionados.'
+        } : null, metricas, serieTiempo, catalogosVista);
+      });
     });
   });
 };
