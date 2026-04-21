@@ -147,7 +147,7 @@ exports.exportarMetricas = (req, res) => {
 
             const rankingData = (ranking || []).map(r => ({
                 'Posición': r.posicion,
-                'SKU': r.sku,
+                'SKU': r.SKU,
                 'Producto': r.nombre_comercial,
                 'Unidades vendidas': r.total_unidades,
                 'Campaña': r.nombre_campania,
