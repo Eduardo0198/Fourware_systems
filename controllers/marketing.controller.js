@@ -11,20 +11,22 @@ function obtenerPercepcionGeneral(promedio, totalCalificaciones) {
   return 'Área de mejora';
 }
 
+function normalizarRankingProductos(rows) {
+  return (rows || []).map((item) => {
+    const promedio = Number(item.promedio_estrellas || 0);
+    const nombre = String(item.nombre_comercial || '');
+    return {
+      ...item,
+      promedio_estrellas: promedio,
+      total_calificaciones: Number(item.total_calificaciones || 0),
+      altura: Math.max(24, Math.round((promedio / 5) * 220)),
+      etiqueta: nombre.length > 14 ? `${nombre.slice(0, 14)}...` : nombre
+    };
+  });
+}
+
 function renderRankingProductos(res, payload) {
   calificacionModel.obtenerPromedioCalificacionesPorCampaniaActiva((err, graficaCampanias) => {
-    if (err) {
-      logger.error(err);
-      return res.render('marketing/rankingProductos', {
-        ...payload,
-        graficaCampanias: [],
-        pageMessage: payload.pageMessage || {
-          tipo: 'warning',
-          texto: 'No fue posible cargar la gráfica de campañas activas.'
-        }
-      });
-    }
-
     const datos = (graficaCampanias || []).map((item) => {
       const promedio = Number(item.promedio_estrellas || 0);
       return {
@@ -35,9 +37,33 @@ function renderRankingProductos(res, payload) {
       };
     });
 
-    return res.render('marketing/rankingProductos', {
-      ...payload,
-      graficaCampanias: datos
+    if (err) {
+      logger.error(err);
+    }
+
+    calificacionModel.obtenerRankingProductosPorCalificacion('DESC', 20, (errMejores, mejores) => {
+      if (errMejores) {
+        logger.error(errMejores);
+      }
+
+      calificacionModel.obtenerRankingProductosPorCalificacion('ASC', 20, (errPeores, peores) => {
+        if (errPeores) {
+          logger.error(errPeores);
+        }
+
+        const pageMessage = payload.pageMessage || ((err || errMejores || errPeores) ? {
+          tipo: 'warning',
+          texto: 'No fue posible cargar una o más gráficas del módulo.'
+        } : null);
+
+        return res.render('marketing/rankingProductos', {
+          ...payload,
+          pageMessage,
+          graficaCampanias: err ? [] : datos,
+          graficaMejoresProductos: errMejores ? [] : normalizarRankingProductos(mejores),
+          graficaPeoresProductos: errPeores ? [] : normalizarRankingProductos(peores)
+        });
+      });
     });
   });
 }

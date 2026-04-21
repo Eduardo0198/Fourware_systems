@@ -4,6 +4,12 @@
     const campaniasGrafica = typeof graficaCampanias !== 'undefined' && Array.isArray(graficaCampanias)
         ? graficaCampanias
         : [];
+    const mejoresProductos = typeof graficaMejoresProductos !== 'undefined' && Array.isArray(graficaMejoresProductos)
+        ? graficaMejoresProductos
+        : [];
+    const peoresProductos = typeof graficaPeoresProductos !== 'undefined' && Array.isArray(graficaPeoresProductos)
+        ? graficaPeoresProductos
+        : [];
 %>
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
@@ -61,6 +67,50 @@
             </div>
         <% } else { %>
             <div class="alert alert-secondary mb-0">No hay campañas activas con información de calificaciones para graficar.</div>
+        <% } %>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="h5 mb-1">Top 20 productos mejor rankeados</h4>
+        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más alto al más bajo.</p>
+        <% if (mejoresProductos.length) { %>
+            <div class="d-flex align-items-end gap-2 overflow-auto pb-2" style="min-height: 18rem;">
+                <% mejoresProductos.forEach((producto) => { %>
+                    <div class="d-flex flex-column justify-content-end align-items-center text-center" style="min-width: 88px;">
+                        <div class="bg-success text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
+                            <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
+                        </div>
+                        <span class="small fw-semibold mt-2 text-truncate w-100" title="<%= producto.nombre_comercial %>"><%= producto.etiqueta %></span>
+                        <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-0">No hay suficientes productos calificados para mostrar el ranking superior.</div>
+        <% } %>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="h5 mb-1">Top 20 productos peor rankeados</h4>
+        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más bajo al más alto dentro del ranking inferior.</p>
+        <% if (peoresProductos.length) { %>
+            <div class="d-flex align-items-end gap-2 overflow-auto pb-2" style="min-height: 18rem;">
+                <% peoresProductos.forEach((producto) => { %>
+                    <div class="d-flex flex-column justify-content-end align-items-center text-center" style="min-width: 88px;">
+                        <div class="bg-danger text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
+                            <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
+                        </div>
+                        <span class="small fw-semibold mt-2 text-truncate w-100" title="<%= producto.nombre_comercial %>"><%= producto.etiqueta %></span>
+                        <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-0">No hay suficientes productos calificados para mostrar el ranking inferior.</div>
         <% } %>
     </div>
 </section>
