@@ -58,6 +58,7 @@
                         </select>
                     </div>
                     <!-- lau y eduardo final filtro cuenta cu-18 -->
+
                 </div>
                 <div class="mt-3">
                     <!-- aqui se manda el formulario para consultar el reporte -->
@@ -66,6 +67,29 @@
                     </button>
                 </div>
             </form>
+            <!-- ----------------------- -->
+            <!-- lau y eduardo inicio formulario exportar cu-18 -->
+            <!-- ----------------------- -->
+            <!-- aqui dejo otro formulario para exportar usando los mismos filtros -->
+            <form method="POST" action="/logistica/reporte-operativo/exportar" class="mt-3">
+                <!-- aqui mando otra vez la fecha inicial -->
+                <input type="hidden" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+                <!-- aqui mando otra vez la fecha final -->
+                <input type="hidden" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+                <!-- aqui mando otra vez la campaña -->
+                <input type="hidden" name="id_campania" value="<%= filtros.id_campania %>">
+                <!-- aqui mando otra vez la cuenta -->
+                <input type="hidden" name="id_cuenta" value="<%= filtros.id_cuenta %>">
+                <!-- aqui mando el formato que despues vamos a usar -->
+                <input type="hidden" name="formato" value="csv">
+
+                <button class="btn btn-success">
+                    Exportar reporte
+                </button>
+            </form>
+            <!-- ----------------------- -->
+            <!-- lau y eduardo final formulario exportar cu-18 -->
+            <!-- ----------------------- -->
             <!-- lau y eduardo final formulario cu-18 -->
         </div>
     </div>
