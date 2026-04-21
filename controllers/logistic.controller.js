@@ -1,3 +1,4 @@
+const XLSX = require('xlsx');
 const reservaModel = require('../models/reserva.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
@@ -175,6 +176,37 @@ function convertirReporteACsv(detalle) { // aqui pongo los titulos del archivo c
   // aqui uno todas las lineas para formar el csv final
   return lineas.join('\n');
 }
+
+function convertirReporteAExcel(detalle) {
+  // aqui preparo las filas que van a ir en el excel
+  const filas = [];
+
+  detalle = detalle || [];
+
+  // aqui recorro cada dato para dejarlo en un formato mas simple
+  detalle.forEach((item) => {
+    filas.push({
+      Folio: item.folio,
+      Fecha: item.fecha,
+      Cuenta: item.cuenta,
+      Distribuidor: item.distribuidor,
+      Campania: item.campania,
+      Producto: item.producto,
+      Cantidad: item.cantidad,
+      Direccion: item.direccion_entrega
+    });
+  });
+
+  // aqui creo el libro y la hoja de excel
+  const libro = XLSX.utils.book_new();
+  const hoja = XLSX.utils.json_to_sheet(filas);
+
+  // aqui agrego la hoja al libro
+  XLSX.utils.book_append_sheet(libro, hoja, 'Reporte');
+
+  // aqui regreso el archivo listo para descargar
+  return XLSX.write(libro, { type: 'buffer', bookType: 'xlsx' });
+}
 // lau y eduardo final helpers reporte operativo
 
 function cargarCatalogosMetricas(callback) {
@@ -337,6 +369,25 @@ exports.exportarReporteOperativo = (req, res) => {
     if (err) {
       logger.error(err);
       return res.status(500).send('No se pudo consultar la informacion para exportar.');
+    }
+
+    // aqui reviso si el usuario pidio excel
+    if (filtros.formato === 'xlsx') {
+      // aqui convierto el detalle a excel
+      const archivoExcel = convertirReporteAExcel(detalle);
+      // aqui guardo un nombre sencillo para el archivo
+      const nombreArchivo = `reporte_operativo_${filtros.fechaInicio}_${filtros.fechaFin}.xlsx`;
+
+      // aqui registro que si se genero la exportacion
+      registrarEvento(req, 'Exportacion de reporte operativo logístico en excel');
+
+      // aqui mando el excel para que se descargue
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+      return res.send(archivoExcel);
     }
 
     // aqui convierto el detalle a formato csv
