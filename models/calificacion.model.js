@@ -60,3 +60,40 @@ exports.obtenerResenasPorSku = (sku, callback) => {
 
     db.query(query, [sku], callback);
 };
+
+exports.consultarResultadosMarketingPorNombre = (nombre, callback) => {
+    const query = `
+        SELECT
+            p."SKU",
+            p.nombre_comercial,
+            cp.nombre AS campania,
+            COUNT(c.id_calificacion)::int AS total_calificaciones,
+            COUNT(*) FILTER (WHERE TRIM(COALESCE(c.comentario, '')) <> '')::int AS total_comentarios,
+            ROUND(AVG(c.estrellas)::numeric, 1) AS promedio_estrellas,
+            CASE
+                WHEN COUNT(c.id_calificacion) = 0 THEN 'No existen comentarios ni calificaciones.'
+                WHEN COUNT(*) FILTER (WHERE TRIM(COALESCE(c.comentario, '')) <> '') = 0 THEN 'No existen comentarios.'
+                ELSE NULL
+            END AS mensaje_estado,
+            COALESCE(
+                JSON_AGG(
+                    JSON_BUILD_OBJECT(
+                        'estrellas', c.estrellas,
+                        'comentario', c.comentario,
+                        'correo', c.correo,
+                        'fecha', c.fecha
+                    )
+                    ORDER BY c.fecha DESC, c.id_calificacion DESC
+                ) FILTER (WHERE TRIM(COALESCE(c.comentario, '')) <> ''),
+                '[]'::json
+            ) AS comentarios
+        FROM "Producto" p
+        INNER JOIN "Campania" cp ON cp.id_campania = p.id_campania
+        LEFT JOIN "Calificacion" c ON c."SKU" = p."SKU"
+        WHERE UPPER(p.nombre_comercial) LIKE UPPER(?)
+        GROUP BY p."SKU", p.nombre_comercial, cp.nombre
+        ORDER BY p.nombre_comercial ASC, p."SKU" ASC
+    `;
+
+    db.query(query, [`%${nombre}%`], callback);
+};

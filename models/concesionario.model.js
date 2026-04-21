@@ -87,7 +87,7 @@ exports.obtenerProductosPaginados = (
         params.push(unidadVenta);
     }
 
-    query += ` LIMIT ? OFFSET ?`;
+    query += ` ORDER BY p."SKU" LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     db.query(query, params, (err, productos) => {
