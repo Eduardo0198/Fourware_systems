@@ -180,18 +180,43 @@ exports.metricasRanking = (req, res) => {
         }
 
         campaniaModel.obtenerCampaniaActiva((errActiva, activas) => {
-            const campaniaActivaId = Array.isArray(activas) && activas.length > 0
-                ? activas[0].id_campania
-                : null;
+            const campaniaActiva = Array.isArray(activas) && activas.length > 0 ? activas[0] : null;
+            const campaniaActivaId = campaniaActiva ? campaniaActiva.id_campania : null;
 
-            registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
-            return res.render('marketing/metricasRanking', {
-                campanias,
-                sinCampanias: false,
-                resultados: null,
-                filtros: {},
-                campaniaActivaId,
-                pageMessage: null
+            if (!campaniaActivaId) {
+                registrarEvento(req, 'Acceso a consulta de ranking sin campaña activa');
+                return res.render('marketing/metricasRanking', {
+                    campanias,
+                    sinCampanias: false,
+                    resultados: null,
+                    filtros: {},
+                    campaniaActivaId: null,
+                    pageMessage: null
+                });
+            }
+
+            const filtros = { idCampania: campaniaActivaId, fechaInicio: null, fechaFin: null, producto: null };
+
+            metricasModel.consultarRankingProductos(filtros, (errRanking, ranking) => {
+                metricasModel.consultarMetricasComparativas(filtros, (errMetricas, metricas) => {
+                    if (errRanking || errMetricas) {
+                        if (errRanking) logger.error(errRanking);
+                        if (errMetricas) logger.error(errMetricas);
+                    }
+
+                    registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
+                    return res.render('marketing/metricasRanking', {
+                        campanias,
+                        sinCampanias: false,
+                        resultados: {
+                            ranking: errRanking ? [] : (ranking || []),
+                            metricas: errMetricas ? [] : (metricas || [])
+                        },
+                        filtros: { idCampania: campaniaActivaId },
+                        campaniaActivaId,
+                        pageMessage: null
+                    });
+                });
             });
         });
     });
