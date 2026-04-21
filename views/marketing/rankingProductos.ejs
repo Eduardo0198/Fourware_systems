@@ -34,6 +34,59 @@
     </div>
 </form>
 
+<% if (resultados && resultados.length) { %>
+    <div class="row g-3 mb-4">
+        <% resultados.forEach((producto) => { %>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between gap-3">
+                            <div>
+                                <h5 class="mb-1"><%= producto.nombre_comercial %></h5>
+                                <p class="text-muted mb-0">SKU: <%= producto.SKU %> | Campaña: <%= producto.campania %></p>
+                            </div>
+                            <div class="text-md-end">
+                                <div class="fw-semibold fs-5"><%= producto.promedio_estrellas.toFixed(1) %> / 5</div>
+                                <div class="text-muted small"><%= producto.total_calificaciones %> calificaciones | <%= producto.total_comentarios %> comentarios</div>
+                                <span class="badge text-bg-light border mt-2"><%= producto.percepcion_general %></span>
+                            </div>
+                        </div>
+
+                        <% if (producto.mensaje_estado) { %>
+                            <div class="alert alert-warning mt-3 mb-0"><%= producto.mensaje_estado %></div>
+                        <% } %>
+
+                        <% if (producto.comentarios.length) { %>
+                            <div class="table-responsive mt-3">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Estrellas</th>
+                                            <th>Comentario</th>
+                                            <th>Correo</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% producto.comentarios.forEach((comentario) => { %>
+                                            <tr>
+                                                <td><strong><%= comentario.estrellas %>★</strong></td>
+                                                <td><%= comentario.comentario %></td>
+                                                <td><%= comentario.correo %></td>
+                                                <td><%= comentario.fecha %></td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -136,59 +189,6 @@
         <% } %>
     </div>
 </section>
-
-<% if (resultados && resultados.length) { %>
-    <div class="row g-3">
-        <% resultados.forEach((producto) => { %>
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex flex-wrap justify-content-between gap-3">
-                            <div>
-                                <h5 class="mb-1"><%= producto.nombre_comercial %></h5>
-                                <p class="text-muted mb-0">SKU: <%= producto.SKU %> | Campaña: <%= producto.campania %></p>
-                            </div>
-                            <div class="text-md-end">
-                                <div class="fw-semibold fs-5"><%= producto.promedio_estrellas.toFixed(1) %> / 5</div>
-                                <div class="text-muted small"><%= producto.total_calificaciones %> calificaciones | <%= producto.total_comentarios %> comentarios</div>
-                                <span class="badge text-bg-light border mt-2"><%= producto.percepcion_general %></span>
-                            </div>
-                        </div>
-
-                        <% if (producto.mensaje_estado) { %>
-                            <div class="alert alert-warning mt-3 mb-0"><%= producto.mensaje_estado %></div>
-                        <% } %>
-
-                        <% if (producto.comentarios.length) { %>
-                            <div class="table-responsive mt-3">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Estrellas</th>
-                                            <th>Comentario</th>
-                                            <th>Correo</th>
-                                            <th>Fecha</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <% producto.comentarios.forEach((comentario) => { %>
-                                            <tr>
-                                                <td><strong><%= comentario.estrellas %>★</strong></td>
-                                                <td><%= comentario.comentario %></td>
-                                                <td><%= comentario.correo %></td>
-                                                <td><%= comentario.fecha %></td>
-                                            </tr>
-                                        <% }) %>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <% } %>
-                    </div>
-                </div>
-            </div>
-        <% }) %>
-    </div>
-<% } %>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
