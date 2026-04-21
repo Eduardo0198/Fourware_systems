@@ -1,5 +1,7 @@
 const metricasModel = require('../models/metricas.model');
 const campaniaModel = require('../models/campania.model');
+const reservaModel = require('../models/reserva.model');
+const concesionarioModel = require('../models/concesionario.model');
 const XLSX = require('xlsx');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
@@ -71,9 +73,48 @@ function renderRankingProductos(res, payload) {
   });
 }
 
-exports.metricasComparativas = (req, res) => {
-    registrarEvento(req, 'Consulta de métricas comparativas de campaña');
-    res.render('marketing/metricasComparativas');
+exports.inicio = (req, res) => {
+    registrarEvento(req, 'Consulta de inicio de marketing');
+
+    const usuario = req.session.usuario;
+    let resumen = { total: 0, confirmadas: 0, canceladas: 0 };
+    let campania = null;
+    let topProductos = [];
+    let pendientes = 3;
+
+    function intentarRender() {
+        pendientes -= 1;
+        if (pendientes > 0) return;
+        res.render('marketing/inicio', {
+            saludo: usuario.nombre.split(' ')[0],
+            resumen,
+            campania,
+            topProductos: topProductos.slice(0, 3)
+        });
+    }
+
+    reservaModel.obtenerResumenAdministrativo((err, rows) => {
+        if (!err && rows && rows[0]) {
+            resumen = {
+                total:       Number(rows[0].total       || 0),
+                confirmadas: Number(rows[0].confirmadas || 0),
+                canceladas:  Number(rows[0].canceladas  || 0)
+            };
+        } else if (err) logger.error(err);
+        intentarRender();
+    });
+
+    campaniaModel.obtenerCampaniaActiva((err, rows) => {
+        if (!err && rows && rows.length > 0) campania = rows[0];
+        else if (err) logger.error(err);
+        intentarRender();
+    });
+
+    concesionarioModel.obtenerTopProductos((err, rows) => {
+        if (!err && Array.isArray(rows)) topProductos = rows;
+        else if (err) logger.error(err);
+        intentarRender();
+    });
 };
 
 exports.rankingProductos = (req, res) => {
@@ -145,11 +186,6 @@ exports.rankingProductos = (req, res) => {
       pageMessage: null
     });
   });
-};
-
-exports.tendenciasRegion = (req, res) => {
-    registrarEvento(req, 'Consulta de tendencias por región');
-    res.render('marketing/tendenciasRegion');
 };
 
 exports.metricasRanking = (req, res) => {
