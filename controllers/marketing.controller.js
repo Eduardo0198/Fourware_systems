@@ -11,6 +11,37 @@ function obtenerPercepcionGeneral(promedio, totalCalificaciones) {
   return 'Área de mejora';
 }
 
+function renderRankingProductos(res, payload) {
+  calificacionModel.obtenerPromedioCalificacionesPorCampaniaActiva((err, graficaCampanias) => {
+    if (err) {
+      logger.error(err);
+      return res.render('marketing/rankingProductos', {
+        ...payload,
+        graficaCampanias: [],
+        pageMessage: payload.pageMessage || {
+          tipo: 'warning',
+          texto: 'No fue posible cargar la gráfica de campañas activas.'
+        }
+      });
+    }
+
+    const datos = (graficaCampanias || []).map((item) => {
+      const promedio = Number(item.promedio_estrellas || 0);
+      return {
+        ...item,
+        promedio_estrellas: promedio,
+        total_calificaciones: Number(item.total_calificaciones || 0),
+        porcentaje: Math.min(100, Math.round((promedio / 5) * 100))
+      };
+    });
+
+    return res.render('marketing/rankingProductos', {
+      ...payload,
+      graficaCampanias: datos
+    });
+  });
+}
+
 exports.metricasComparativas = (req, res) => {
   registrarEvento(req, 'Consulta de métricas comparativas de campaña');
   res.render('marketing/metricasComparativas');
@@ -20,7 +51,7 @@ exports.rankingProductos = (req, res) => {
   const nombre = String(req.query.nombre || '').trim();
 
   if (!nombre) {
-    return res.render('marketing/rankingProductos', {
+    return renderRankingProductos(res, {
       criterios: { nombre: '' },
       resultados: [],
       pageMessage: null
@@ -29,7 +60,7 @@ exports.rankingProductos = (req, res) => {
 
   if (!CRITERIO_NOMBRE_VALIDO.test(nombre)) {
     registrarEvento(req, 'Intento de consulta con criterios inválidos de calificaciones y comentarios');
-    return res.render('marketing/rankingProductos', {
+    return renderRankingProductos(res, {
       criterios: { nombre },
       resultados: [],
       pageMessage: {
@@ -43,7 +74,7 @@ exports.rankingProductos = (req, res) => {
     if (err) {
       logger.error(err);
       registrarEvento(req, 'Error al procesar consulta de calificaciones y comentarios de productos');
-      return res.render('marketing/rankingProductos', {
+      return renderRankingProductos(res, {
         criterios: { nombre },
         resultados: [],
         pageMessage: {
@@ -68,7 +99,7 @@ exports.rankingProductos = (req, res) => {
 
     if (!resultadosNormalizados.length) {
       registrarEvento(req, 'Consulta sin resultados de calificaciones y comentarios de productos');
-      return res.render('marketing/rankingProductos', {
+      return renderRankingProductos(res, {
         criterios: { nombre },
         resultados: [],
         pageMessage: {
@@ -79,7 +110,7 @@ exports.rankingProductos = (req, res) => {
     }
 
     registrarEvento(req, 'Consulta de resultados de calificaciones y comentarios de productos');
-    return res.render('marketing/rankingProductos', {
+    return renderRankingProductos(res, {
       criterios: { nombre },
       resultados: resultadosNormalizados,
       pageMessage: null
