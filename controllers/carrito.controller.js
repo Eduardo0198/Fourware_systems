@@ -16,6 +16,7 @@ const {
     obtenerCarritoActivo,
     sincronizarCarritoConProducto
 } = require('../services/carrito.service');
+const Carrito = require('../services/Carrito');
 
 function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
     setImmediate(() => {
@@ -84,6 +85,8 @@ exports.agregarProducto = (req, res) => {
 
         req.session.carritoCuentaId = cuentaActivaId;
 
+        const un_carrito = new Carrito(req.session.carrito, cuentaActivaId);
+
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
                 logger.error(productoErr);
@@ -98,22 +101,20 @@ exports.agregarProducto = (req, res) => {
                 return res.redirect('/concesionario/catalogo');
             }
 
-            const carrito = req.session.carrito;
-            const index = carrito.findIndex(p => p.sku === sku);
+            const index = un_carrito.existeProducto(sku);
 
             if (index !== -1) {
-                carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
-                carrito[index].cantidad += cantidadNumerica;
+                un_carrito.actualizarCantidad(index, producto, cantidadNumerica);
             } else {
-                carrito.push(construirItemCarrito(producto, cantidadNumerica));
+                un_carrito.agregarProducto(construirItemCarrito(producto, cantidadNumerica));
             }
 
-            req.session.carrito = carrito;
+            req.session.carrito = un_carrito.toArray();
 
             const correo = req.session.usuario?.correo || req.session.usuario?.usuario?.correo;
             registrarEvento(req, `Agregó producto ${sku} al carrito`, correo);
 
-            if (esAjax) return res.json({ ok: true, carritoCount: carrito.length, sku });
+            if (esAjax) return res.json({ ok: true, carritoCount: req.session.carrito.length, sku });
 
             req.session.mensaje = { tipo: 'success', texto: 'Producto agregado correctamente al carrito.' };
             return res.redirect(redirectCatalogo);

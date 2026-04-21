@@ -89,10 +89,9 @@
                     </div>
                 </div>
 
-        <form method="POST" action="/concesionario/carrito/agregar" class="mt-2">
-            <input type="hidden" name="sku" value="<%= producto.SKU %>">
-            <input type="hidden" name="return_to" value="<%= returnTo || '/concesionario/catalogo' %>">
+        <div id="alertaCarrito" class="d-none" role="alert"></div>
 
+        <div class="mt-2">
             <div class="row g-3 align-items-end justify-content-end">
                 <div class="col-sm-4 col-md-3">
                     <label for="cantidad" class="form-label fw-semibold">Cantidad</label>
@@ -102,15 +101,70 @@
                            class="form-control"
                            min="1"
                            step="1"
-                           value="1"
-                           required>
+                           value="1">
                 </div>
 
                 <div class="col-sm-8 col-md-auto">
-                    <button class="btn btn-primary w-100 px-4">Agregar al carrito</button>
+                    <button id="btnAgregarCarrito" class="btn btn-primary w-100 px-4">
+                        <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
+                    </button>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <script>
+        document.getElementById('btnAgregarCarrito').addEventListener('click', async () => {
+            const btn = document.getElementById('btnAgregarCarrito');
+            const cantidad = document.getElementById('cantidad').value;
+            const sku = '<%= producto.SKU %>';
+            const returnTo = '<%= returnTo || "/concesionario/catalogo" %>';
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Agregando...';
+
+            try {
+                const body = new URLSearchParams({ sku, cantidad, return_to: returnTo });
+                const res = await fetch('/concesionario/carrito/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+
+                const data = await res.json();
+
+                if (data.ok) {
+                    const cartIcon = document.getElementById('cartHeaderIcon');
+                    let badge = cartIcon ? cartIcon.querySelector('.badge') : null;
+                    if (cartIcon) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                            badge.style.cssText = 'font-size:0.6rem;min-width:18px';
+                            cartIcon.appendChild(badge);
+                        }
+                        badge.textContent = data.carritoCount;
+                    }
+                    mostrarAlerta('success', 'Producto agregado correctamente al carrito.');
+                } else {
+                    mostrarAlerta('danger', data.mensaje);
+                }
+            } catch (e) {
+                mostrarAlerta('danger', 'Error al conectar con el servidor. Intente nuevamente.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cart-plus me-1"></i>Agregar al carrito';
+            }
+        });
+
+        function mostrarAlerta(tipo, mensaje) {
+            const alerta = document.getElementById('alertaCarrito');
+            alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alerta.innerHTML = `${mensaje} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        }
+        </script>
             </div>
         </div>
     </div>
