@@ -176,18 +176,14 @@
 <% if (resultados && (resultados.ranking.length > 0 || resultados.metricas.length > 0)) { %>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
     <% if (resultados.ranking.length > 0) { %>
-    const rankingLabels = <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => r.nombre_comercial)) %>;
-    const rankingData   = <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => Number(r.total_unidades))) %>;
-
     new Chart(document.getElementById('chartRanking'), {
         type: 'bar',
         data: {
-            labels: rankingLabels,
+            labels: <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => r.nombre_comercial)) %>,
             datasets: [{
                 label: 'Unidades vendidas',
-                data: rankingData,
+                data: <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => Number(r.total_unidades))) %>,
                 backgroundColor: 'rgba(13, 110, 253, 0.7)',
                 borderColor: 'rgba(13, 110, 253, 1)',
                 borderWidth: 1
@@ -205,18 +201,14 @@ document.addEventListener('DOMContentLoaded', () => {
     <% } %>
 
     <% if (resultados.metricas.length > 0) { %>
-    const metricasLabels  = <%- JSON.stringify(resultados.metricas.map(m => m.nombre_campania)) %>;
-    const metricasOrdenes = <%- JSON.stringify(resultados.metricas.map(m => Number(m.total_ordenes))) %>;
-    const metricasMontos  = <%- JSON.stringify(resultados.metricas.map(m => Number(m.monto_total))) %>;
-
     new Chart(document.getElementById('chartMetricas'), {
         type: 'bar',
         data: {
-            labels: metricasLabels,
+            labels: <%- JSON.stringify(resultados.metricas.map(m => m.nombre_campania)) %>,
             datasets: [
                 {
                     label: 'Total órdenes',
-                    data: metricasOrdenes,
+                    data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.total_ordenes))) %>,
                     backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: 'rgba(25, 135, 84, 1)',
                     borderWidth: 1,
@@ -224,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 {
                     label: 'Monto total ($)',
-                    data: metricasMontos,
+                    data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.monto_total))) %>,
                     backgroundColor: 'rgba(255, 193, 7, 0.7)',
                     borderColor: 'rgba(255, 193, 7, 1)',
                     borderWidth: 1,
@@ -256,6 +248,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     <% } %>
-});
 </script>
 <% } %>
