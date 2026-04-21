@@ -25,4 +25,13 @@ router.get('/reporte-operativo',
     logisticController.reporteOperativo
 );
 
+// lau y eduardo inicio ruta exportar cu-18
+router.post('/reporte-operativo/exportar',
+    protegerRuta,
+    tieneRol(['Logistica']),
+    tienePrivilegio(['generar_reporte_logistica']),
+    logisticController.exportarReporteOperativo
+);
+// lau y eduardo final ruta exportar cu-18
+
 module.exports = router;
