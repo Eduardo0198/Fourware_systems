@@ -40,6 +40,24 @@
                             <% }); %>
                         </select>
                     </div>
+                    <!-- lau y eduardo inicio filtro cuenta cu-18 -->
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            Cuenta
+                        </label>
+                        <!-- aqui muestro las cuentas que vienen del controlador -->
+                        <select name="id_cuenta" class="form-select">
+                            <option value="">
+                                Seleccionar cuenta
+                            </option>
+                            <% cuentas.forEach((cuenta) => { %>
+                                <option value="<%= cuenta.id_cuenta %>" <% if (filtros.id_cuenta == cuenta.id_cuenta) { %>selected<% } %>>
+                                    <%= cuenta.nombre %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <!-- lau y eduardo final filtro cuenta cu-18 -->
                 </div>
                 <div class="mt-3">
                     <!-- aqui se manda el formulario para consultar el reporte -->
@@ -87,7 +105,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                    <!-- lau inicio tabla cu-18 -->
+                                    <!-- lau y eduardo del inicio tabla cu-18 -->
                                     <% if (detalle && detalle.length > 0) { %>
                                         <!-- aqui recorro cada fila que llega del controlador -->
                                         <% detalle.forEach((item) => { %>
@@ -110,7 +128,7 @@
                                             </td>
                                         </tr>
                                     <% } %>
-                                    <!-- lau final tabla cu-18 -->
+                                    <!-- lau y eduardo  final tabla cu-18 -->
                             </tbody>
                         </table>
                     </div>
