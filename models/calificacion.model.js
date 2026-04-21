@@ -115,3 +115,25 @@ exports.obtenerPromedioCalificacionesPorCampaniaActiva = (callback) => {
 
     db.query(query, callback);
 };
+
+exports.obtenerRankingProductosPorCalificacion = (direccion, limite, callback) => {
+    const orden = String(direccion).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const query = `
+        SELECT
+            p."SKU",
+            p.nombre_comercial,
+            cp.nombre AS campania,
+            COUNT(c.id_calificacion)::int AS total_calificaciones,
+            ROUND(AVG(c.estrellas)::numeric, 1) AS promedio_estrellas
+        FROM "Producto" p
+        INNER JOIN "Campania" cp ON cp.id_campania = p.id_campania
+        INNER JOIN "Calificacion" c ON c."SKU" = p."SKU"
+        WHERE cp.estatus = 1
+        GROUP BY p."SKU", p.nombre_comercial, cp.nombre
+        HAVING COUNT(c.id_calificacion) > 0
+        ORDER BY promedio_estrellas ${orden}, total_calificaciones DESC, p.nombre_comercial ASC
+        LIMIT ?
+    `;
+
+    db.query(query, [limite], callback);
+};
