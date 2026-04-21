@@ -83,6 +83,37 @@ function construirFiltrosVista(filtros) {
   };
 }
 
+// lau y eduardo inicio helpers reporte operativo
+function obtenerFiltrosReporte(query) {
+  const { fechaInicio, fechaFin } = obtenerRangoFechas(query);
+
+  return {
+    fechaInicio,
+    fechaFin,
+    idCampania: normalizarIdFiltro(query.id_campania),
+    idCuenta: normalizarIdFiltro(query.id_cuenta)
+  };
+}
+
+function construirResumenReporte(detalle) {
+  const folios = new Set();
+
+  return (detalle || []).reduce((acc, item) => {
+    folios.add(item.folio);
+    acc.totalReservas = folios.size;
+    acc.totalProductos += Number(item.cantidad || 0);
+    acc.totalPeso += Number(item.peso_total_linea || 0);
+    acc.totalVolumen += Number(item.volumen_total_linea || 0);
+    return acc;
+  }, {
+    totalReservas: 0,
+    totalProductos: 0,
+    totalPeso: 0,
+    totalVolumen: 0
+  });
+}
+// lau y eduardo final helpers reporte operativo
+
 function cargarCatalogosMetricas(callback) {
   campaniaModel.obtenerTodas((errCampanias, campanias) => {
     if (errCampanias) return callback(errCampanias);
@@ -205,6 +236,59 @@ exports.metricas = (req, res) => {
 };
 
 exports.reporteOperativo = (req, res) => {
-  registrarEvento(req, 'Generación de reporte operativo logístico');
-  res.render('logistica/reporteOperativo');
+  // lau y eduardo inicio controlador reporte operativo
+  const filtros = obtenerFiltrosReporte(req.query);
+
+  const renderReporte = (pageMessage, detalle, catalogos) => {
+    res.render('logistica/reporteOperativo', {
+      pageMessage,
+      filtros: {
+        fecha_inicio: filtros.fechaInicio,
+        fecha_fin: filtros.fechaFin,
+        id_campania: filtros.idCampania || '',
+        id_cuenta: filtros.idCuenta || ''
+      },
+      detalle: detalle || [],
+      resumen: construirResumenReporte(detalle),
+      campanias: catalogos.campanias || [],
+      cuentas: catalogos.cuentas || []
+    });
+  };
+
+  cargarCatalogosMetricas((catalogosErr, catalogos) => {
+    const catalogosVista = catalogos || { campanias: [], cuentas: [] };
+
+    if (catalogosErr) {
+      logger.error(catalogosErr);
+      return renderReporte({
+        tipo: 'danger',
+        texto: 'No fue posible cargar los filtros del reporte.'
+      }, [], catalogosVista);
+    }
+
+    if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
+      return renderReporte({
+        tipo: 'danger',
+        texto: 'Debes seleccionar un rango de fechas valido.'
+      }, [], catalogosVista);
+    }
+
+    reservaModel.obtenerReporteOperativoLogistico(filtros, (err, detalle) => {
+      if (err) {
+        logger.error(err);
+        return renderReporte({
+          tipo: 'danger',
+          texto: 'No fue posible consultar el reporte operativo.'
+        }, [], catalogosVista);
+      }
+
+      registrarEvento(req, 'Consulta de reporte operativo logístico');
+
+      return renderReporte(detalle.length === 0 ? {
+        tipo: 'warning',
+        texto: 'No hay registros para los filtros seleccionados.'
+      } : null, detalle || [], catalogosVista);
+    });
+  });
+  // lau y eduardo final controlador reporte operativo
 };
