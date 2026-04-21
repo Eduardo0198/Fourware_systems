@@ -1,40 +1,159 @@
-<h2>Métricas de peso y volumen</h2>
-<hr>
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Peso total enviado
-             </div>
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-campaigns">
+        <div>
+            <span class="admin-eyebrow">Logistica</span>
+            <h2 class="admin-title">Metricas Consolidadas</h2>
+            <p class="admin-subtitle">
+                Consulta el peso y volumen consolidado de reservas confirmadas por campania o cuenta.
+            </p>
         </div>
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Volumen total transportado
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Capacidad logística usada
-            </div>
+        <div class="admin-hero-note">
+            <span>Agrupacion actual</span>
+            <strong><%= filtros.agrupar_por === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
+            <small>Periodo del <%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %>.</small>
         </div>
     </div>
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="placeholder-box graph-box">
-                Gráfica de métricas logísticas
+
+    <% if (pageMessage) { %>
+        <div class="alert alert-<%= pageMessage.tipo %>" role="alert">
+            <%= pageMessage.texto %>
+        </div>
+    <% } %>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Filtros de consulta</h4>
+                <p>Selecciona periodo, agrupacion y filtros opcionales para consolidar metricas logisticas.</p>
             </div>
+            <span class="admin-table-pill">Estatus: Confirmadas</span>
+        </div>
+
+        <form method="GET" action="/logistica/metricas" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input
+                    type="date"
+                    name="fecha_inicio"
+                    class="form-control"
+                    value="<%= filtros.fecha_inicio %>"
+                    required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input
+                    type="date"
+                    name="fecha_fin"
+                    class="form-control"
+                    value="<%= filtros.fecha_fin %>"
+                    required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Agrupar por</label>
+                <select name="agrupar_por" class="form-select">
+                    <option value="campania" <%= filtros.agrupar_por === 'campania' ? 'selected' : '' %>>Campania</option>
+                    <option value="cuenta" <%= filtros.agrupar_por === 'cuenta' ? 'selected' : '' %>>Cuenta</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Campania</label>
+                <select name="id_campania" class="form-select">
+                    <option value="">Todas</option>
+                    <% campanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(filtros.id_campania) === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Cuenta</label>
+                <select name="id_cuenta" class="form-select">
+                    <option value="">Todas</option>
+                    <% cuentas.forEach((cuenta) => { %>
+                        <option
+                            value="<%= cuenta.id_cuenta %>"
+                            <%= String(filtros.id_cuenta) === String(cuenta.id_cuenta) ? 'selected' : '' %>>
+                            <%= cuenta.nombre %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <button class="btn admin-action-btn" type="submit">Consultar</button>
+                <a href="/logistica/metricas" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-stats-grid">
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Peso total</span>
+            <strong><%= Number(resumen.totalPeso || 0).toFixed(2) %> kg</strong>
+            <p>Peso consolidado de productos reservados.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Volumen total</span>
+            <strong><%= Number(resumen.totalVolumen || 0).toFixed(2) %> m3</strong>
+            <p>Volumen consolidado para planeacion logistica.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Reservas confirmadas</span>
+            <strong><%= Number(resumen.totalReservas || 0) %></strong>
+            <p>Reservas unicas incluidas en la consulta.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Importe productos</span>
+            <strong>$<%= Number(resumen.totalImporte || 0).toFixed(2) %></strong>
+            <p>Suma del subtotal de productos reservados.</p>
+        </article>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Detalle consolidado</h4>
+                <p>Resultados agrupados por <%= filtros.agrupar_por === 'cuenta' ? 'cuenta' : 'campania' %>.</p>
+            </div>
+            <span class="admin-table-pill"><%= metricas.length %> registros</span>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="table admin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th><%= filtros.agrupar_por === 'cuenta' ? 'Cuenta' : 'Campania' %></th>
+                        <th>Reservas</th>
+                        <th>Productos</th>
+                        <th>Peso total</th>
+                        <th>Volumen total</th>
+                        <th>Importe productos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (metricas && metricas.length > 0) { %>
+                        <% metricas.forEach((item) => { %>
+                            <tr>
+                                <td>
+                                    <strong><%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                </td>
+                                <td><%= Number(item.total_reservas || 0) %></td>
+                                <td><%= Number(item.total_productos || 0) %></td>
+                                <td><%= Number(item.peso_total || 0).toFixed(2) %> kg</td>
+                                <td><%= Number(item.volumen_total || 0).toFixed(2) %> m3</td>
+                                <td>$<%= Number(item.importe_productos || 0).toFixed(2) %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                No existen metricas logisticas para los filtros seleccionados.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="placeholder-box table-box">
-                Distribución de peso por sucursal
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="placeholder-box table-box">
-                Distribución de volumen por producto
-            </div>
-        </div>
-    </div>
-</div>
+</section>
