@@ -87,30 +87,51 @@ function construirFiltrosVista(filtros) {
 function obtenerFiltrosReporte(query) {
   const { fechaInicio, fechaFin } = obtenerRangoFechas(query);
 
-  return {
-    fechaInicio,
-    fechaFin,
-    idCampania: normalizarIdFiltro(query.id_campania),
-    idCuenta: normalizarIdFiltro(query.id_cuenta)
+  return { // aqui regreso todos los filtros juntos
+    fechaInicio, // fecha desde donde empieza la busqueda
+    fechaFin, // fecha donde termina la busqueda
+    idCampania: normalizarIdFiltro(query.id_campania), // id de la campaña si el usuario selecciono una
+    idCuenta: normalizarIdFiltro(query.id_cuenta) // id de la cuenta si el usuario selecciono una
   };
 }
 
 function construirResumenReporte(detalle) {
-  const folios = new Set();
-
-  return (detalle || []).reduce((acc, item) => {
-    folios.add(item.folio);
-    acc.totalReservas = folios.size;
-    acc.totalProductos += Number(item.cantidad || 0);
-    acc.totalPeso += Number(item.peso_total_linea || 0);
-    acc.totalVolumen += Number(item.volumen_total_linea || 0);
-    return acc;
-  }, {
+  // aqui creo el resumen y todo empieza en 0
+  const resumen = {
     totalReservas: 0,
     totalProductos: 0,
     totalPeso: 0,
     totalVolumen: 0
+  };
+
+  // aqui guardo los folios para no repetir reservas
+  const folios = [];
+
+  // si detalle viene vacio, uso un arreglo vacio
+  detalle = detalle || [];
+
+  // aqui recorro uno por uno los datos del detalle
+  detalle.forEach((item) => {
+    // si el folio no existe todavia, lo agrego
+    if (!folios.includes(item.folio)) {
+      folios.push(item.folio);
+    }
+
+    // aqui cuento cuantas reservas diferentes hay
+    resumen.totalReservas = folios.length;
+
+    // aqui sumo la cantidad total de productos
+    resumen.totalProductos += Number(item.cantidad || 0);
+
+    // aqui sumo el peso total
+    resumen.totalPeso += Number(item.peso_total_linea || 0);
+
+    // aqui sumo el volumen total
+    resumen.totalVolumen += Number(item.volumen_total_linea || 0);
   });
+
+  // aqui regreso el resumen final
+  return resumen;
 }
 // lau y eduardo final helpers reporte operativo
 
@@ -236,59 +257,45 @@ exports.metricas = (req, res) => {
 };
 
 exports.reporteOperativo = (req, res) => {
-  // lau y eduardo inicio controlador reporte operativo
-  const filtros = obtenerFiltrosReporte(req.query);
+  
+};
 
-  const renderReporte = (pageMessage, detalle, catalogos) => {
-    res.render('logistica/reporteOperativo', {
-      pageMessage,
-      filtros: {
-        fecha_inicio: filtros.fechaInicio,
-        fecha_fin: filtros.fechaFin,
-        id_campania: filtros.idCampania || '',
-        id_cuenta: filtros.idCuenta || ''
-      },
-      detalle: detalle || [],
-      resumen: construirResumenReporte(detalle),
-      campanias: catalogos.campanias || [],
-      cuentas: catalogos.cuentas || []
-    });
+// lau y eduardo inicio exportar reporte operativo cu-18
+exports.exportarReporteOperativo = (req, res) => {
+  // aqui leo las fechas que llegan del formulario
+  const fecha_inicio = String(req.body.fecha_inicio || '').trim();
+  const fecha_fin = String(req.body.fecha_fin || '').trim();
+
+  // aqui leo la campaña, la cuenta y el formato
+  const id_campania = req.body.id_campania;
+  const id_cuenta = req.body.id_cuenta;
+  const formato = String(req.body.formato || '').trim().toLowerCase();
+
+  
+  // aqui junto todo en un solo objeto para usarlo mas facil
+  const filtros = {};
+    filtros.fechaInicio = fecha_inicio;
+    filtros.fechaFin = fecha_fin;
+    filtros.idCampania = normalizarIdFiltro(id_campania);
+    filtros.idCuenta = normalizarIdFiltro(id_cuenta);
+    filtros.formato = formato;
   };
 
-  cargarCatalogosMetricas((catalogosErr, catalogos) => {
-    const catalogosVista = catalogos || { campanias: [], cuentas: [] };
+  // aqui valido que las fechas si tengan un valor correcto
+  if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
+    return res.status(400).send('Las fechas del reporte no son validas.');
+  }
 
-    if (catalogosErr) {
-      logger.error(catalogosErr);
-      return renderReporte({
-        tipo: 'danger',
-        texto: 'No fue posible cargar los filtros del reporte.'
-      }, [], catalogosVista);
+  // aqui consulto el modelo para traer la informacion del reporte
+  reservaModel.obtenerReporteOperativoLogistico(filtros, (err, detalle) => {
+    if (err) {
+      logger.error(err);
+      return res.status(500).send('No se pudo consultar la informacion para exportar.');
     }
 
-    if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
-      return renderReporte({
-        tipo: 'danger',
-        texto: 'Debes seleccionar un rango de fechas valido.'
-      }, [], catalogosVista);
-    }
-
-    reservaModel.obtenerReporteOperativoLogistico(filtros, (err, detalle) => {
-      if (err) {
-        logger.error(err);
-        return renderReporte({
-          tipo: 'danger',
-          texto: 'No fue posible consultar el reporte operativo.'
-        }, [], catalogosVista);
-      }
-
-      registrarEvento(req, 'Consulta de reporte operativo logístico');
-
-      return renderReporte(detalle.length === 0 ? {
-        tipo: 'warning',
-        texto: 'No hay registros para los filtros seleccionados.'
-      } : null, detalle || [], catalogosVista);
-    });
+    // por ahora solo confirmo que la consulta salio bien
+    registrarEvento(req, 'Consulta de datos para exportar reporte operativo logístico');
+    return res.send(`Se consultaron ${detalle.length} registros para exportar en formato ${filtros.formato}.`);
   });
-  // lau y eduardo final controlador reporte operativo
 };
+// lau y eduardo final exportar reporte operativo cu-18
