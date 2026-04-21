@@ -1,9 +1,9 @@
 const reservaModel = require('../models/reserva.model');
-//lau inicio
-// Cargamos catalogos para filtrar metricas por campania y cuenta.
+// lau inicio
+// Cargamos los catalogos para filtrar metricas por campaña y cuenta desde la base de datos
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
-//lau final
+// lau fin
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 
@@ -41,17 +41,17 @@ function construirResumenReservas(reservas) {
   });
 }
 
-//lau inicio
+//lau inciio
 function construirResumenMetricasVacio() {
   return {
-    // Valores base mientras aun no consultamos metricas reales.
-    // Esto evita que la vista falle al intentar mostrar datos vacios.
+    // Valores base mientras aun no consultamos metricas reales
+    // Esto evita que la vista falle al intentar mostrar datos vacios
     totalPeso: 0,
     totalVolumen: 0,
     totalRegistros: 0
   };
 }
-//lau final
+// lau final
 
 exports.reservasConfirmadas = (req, res) => {
   const { fechaInicio, fechaFin } = obtenerRangoFechas(req.query);
@@ -105,8 +105,35 @@ exports.reservasConfirmadas = (req, res) => {
 };
 
 exports.metricas = (req, res) => {
-  registrarEvento(req, 'Consulta de métricas logísticas');
-  res.render('logistica/metricas');
+  // Primero cargamos las campanias disponibles para el filtro.
+  campaniaModel.obtenerTodas((campaniaErr, campanias) => {
+    if (campaniaErr) {
+      logger.error(campaniaErr);
+    }
+
+    // Despues cargamos las cuentas para mostrar ambos selectores en la vista.
+    cuentaModel.obtenerTodas((cuentaErr, cuentas) => {
+      if (cuentaErr) {
+        logger.error(cuentaErr);
+      }
+
+      registrarEvento(req, 'Consulta de métricas logísticas');
+      res.render('logistica/metricas', {
+        pageMessage: campaniaErr || cuentaErr ? {
+          tipo: 'warning',
+          texto: 'No fue posible cargar todos los filtros de métricas.'
+        } : null,
+        filtros: {
+          // Dejamos los filtros vacios en esta primera version.
+          id_campania: '',
+          id_cuenta: ''
+        },
+        campanias: Array.isArray(campanias) ? campanias : [],
+        cuentas: Array.isArray(cuentas) ? cuentas : [],
+        resumen: construirResumenMetricasVacio()
+      });
+    });
+  });
 };
 
 exports.reporteOperativo = (req, res) => {
