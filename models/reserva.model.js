@@ -185,6 +185,92 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
     db.query(query, [fechaInicio, fechaFin], callback);
 };
 
+exports.obtenerMetricasLogisticasConsolidadas = (filtros, callback) => {
+    const agruparPorCuenta = filtros.agruparPor === 'cuenta';
+
+    const campoId = agruparPorCuenta
+        ? 'c.id_cuenta'
+        : 'ca.id_campania';
+
+    const campoNombre = agruparPorCuenta
+        ? 'c.nombre'
+        : 'ca.nombre';
+
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    const query = `
+        SELECT
+            ${campoId} AS id_agrupacion,
+            COALESCE(${campoNombre}, 'Sin campania') AS agrupacion,
+            COUNT(DISTINCT r.folio) AS total_reservas,
+            COALESCE(SUM(rp.cantidad), 0) AS total_productos,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total,
+            ROUND(COALESCE(SUM(rp.subtotal_linea), 0), 2) AS importe_productos
+        FROM "Reserva" r
+        JOIN "Cuenta" c ON c.id_cuenta = r.id_cuenta
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY ${campoId}, ${campoNombre}
+        ORDER BY peso_total DESC, volumen_total DESC, agrupacion ASC
+    `;
+
+    db.query(query, params, callback);
+};
+
+exports.obtenerSerieTiempoMetricasLogisticas = (filtros, callback) => {
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    const query = `
+        SELECT
+            DATE(r.fecha) AS fecha,
+            COUNT(DISTINCT r.folio) AS total_reservas,
+            COALESCE(SUM(rp.cantidad), 0) AS total_productos,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total
+        FROM "Reserva" r
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY DATE(r.fecha)
+        ORDER BY fecha ASC
+    `;
+
+    db.query(query, params, callback);
+};
+
+
 exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
     const condiciones = [
         'r.estatus = 1',
@@ -251,6 +337,71 @@ exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
 
     db.query(query, params, callback);
 };
+
+// lau inicio modelo reporte operativo
+exports.obtenerReporteOperativoLogistico = (filtros, callback) => {
+    // aqui guardo las condiciones basicas para solo traer reservas confirmadas del rango pedido
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+
+    // aqui mando primero las fechas porque siempre se usan
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    // si mandan cuenta, la agrego al filtro
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    // si mandan campaña, filtro por la campaña del producto
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    // esta consulta regresa el detalle operativo por producto reservado
+    const query = `
+        SELECT
+            r.folio,
+            DATE(r.fecha) AS fecha,
+            c.id_cuenta,
+            c.nombre AS cuenta,
+            u.nombre AS distribuidor,
+            u.correo,
+            COALESCE(ca.nombre, 'Sin campania') AS campania,
+            rp."SKU" AS sku,
+            p.nombre_comercial AS producto,
+            rp.cantidad,
+            ROUND(COALESCE(p.peso_unitario, 0), 2) AS peso_unitario,
+            ROUND(COALESCE(p.volumen_unitario, 0), 2) AS volumen_unitario,
+            ROUND(COALESCE(rp.cantidad * p.peso_unitario, 0), 2) AS peso_total_linea,
+            ROUND(COALESCE(rp.cantidad * p.volumen_unitario, 0), 2) AS volumen_total_linea,
+            ROUND(COALESCE(rp.subtotal_linea, 0), 2) AS subtotal_linea,
+            COALESCE(s.nombre, 'Sin sucursal') AS sucursal,
+            TRIM(
+                CONCAT(
+                    COALESCE(s.direccion, ''),
+                    CASE WHEN COALESCE(s.municipio, '') <> '' THEN CONCAT(', ', s.municipio) ELSE '' END,
+                    CASE WHEN COALESCE(s.estado, '') <> '' THEN CONCAT(', ', s.estado) ELSE '' END
+                )
+            ) AS direccion_entrega
+        FROM "Reserva" r
+        JOIN "Cuenta" c ON c.id_cuenta = r.id_cuenta
+        JOIN "Usuario" u ON u.correo = r.correo
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
+        LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
+        WHERE ${condiciones.join('\n          AND ')}
+        ORDER BY r.fecha DESC, r.folio DESC, rp."SKU" ASC
+    `;
+
+    // aqui ejecuto la consulta ya con los filtros armados
+    db.query(query, params, callback);
+};
+// lau final modelo reporte operativo
 
 exports.crearReservaConProductos = (data, productos, callback) => {
     db.connect((connectErr, client, done) => {

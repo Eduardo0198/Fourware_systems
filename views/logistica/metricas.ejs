@@ -1,40 +1,339 @@
-<h2>Métricas de peso y volumen</h2>
-<hr>
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Peso total enviado
-             </div>
+<%
+    const safeFiltros = (typeof filtros !== 'undefined' && filtros) ? filtros : {};
+    const safeMetricas = (typeof metricas !== 'undefined' && Array.isArray(metricas)) ? metricas : [];
+    const safeSerieTiempo = (typeof serieTiempo !== 'undefined' && Array.isArray(serieTiempo)) ? serieTiempo : [];
+    const safeCampanias = (typeof campanias !== 'undefined' && Array.isArray(campanias)) ? campanias : [];
+    const safeCuentas = (typeof cuentas !== 'undefined' && Array.isArray(cuentas)) ? cuentas : [];
+    const safeResumen = (typeof resumen !== 'undefined' && resumen) ? resumen : {};
+    const safePageMessage = (typeof pageMessage !== 'undefined' && pageMessage) ? pageMessage : null;
+    const filtroAgruparPor = safeFiltros.agrupar_por === 'cuenta' ? 'cuenta' : 'campania';
+    const filtroFechaInicio = safeFiltros.fecha_inicio || '';
+    const filtroFechaFin = safeFiltros.fecha_fin || '';
+    const filtroIdCampania = safeFiltros.id_campania || '';
+    const filtroIdCuenta = safeFiltros.id_cuenta || '';
+    const maxPesoComparativo = Math.max(1, ...safeMetricas.map(item => Number(item.peso_total || 0)));
+    const maxVolumenComparativo = Math.max(1, ...safeMetricas.map(item => Number(item.volumen_total || 0)));
+    const serieParaVista = safeSerieTiempo.slice(-15);
+    const maxPesoSerie = Math.max(1, ...serieParaVista.map(item => Number(item.peso_total || 0)));
+    const maxVolumenSerie = Math.max(1, ...serieParaVista.map(item => Number(item.volumen_total || 0)));
+    const totalPesoGlobal = safeMetricas.reduce((acc, item) => acc + Number(item.peso_total || 0), 0);
+    const totalVolumenGlobal = safeMetricas.reduce((acc, item) => acc + Number(item.volumen_total || 0), 0);
+    const top5Peso = [...safeMetricas]
+        .sort((a, b) => Number(b.peso_total || 0) - Number(a.peso_total || 0))
+        .slice(0, 5);
+    const top5Volumen = [...safeMetricas]
+        .sort((a, b) => Number(b.volumen_total || 0) - Number(a.volumen_total || 0))
+        .slice(0, 5);
+%>
+
+<section class="admin-shell">
+    <div class="admin-hero admin-hero-campaigns">
+        <div>
+            <span class="admin-eyebrow">Logistica</span>
+            <h2 class="admin-title">Metricas Consolidadas</h2>
+            <p class="admin-subtitle">
+                Consulta el peso y volumen consolidado de reservas confirmadas por campania o cuenta.
+            </p>
         </div>
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Volumen total transportado
+        <div class="admin-hero-note">
+            <span>Agrupacion actual</span>
+            <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
+            <small>Periodo del <%= filtroFechaInicio %> al <%= filtroFechaFin %>.</small>
+        </div>
+    </div>
+
+    <% if (safePageMessage) { %>
+        <div class="alert alert-<%= safePageMessage.tipo %>" role="alert">
+            <%= safePageMessage.texto %>
+        </div>
+    <% } %>
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Filtros de consulta</h4>
+                <p>Selecciona periodo, agrupacion y filtros opcionales para consolidar metricas logisticas.</p>
+            </div>
+            <span class="admin-table-pill">Estatus: Confirmadas</span>
+        </div>
+
+        <form method="GET" action="/logistica/metricas" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input
+                    type="date"
+                    name="fecha_inicio"
+                    class="form-control"
+                    value="<%= filtroFechaInicio %>"
+                    required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input
+                    type="date"
+                    name="fecha_fin"
+                    class="form-control"
+                    value="<%= filtroFechaFin %>"
+                    required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Agrupar por</label>
+                <select name="agrupar_por" class="form-select">
+                    <option value="campania" <%= filtroAgruparPor === 'campania' ? 'selected' : '' %>>Campania</option>
+                    <option value="cuenta" <%= filtroAgruparPor === 'cuenta' ? 'selected' : '' %>>Cuenta</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Campania</label>
+                <select name="id_campania" class="form-select">
+                    <option value="">Todas</option>
+                    <% safeCampanias.forEach((campania) => { %>
+                        <option
+                            value="<%= campania.id_campania %>"
+                            <%= String(filtroIdCampania) === String(campania.id_campania) ? 'selected' : '' %>>
+                            <%= campania.nombre %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Cuenta</label>
+                <select name="id_cuenta" class="form-select">
+                    <option value="">Todas</option>
+                    <% safeCuentas.forEach((cuenta) => { %>
+                        <option
+                            value="<%= cuenta.id_cuenta %>"
+                            <%= String(filtroIdCuenta) === String(cuenta.id_cuenta) ? 'selected' : '' %>>
+                            <%= cuenta.nombre %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <button class="btn admin-action-btn" type="submit">Consultar</button>
+                <a href="/logistica/metricas" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-stats-grid">
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Peso total</span>
+            <strong><%= Number(safeResumen.totalPeso || 0).toFixed(2) %> kg</strong>
+            <p>Peso consolidado de productos reservados.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Volumen total</span>
+            <strong><%= Number(safeResumen.totalVolumen || 0).toFixed(2) %> m3</strong>
+            <p>Volumen consolidado para planeacion logistica.</p>
+        </article>
+        <article class="admin-stat-card admin-stat-accent">
+            <span class="admin-stat-label">Reservas confirmadas</span>
+            <strong><%= Number(safeResumen.totalReservas || 0) %></strong>
+            <p>Reservas unicas incluidas en la consulta.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Importe productos</span>
+            <strong>$<%= Number(safeResumen.totalImporte || 0).toFixed(2) %></strong>
+            <p>Suma del subtotal de productos reservados.</p>
+        </article>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Comparativo logistico</h4>
+                        <p>Peso y volumen por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campania' %>.</p>
+                    </div>
+                    <span class="admin-table-pill">Lectura rapida</span>
+                </div>
+
+                <% if (safeMetricas.length > 0) { %>
+                    <div class="vstack gap-3">
+                        <% safeMetricas.forEach((item) => {
+                            const peso = Number(item.peso_total || 0);
+                            const volumen = Number(item.volumen_total || 0);
+                            const pesoPct = Math.max(0, Math.min(100, (peso / maxPesoComparativo) * 100));
+                            const volumenPct = Math.max(0, Math.min(100, (volumen / maxVolumenComparativo) * 100));
+                        %>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong><%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                    <small class="text-muted">Res: <%= Number(item.total_reservas || 0) %></small>
+                                </div>
+                                <div class="small text-muted mb-1">Peso: <%= peso.toFixed(2) %> kg</div>
+                                <div class="progress mb-2" role="progressbar" aria-label="Peso total">
+                                    <div class="progress-bar bg-primary" style="width: <%= pesoPct.toFixed(2) %>%"></div>
+                                </div>
+                                <div class="small text-muted mb-1">Volumen: <%= volumen.toFixed(2) %> m3</div>
+                                <div class="progress" role="progressbar" aria-label="Volumen total">
+                                    <div class="progress-bar bg-warning text-dark" style="width: <%= volumenPct.toFixed(2) %>%"></div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">Sin datos para graficar.</p>
+                <% } %>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="placeholder-box metric-card">
-                Capacidad logística usada
+
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Tendencia por fecha</h4>
+                        <p>Ultimos 15 puntos diarios de peso y volumen confirmados.</p>
+                    </div>
+                    <span class="admin-table-pill">Serie temporal</span>
+                </div>
+
+                <% if (serieParaVista.length > 0) { %>
+                    <div class="vstack gap-3">
+                        <% serieParaVista.forEach((item) => {
+                            const peso = Number(item.peso_total || 0);
+                            const volumen = Number(item.volumen_total || 0);
+                            const pesoPct = Math.max(0, Math.min(100, (peso / maxPesoSerie) * 100));
+                            const volumenPct = Math.max(0, Math.min(100, (volumen / maxVolumenSerie) * 100));
+                        %>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong><%= item.fecha %></strong>
+                                    <small class="text-muted">Reservas: <%= Number(item.total_reservas || 0) %></small>
+                                </div>
+                                <div class="small text-muted mb-1">Peso: <%= peso.toFixed(2) %> kg</div>
+                                <div class="progress mb-2" role="progressbar" aria-label="Peso diario">
+                                    <div class="progress-bar bg-primary" style="width: <%= pesoPct.toFixed(2) %>%"></div>
+                                </div>
+                                <div class="small text-muted mb-1">Volumen: <%= volumen.toFixed(2) %> m3</div>
+                                <div class="progress" role="progressbar" aria-label="Volumen diario">
+                                    <div class="progress-bar bg-warning text-dark" style="width: <%= volumenPct.toFixed(2) %>%"></div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">Sin datos historicos para graficar.</p>
+                <% } %>
             </div>
         </div>
     </div>
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="placeholder-box graph-box">
-                Gráfica de métricas logísticas
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Top 5 por peso</h4>
+                        <p>Participacion de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campanias' %> con mayor peso.</p>
+                    </div>
+                    <span class="admin-table-pill">Ranking</span>
+                </div>
+
+                <% if (top5Peso.length > 0) { %>
+                    <div class="vstack gap-3">
+                        <% top5Peso.forEach((item, index) => {
+                            const peso = Number(item.peso_total || 0);
+                            const participacion = totalPesoGlobal > 0 ? (peso / totalPesoGlobal) * 100 : 0;
+                        %>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                    <small class="text-muted"><%= participacion.toFixed(2) %>%</small>
+                                </div>
+                                <div class="small text-muted mb-1"><%= peso.toFixed(2) %> kg</div>
+                                <div class="progress" role="progressbar" aria-label="Participacion de peso">
+                                    <div class="progress-bar bg-primary" style="width: <%= Math.max(0, Math.min(100, participacion)).toFixed(2) %>%"></div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">Sin datos para calcular top por peso.</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Top 5 por volumen</h4>
+                        <p>Participacion de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campanias' %> con mayor volumen.</p>
+                    </div>
+                    <span class="admin-table-pill">Ranking</span>
+                </div>
+
+                <% if (top5Volumen.length > 0) { %>
+                    <div class="vstack gap-3">
+                        <% top5Volumen.forEach((item, index) => {
+                            const volumen = Number(item.volumen_total || 0);
+                            const participacion = totalVolumenGlobal > 0 ? (volumen / totalVolumenGlobal) * 100 : 0;
+                        %>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                    <small class="text-muted"><%= participacion.toFixed(2) %>%</small>
+                                </div>
+                                <div class="small text-muted mb-1"><%= volumen.toFixed(2) %> m3</div>
+                                <div class="progress" role="progressbar" aria-label="Participacion de volumen">
+                                    <div class="progress-bar bg-warning text-dark" style="width: <%= Math.max(0, Math.min(100, participacion)).toFixed(2) %>%"></div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">Sin datos para calcular top por volumen.</p>
+                <% } %>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="placeholder-box table-box">
-                Distribución de peso por sucursal
+
+    <div class="admin-table-card">
+        <div class="admin-table-head">
+            <div>
+                <h4>Detalle consolidado</h4>
+                <p>Resultados agrupados por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campania' %>.</p>
             </div>
+            <span class="admin-table-pill"><%= safeMetricas.length %> registros</span>
         </div>
-        <div class="col-md-6">
-            <div class="placeholder-box table-box">
-                Distribución de volumen por producto
-            </div>
+        <div class="admin-table-wrap">
+            <table class="table admin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></th>
+                        <th>Reservas</th>
+                        <th>Productos</th>
+                        <th>Peso total</th>
+                        <th>Volumen total</th>
+                        <th>Importe productos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (safeMetricas.length > 0) { %>
+                        <% safeMetricas.forEach((item) => { %>
+                            <tr>
+                                <td>
+                                    <strong><%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                </td>
+                                <td><%= Number(item.total_reservas || 0) %></td>
+                                <td><%= Number(item.total_productos || 0) %></td>
+                                <td><%= Number(item.peso_total || 0).toFixed(2) %> kg</td>
+                                <td><%= Number(item.volumen_total || 0).toFixed(2) %> m3</td>
+                                <td>$<%= Number(item.importe_productos || 0).toFixed(2) %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                No existen metricas logisticas para los filtros seleccionados.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
+</section>
