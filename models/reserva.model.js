@@ -235,6 +235,41 @@ exports.obtenerMetricasLogisticasConsolidadas = (filtros, callback) => {
     db.query(query, params, callback);
 };
 
+exports.obtenerSerieTiempoMetricasLogisticas = (filtros, callback) => {
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    const query = `
+        SELECT
+            DATE(r.fecha) AS fecha,
+            COUNT(DISTINCT r.folio) AS total_reservas,
+            COALESCE(SUM(rp.cantidad), 0) AS total_productos,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total
+        FROM "Reserva" r
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY DATE(r.fecha)
+        ORDER BY fecha ASC
+    `;
+
+    db.query(query, params, callback);
+};
+
 
 exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
     const condiciones = [
