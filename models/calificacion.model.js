@@ -97,3 +97,21 @@ exports.consultarResultadosMarketingPorNombre = (nombre, callback) => {
 
     db.query(query, [`%${nombre}%`], callback);
 };
+
+exports.obtenerPromedioCalificacionesPorCampaniaActiva = (callback) => {
+    const query = `
+        SELECT
+            cp.id_campania,
+            cp.nombre AS campania,
+            COUNT(c.id_calificacion)::int AS total_calificaciones,
+            ROUND(COALESCE(AVG(c.estrellas), 0)::numeric, 1) AS promedio_estrellas
+        FROM "Campania" cp
+        LEFT JOIN "Producto" p ON p.id_campania = cp.id_campania
+        LEFT JOIN "Calificacion" c ON c."SKU" = p."SKU"
+        WHERE cp.estatus = 1
+        GROUP BY cp.id_campania, cp.nombre
+        ORDER BY cp.nombre ASC, cp.id_campania ASC
+    `;
+
+    db.query(query, callback);
+};
