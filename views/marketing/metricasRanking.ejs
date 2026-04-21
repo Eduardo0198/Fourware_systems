@@ -119,6 +119,11 @@
             </div>
             <% } %>
         </div>
+        <% if (resultados.ranking.length > 0) { %>
+        <div class="card-footer bg-white">
+            <canvas id="chartRanking" height="100"></canvas>
+        </div>
+        <% } %>
     </div>
 
     <div class="card shadow-sm mb-4">
@@ -158,7 +163,99 @@
             </div>
             <% } %>
         </div>
+        <% if (resultados.metricas.length > 0) { %>
+        <div class="card-footer bg-white">
+            <canvas id="chartMetricas" height="100"></canvas>
+        </div>
+        <% } %>
     </div>
 
     <% } %>
 </div>
+
+<% if (resultados && (resultados.ranking.length > 0 || resultados.metricas.length > 0)) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    <% if (resultados.ranking.length > 0) { %>
+    const rankingLabels = <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => r.nombre_comercial)) %>;
+    const rankingData   = <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => Number(r.total_unidades))) %>;
+
+    new Chart(document.getElementById('chartRanking'), {
+        type: 'bar',
+        data: {
+            labels: rankingLabels,
+            datasets: [{
+                label: 'Unidades vendidas',
+                data: rankingData,
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Top 10 productos por unidades vendidas' }
+            },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+    <% } %>
+
+    <% if (resultados.metricas.length > 0) { %>
+    const metricasLabels  = <%- JSON.stringify(resultados.metricas.map(m => m.nombre_campania)) %>;
+    const metricasOrdenes = <%- JSON.stringify(resultados.metricas.map(m => Number(m.total_ordenes))) %>;
+    const metricasMontos  = <%- JSON.stringify(resultados.metricas.map(m => Number(m.monto_total))) %>;
+
+    new Chart(document.getElementById('chartMetricas'), {
+        type: 'bar',
+        data: {
+            labels: metricasLabels,
+            datasets: [
+                {
+                    label: 'Total órdenes',
+                    data: metricasOrdenes,
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'yOrdenes'
+                },
+                {
+                    label: 'Monto total ($)',
+                    data: metricasMontos,
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'yMonto'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Comparativa de campañas: órdenes vs monto' }
+            },
+            scales: {
+                yOrdenes: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    title: { display: true, text: 'Órdenes' }
+                },
+                yMonto: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Monto ($)' }
+                }
+            }
+        }
+    });
+    <% } %>
+});
+</script>
+<% } %>
