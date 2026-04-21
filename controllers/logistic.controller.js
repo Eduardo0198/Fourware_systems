@@ -176,7 +176,7 @@ function convertirReporteACsv(detalle) { // aqui pongo los titulos del archivo c
   // aqui uno todas las lineas para formar el csv final
   return lineas.join('\n');
 }
-
+// -- lau y eduardo ------21
 function convertirReporteAExcel(detalle) {
   // aqui preparo las filas que van a ir en el excel
   const filas = [];
@@ -207,7 +207,8 @@ function convertirReporteAExcel(detalle) {
   // aqui regreso el archivo listo para descargar
   return XLSX.write(libro, { type: 'buffer', bookType: 'xlsx' });
 }
-// lau y eduardo final helpers reporte operativo
+// lau y eduardo final helpers reporte operativo -- 21
+
 
 function cargarCatalogosMetricas(callback) {
   campaniaModel.obtenerTodas((errCampanias, campanias) => {
