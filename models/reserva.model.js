@@ -185,6 +185,57 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
     db.query(query, [fechaInicio, fechaFin], callback);
 };
 
+exports.obtenerMetricasLogisticasConsolidadas = (filtros, callback) => {
+    const agruparPorCuenta = filtros.agruparPor === 'cuenta';
+
+    const campoId = agruparPorCuenta
+        ? 'c.id_cuenta'
+        : 'ca.id_campania';
+
+    const campoNombre = agruparPorCuenta
+        ? 'c.nombre'
+        : 'ca.nombre';
+
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    const query = `
+        SELECT
+            ${campoId} AS id_agrupacion,
+            COALESCE(${campoNombre}, 'Sin campania') AS agrupacion,
+            COUNT(DISTINCT r.folio) AS total_reservas,
+            COALESCE(SUM(rp.cantidad), 0) AS total_productos,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total,
+            ROUND(COALESCE(SUM(rp.subtotal_linea), 0), 2) AS importe_productos
+        FROM "Reserva" r
+        JOIN "Cuenta" c ON c.id_cuenta = r.id_cuenta
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY ${campoId}, ${campoNombre}
+        ORDER BY peso_total DESC, volumen_total DESC, agrupacion ASC
+    `;
+
+    db.query(query, params, callback);
+};
+
+
 exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
     const condiciones = [
         'r.estatus = 1',
