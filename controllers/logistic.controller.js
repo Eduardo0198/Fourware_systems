@@ -1,4 +1,9 @@
 const reservaModel = require('../models/reserva.model');
+//lau inicio
+// Cargamos catalogos para filtrar metricas por campania y cuenta.
+const campaniaModel = require('../models/campania.model');
+const cuentaModel = require('../models/cuenta.model');
+//lau final
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 
@@ -35,6 +40,18 @@ function construirResumenReservas(reservas) {
     totalVolumen: 0
   });
 }
+
+//lau inicio
+function construirResumenMetricasVacio() {
+  return {
+    // Valores base mientras aun no consultamos metricas reales.
+    // Esto evita que la vista falle al intentar mostrar datos vacios.
+    totalPeso: 0,
+    totalVolumen: 0,
+    totalRegistros: 0
+  };
+}
+//lau final
 
 exports.reservasConfirmadas = (req, res) => {
   const { fechaInicio, fechaFin } = obtenerRangoFechas(req.query);
