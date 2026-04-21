@@ -82,7 +82,18 @@
                         <div class="bg-success text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
                             <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
                         </div>
-                        <span class="small fw-semibold mt-2 text-truncate w-100" title="<%= producto.nombre_comercial %>"><%= producto.etiqueta %></span>
+                        <button
+                            class="btn btn-link btn-sm fw-semibold mt-2 p-0 text-dark text-decoration-none text-truncate w-100"
+                            type="button"
+                            data-bs-toggle="popover"
+                            data-bs-trigger="focus click"
+                            data-bs-placement="bottom"
+                            data-bs-container="body"
+                            data-bs-content="<%= producto.nombre_comercial %>"
+                            title="Nombre completo"
+                        >
+                            <%= producto.etiqueta %>
+                        </button>
                         <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
                     </div>
                 <% }) %>
@@ -104,7 +115,18 @@
                         <div class="bg-danger text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
                             <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
                         </div>
-                        <span class="small fw-semibold mt-2 text-truncate w-100" title="<%= producto.nombre_comercial %>"><%= producto.etiqueta %></span>
+                        <button
+                            class="btn btn-link btn-sm fw-semibold mt-2 p-0 text-dark text-decoration-none text-truncate w-100"
+                            type="button"
+                            data-bs-toggle="popover"
+                            data-bs-trigger="focus click"
+                            data-bs-placement="bottom"
+                            data-bs-container="body"
+                            data-bs-content="<%= producto.nombre_comercial %>"
+                            title="Nombre completo"
+                        >
+                            <%= producto.etiqueta %>
+                        </button>
                         <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
                     </div>
                 <% }) %>
@@ -167,3 +189,11 @@
         <% }) %>
     </div>
 <% } %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach((elemento) => {
+            bootstrap.Popover.getOrCreateInstance(elemento);
+        });
+    });
+</script>
