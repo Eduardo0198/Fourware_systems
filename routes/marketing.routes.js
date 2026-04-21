@@ -23,4 +23,25 @@ router.get('/tendencias-region',
     marketingController.tendenciasRegion
 );
 
+router.get('/metricas-ranking',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    tienePrivilegio(['consultar_ranking_productos']),
+    marketingController.metricasRanking
+);
+
+router.post('/consultar-metricas',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    tienePrivilegio(['consultar_ranking_productos']),
+    marketingController.consultarMetricas
+);
+
+router.post('/exportar-metricas',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    tienePrivilegio(['consultar_ranking_productos']),
+    marketingController.exportarMetricas
+);
+
 module.exports = router;
