@@ -1,28 +1,199 @@
-<h2>Ranking de Productos</h2>
-<hr>
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="placeholder-box filter-box">
-                Filtro por campaña
-            </div>
+<h2>Calificaciones y comentarios de productos</h2>
+<p class="text-muted mb-4">Consulta la percepción general de los productos de preventa a partir de las opiniones registradas por concesionarios.</p>
+<%
+    const campaniasGrafica = typeof graficaCampanias !== 'undefined' && Array.isArray(graficaCampanias)
+        ? graficaCampanias
+        : [];
+    const mejoresProductos = typeof graficaMejoresProductos !== 'undefined' && Array.isArray(graficaMejoresProductos)
+        ? graficaMejoresProductos
+        : [];
+    const peoresProductos = typeof graficaPeoresProductos !== 'undefined' && Array.isArray(graficaPeoresProductos)
+        ? graficaPeoresProductos
+        : [];
+%>
+
+<%- include('../includes/shared/pageMessage', { pageMessage }) %>
+
+<form method="GET" action="/marketing/ranking-productos" class="card border-0 shadow-sm mb-4">
+    <div class="card-body row g-3 align-items-end">
+        <div class="col-md-9">
+            <label for="nombre" class="form-label fw-semibold">Criterio de búsqueda</label>
+            <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                class="form-control"
+                maxlength="120"
+                placeholder="Ej. RIVER BARNIZ SECADO RAPIDO"
+                value="<%= criterios?.nombre || '' %>"
+            >
         </div>
-        <div class="col-md-6">
-            <div class="placeholder-box filter-box">
-                Filtro por categoría
-            </div>
+        <div class="col-md-3 d-grid">
+            <button type="submit" class="btn btn-dark">Consultar</button>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-7">
-            <div class="placeholder-box table-box">
-                Tabla ranking de productos más solicitados/apartados
+</form>
+
+<% if (resultados && resultados.length) { %>
+    <div class="row g-3 mb-4">
+        <% resultados.forEach((producto) => { %>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between gap-3">
+                            <div>
+                                <h5 class="mb-1"><%= producto.nombre_comercial %></h5>
+                                <p class="text-muted mb-0">SKU: <%= producto.SKU %> | Campaña: <%= producto.campania %></p>
+                            </div>
+                            <div class="text-md-end">
+                                <div class="fw-semibold fs-5"><%= producto.promedio_estrellas.toFixed(1) %> / 5</div>
+                                <div class="text-muted small"><%= producto.total_calificaciones %> calificaciones | <%= producto.total_comentarios %> comentarios</div>
+                                <span class="badge text-bg-light border mt-2"><%= producto.percepcion_general %></span>
+                            </div>
+                        </div>
+
+                        <% if (producto.mensaje_estado) { %>
+                            <div class="alert alert-warning mt-3 mb-0"><%= producto.mensaje_estado %></div>
+                        <% } %>
+
+                        <% if (producto.comentarios.length) { %>
+                            <div class="table-responsive mt-3">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Estrellas</th>
+                                            <th>Comentario</th>
+                                            <th>Correo</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% producto.comentarios.forEach((comentario) => { %>
+                                            <tr>
+                                                <td><strong><%= comentario.estrellas %>★</strong></td>
+                                                <td><%= comentario.comentario %></td>
+                                                <td><%= comentario.correo %></td>
+                                                <td><%= comentario.fecha %></td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-md-5">
-            <div class="placeholder-box chart-box">
-                Gráfica Top productos
-            </div>
-        </div>
+        <% }) %>
     </div>
-</div>
+<% } %>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h4 class="h5 mb-1">Promedio por campaña activa</h4>
+                <p class="text-muted mb-0">Gráfica de calificación promedio usando una escala de 0 a 5 estrellas.</p>
+            </div>
+            <span class="badge text-bg-dark">Campañas activas</span>
+        </div>
+
+        <% if (campaniasGrafica.length) { %>
+            <div class="row g-3">
+                <% campaniasGrafica.forEach((campania) => { %>
+                    <div class="col-12">
+                        <div class="border rounded-3 p-3 bg-light-subtle">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                <strong><%= campania.campania %></strong>
+                                <span class="text-muted small"><%= campania.total_calificaciones %> calificaciones</span>
+                            </div>
+                            <div class="progress" role="img" aria-label="Promedio de <%= campania.promedio_estrellas.toFixed(1) %> de 5 para <%= campania.campania %>" style="height: 1.25rem;">
+                                <div
+                                    class="progress-bar bg-success fw-semibold"
+                                    style="width: <%= campania.porcentaje %>%"
+                                >
+                                    <%= campania.promedio_estrellas.toFixed(1) %> / 5
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-0">No hay campañas activas con información de calificaciones para graficar.</div>
+        <% } %>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="h5 mb-1">Top 20 productos mejor rankeados</h4>
+        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más alto al más bajo.</p>
+        <% if (mejoresProductos.length) { %>
+            <div class="d-flex align-items-end gap-2 overflow-auto pb-2" style="min-height: 18rem;">
+                <% mejoresProductos.forEach((producto) => { %>
+                    <div class="d-flex flex-column justify-content-end align-items-center text-center" style="min-width: 88px;">
+                        <div class="bg-success text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
+                            <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
+                        </div>
+                        <button
+                            class="btn btn-link btn-sm fw-semibold mt-2 p-0 text-dark text-decoration-none text-truncate w-100"
+                            type="button"
+                            data-bs-toggle="popover"
+                            data-bs-trigger="focus click"
+                            data-bs-placement="bottom"
+                            data-bs-container="body"
+                            data-bs-content="<%= producto.nombre_comercial %>"
+                            title="Nombre completo"
+                        >
+                            <%= producto.etiqueta %>
+                        </button>
+                        <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-0">No hay suficientes productos calificados para mostrar el ranking superior.</div>
+        <% } %>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="h5 mb-1">Top 20 productos peor rankeados</h4>
+        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más bajo al más alto dentro del ranking inferior.</p>
+        <% if (peoresProductos.length) { %>
+            <div class="d-flex align-items-end gap-2 overflow-auto pb-2" style="min-height: 18rem;">
+                <% peoresProductos.forEach((producto) => { %>
+                    <div class="d-flex flex-column justify-content-end align-items-center text-center" style="min-width: 88px;">
+                        <div class="bg-danger text-white rounded-top d-flex align-items-end justify-content-center px-2 w-100" style="height: <%= producto.altura %>px;">
+                            <span class="small fw-semibold mb-2"><%= producto.promedio_estrellas.toFixed(1) %></span>
+                        </div>
+                        <button
+                            class="btn btn-link btn-sm fw-semibold mt-2 p-0 text-dark text-decoration-none text-truncate w-100"
+                            type="button"
+                            data-bs-toggle="popover"
+                            data-bs-trigger="focus click"
+                            data-bs-placement="bottom"
+                            data-bs-container="body"
+                            data-bs-content="<%= producto.nombre_comercial %>"
+                            title="Nombre completo"
+                        >
+                            <%= producto.etiqueta %>
+                        </button>
+                        <span class="text-muted" style="font-size: .75rem;"><%= producto.total_calificaciones %> cal.</span>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-0">No hay suficientes productos calificados para mostrar el ranking inferior.</div>
+        <% } %>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach((elemento) => {
+            bootstrap.Popover.getOrCreateInstance(elemento);
+        });
+    });
+</script>

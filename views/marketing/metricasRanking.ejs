@@ -1,0 +1,291 @@
+<div class="container-fluid mt-4">
+    <h2><i class="bi bi-trophy me-2"></i>Ranking de Productos y Métricas Comparativas</h2>
+    <hr>
+
+    <% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %> alert-dismissible fade show" role="alert">
+        <i class="bi bi-<%= pageMessage.tipo === 'danger' ? 'exclamation-triangle' : pageMessage.tipo === 'warning' ? 'exclamation-circle' : 'info-circle' %> me-2"></i>
+        <%= pageMessage.texto %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <% if (!sinCampanias) { %>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-funnel me-2"></i>Filtros
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/marketing/consultar-metricas">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="idCampania" class="form-label">Campaña</label>
+                        <select name="idCampania" id="idCampania" class="form-select">
+                            <option value="">Todas las campañas</option>
+                            <% campanias.forEach(c => { %>
+                            <%
+                                const seleccionada = filtros.idCampania
+                                    ? String(filtros.idCampania) === String(c.id_campania)
+                                    : String(campaniaActivaId) === String(c.id_campania);
+                            %>
+                            <option value="<%= c.id_campania %>" <%= seleccionada ? 'selected' : '' %>>
+                                <%= c.nombre %>
+                            </option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaInicio" class="form-label">Fecha inicio</label>
+                        <input type="date" name="fechaInicio" id="fechaInicio" class="form-control"
+                               value="<%= filtros.fechaInicio || '' %>">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaFin" class="form-label">Fecha fin</label>
+                        <input type="date" name="fechaFin" id="fechaFin" class="form-control"
+                               value="<%= filtros.fechaFin || '' %>">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="producto" class="form-label">Producto (SKU o nombre)</label>
+                        <input type="text" name="producto" id="producto" class="form-control"
+                               placeholder="Buscar producto..." value="<%= filtros.producto || '' %>">
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i>Consultar
+                    </button>
+                    <a href="/marketing/metricas-ranking" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <% } %>
+
+    <% if (resultados) { %>
+
+    <% if (resultados.ranking.length > 0 || resultados.metricas.length > 0) { %>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-bar-chart me-2"></i>Gráficas
+        </div>
+        <div class="card-body">
+            <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
+                <% if (resultados.ranking.length > 0) { %>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-ranking" data-bs-toggle="tab"
+                            data-bs-target="#pane-ranking" type="button" role="tab">
+                        <i class="bi bi-list-ol me-1"></i>Ranking de productos
+                    </button>
+                </li>
+                <% } %>
+                <% if (resultados.metricas.length > 0) { %>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <%= resultados.ranking.length === 0 ? 'active' : '' %>"
+                            id="tab-metricas" data-bs-toggle="tab"
+                            data-bs-target="#pane-metricas" type="button" role="tab">
+                        <i class="bi bi-bar-chart-line me-1"></i>Métricas comparativas
+                    </button>
+                </li>
+                <% } %>
+            </ul>
+            <div class="tab-content">
+                <% if (resultados.ranking.length > 0) { %>
+                <div class="tab-pane fade show active" id="pane-ranking" role="tabpanel">
+                    <canvas id="chartRanking" height="80"></canvas>
+                </div>
+                <% } %>
+                <% if (resultados.metricas.length > 0) { %>
+                <div class="tab-pane fade <%= resultados.ranking.length === 0 ? 'show active' : '' %>"
+                     id="pane-metricas" role="tabpanel">
+                    <canvas id="chartMetricas" height="80"></canvas>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+            <span><i class="bi bi-list-ol me-2"></i>Ranking de Productos</span>
+            <% if (resultados.ranking.length > 0) { %>
+            <form method="POST" action="/marketing/exportar-metricas" class="d-inline">
+                <input type="hidden" name="idCampania" value="<%= filtros.idCampania || '' %>">
+                <input type="hidden" name="fechaInicio" value="<%= filtros.fechaInicio || '' %>">
+                <input type="hidden" name="fechaFin" value="<%= filtros.fechaFin || '' %>">
+                <input type="hidden" name="producto" value="<%= filtros.producto || '' %>">
+                <button type="submit" class="btn btn-sm btn-success">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+                </button>
+            </form>
+            <% } %>
+        </div>
+        <div class="card-body p-0">
+            <% if (resultados.ranking.length === 0) { %>
+            <p class="text-muted text-center py-4">Sin resultados para los filtros aplicados.</p>
+            <% } else { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>SKU</th>
+                            <th>Producto</th>
+                            <th class="text-end">Unidades vendidas</th>
+                            <th>Campaña</th>
+                            <th class="text-end">Órdenes campaña</th>
+                            <th class="text-end">Monto campaña</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resultados.ranking.forEach(r => { %>
+                        <tr>
+                            <td>
+                                <% if (r.posicion == 1) { %>
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-trophy-fill"></i> 1</span>
+                                <% } else if (r.posicion == 2) { %>
+                                    <span class="badge bg-secondary">2</span>
+                                <% } else if (r.posicion == 3) { %>
+                                    <span class="badge" style="background:#cd7f32;color:#fff;">3</span>
+                                <% } else { %>
+                                    <%= r.posicion %>
+                                <% } %>
+                            </td>
+                            <td><code><%= r.SKU %></code></td>
+                            <td><%= r.nombre_comercial %></td>
+                            <td class="text-end fw-bold"><%= r.total_unidades %></td>
+                            <td><%= r.nombre_campania %></td>
+                            <td class="text-end"><%= r.total_ordenes_campania %></td>
+                            <td class="text-end">$<%= Number(r.monto_total_campania).toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-bar-chart-line me-2"></i>Métricas Comparativas por Campaña
+        </div>
+        <div class="card-body p-0">
+            <% if (resultados.metricas.length === 0) { %>
+            <p class="text-muted text-center py-4">Sin métricas para los filtros aplicados.</p>
+            <% } else { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Campaña</th>
+                            <th class="text-end">Total órdenes</th>
+                            <th class="text-end">Monto total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resultados.metricas.forEach(m => { %>
+                        <tr>
+                            <td><%= m.nombre_campania %></td>
+                            <td class="text-end"><%= m.total_ordenes %></td>
+                            <td class="text-end">$<%= Number(m.monto_total).toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td>Total</td>
+                            <td class="text-end"><%= resultados.metricas.reduce((s, m) => s + Number(m.total_ordenes), 0) %></td>
+                            <td class="text-end">$<%= resultados.metricas.reduce((s, m) => s + Number(m.monto_total), 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <% } %>
+</div>
+
+<% if (resultados && (resultados.ranking.length > 0 || resultados.metricas.length > 0)) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    <% if (resultados.ranking.length > 0) { %>
+    new Chart(document.getElementById('chartRanking'), {
+        type: 'bar',
+        data: {
+            labels: <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => r.nombre_comercial)) %>,
+            datasets: [{
+                label: 'Unidades vendidas',
+                data: <%- JSON.stringify(resultados.ranking.slice(0, 10).map(r => Number(r.total_unidades))) %>,
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Top 10 productos por unidades vendidas' }
+            },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+    <% } %>
+
+    <% if (resultados.metricas.length > 0) { %>
+    let chartMetricasIniciado = false;
+    document.getElementById('tab-metricas').addEventListener('shown.bs.tab', () => {
+        if (chartMetricasIniciado) return;
+        chartMetricasIniciado = true;
+        new Chart(document.getElementById('chartMetricas'), {
+            type: 'bar',
+            data: {
+                labels: <%- JSON.stringify(resultados.metricas.map(m => m.nombre_campania)) %>,
+                datasets: [
+                    {
+                        label: 'Total órdenes',
+                        data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.total_ordenes))) %>,
+                        backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'yOrdenes'
+                    },
+                    {
+                        label: 'Monto total ($)',
+                        data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.monto_total))) %>,
+                        backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'yMonto'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Comparativa de campañas: órdenes vs monto' }
+                },
+                scales: {
+                    yOrdenes: {
+                        type: 'linear', position: 'left', beginAtZero: true,
+                        ticks: { precision: 0 }, title: { display: true, text: 'Órdenes' }
+                    },
+                    yMonto: {
+                        type: 'linear', position: 'right', beginAtZero: true,
+                        grid: { drawOnChartArea: false }, title: { display: true, text: 'Monto ($)' }
+                    }
+                }
+            }
+        });
+    });
+    <% if (resultados.ranking.length === 0) { %>
+    document.getElementById('tab-metricas').dispatchEvent(new Event('shown.bs.tab'));
+    <% } %>
+    <% } %>
+</script>
+<% } %>
