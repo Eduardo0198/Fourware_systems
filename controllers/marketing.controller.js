@@ -1,4 +1,5 @@
 const metricasModel = require('../models/metricas.model');
+const campaniaModel = require('../models/campania.model');
 const XLSX = require('xlsx');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
@@ -161,6 +162,7 @@ exports.metricasRanking = (req, res) => {
                 sinCampanias: true,
                 resultados: null,
                 filtros: {},
+                campaniaActivaId: null,
                 pageMessage: { tipo: 'danger', texto: 'Error al cargar las campañas.' }
             });
         }
@@ -172,17 +174,25 @@ exports.metricasRanking = (req, res) => {
                 sinCampanias: true,
                 resultados: null,
                 filtros: {},
+                campaniaActivaId: null,
                 pageMessage: { tipo: 'warning', texto: 'No hay campañas con reservas registradas.' }
             });
         }
 
-        registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
-        return res.render('marketing/metricasRanking', {
-            campanias,
-            sinCampanias: false,
-            resultados: null,
-            filtros: {},
-            pageMessage: null
+        campaniaModel.obtenerCampaniaActiva((errActiva, activas) => {
+            const campaniaActivaId = Array.isArray(activas) && activas.length > 0
+                ? activas[0].id_campania
+                : null;
+
+            registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
+            return res.render('marketing/metricasRanking', {
+                campanias,
+                sinCampanias: false,
+                resultados: null,
+                filtros: {},
+                campaniaActivaId,
+                pageMessage: null
+            });
         });
     });
 };

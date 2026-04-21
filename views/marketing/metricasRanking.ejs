@@ -23,7 +23,12 @@
                         <select name="idCampania" id="idCampania" class="form-select">
                             <option value="">Todas las campañas</option>
                             <% campanias.forEach(c => { %>
-                            <option value="<%= c.id_campania %>" <%= String(filtros.idCampania) === String(c.id_campania) ? 'selected' : '' %>>
+                            <%
+                                const seleccionada = filtros.idCampania
+                                    ? String(filtros.idCampania) === String(c.id_campania)
+                                    : String(campaniaActivaId) === String(c.id_campania);
+                            %>
+                            <option value="<%= c.id_campania %>" <%= seleccionada ? 'selected' : '' %>>
                                 <%= c.nombre %>
                             </option>
                             <% }) %>
