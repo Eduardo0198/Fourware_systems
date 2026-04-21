@@ -55,7 +55,7 @@
                     <div class="col-12">
                         <div class="card text-center">
                             <div class="card-body">
-                                <!-- lau inicio resumen cu-18 -->
+                                <!-- lau  y eduardo inicio resumen cu-18 -->
                                 <h6>
                                     Total Reservas
                                 </h6>
@@ -63,7 +63,7 @@
                                 <!-- aqui muestro el total de reservas que mando el controlador -->
                                 <%= resumen.totalReservas %>
                                 </h2>
-                                <!-- lau final resumen cu-18 -->
+                                <!-- lau y eduardo final resumen cu-18 -->
                             </div>
                         </div>
                     </div>
@@ -87,11 +87,30 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                    <tr>
-                                    <td colspan="8" class="text-center">
-                                    Aquí se mostrarán los resultados del reporte.
-                                    </td>
-                                    </tr>
+                                    <!-- lau inicio tabla cu-18 -->
+                                    <% if (detalle && detalle.length > 0) { %>
+                                        <!-- aqui recorro cada fila que llega del controlador -->
+                                        <% detalle.forEach((item) => { %>
+                                            <tr>
+                                                <td><%= item.folio %></td>
+                                                <td><%= item.cuenta %></td>
+                                                <td><%= item.distribuidor %></td>
+                                                <td><%= item.campania %></td>
+                                                <td><%= item.producto %></td>
+                                                <td><%= item.cantidad %></td>
+                                                <td><%= item.direccion_entrega %></td>
+                                                <td><%= item.fecha %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <!-- aqui se muestra este mensaje si no hay resultados -->
+                                        <tr>
+                                            <td colspan="8" class="text-center">
+                                                Aquí se mostrarán los resultados del reporte.
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                    <!-- lau final tabla cu-18 -->
                             </tbody>
                         </table>
                     </div>
