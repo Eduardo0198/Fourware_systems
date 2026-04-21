@@ -14,7 +14,7 @@ function redirigirSegunRol(roles, res) {
     } else if (roles.includes('Logistica')) {
         return res.redirect('/logistica/reservas-confirmadas');
     } else if (roles.includes('Marketing')) {
-        return res.redirect('/marketing/metricas-comparativas');
+        return res.redirect('/marketing/inicio');
     }
 
     return res.redirect('/concesionario/home');

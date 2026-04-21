@@ -4,10 +4,10 @@ const marketingController = require('../controllers/marketing.controller');
 
 const { protegerRuta, tieneRol, tienePrivilegio } = require('../middlewares/auth.middleware');
 
-router.get('/metricas-comparativas',
+router.get('/inicio',
     protegerRuta,
     tieneRol(['Marketing']),
-    marketingController.metricasComparativas
+    marketingController.inicio
 );
 
 router.get('/ranking-productos',
@@ -15,12 +15,6 @@ router.get('/ranking-productos',
     tieneRol(['Marketing']),
     tienePrivilegio(['consultar_ranking_productos']),
     marketingController.rankingProductos
-);
-
-router.get('/tendencias-region',
-    protegerRuta,
-    tieneRol(['Marketing']),
-    marketingController.tendenciasRegion
 );
 
 router.get('/metricas-ranking',
