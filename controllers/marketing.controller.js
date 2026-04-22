@@ -1,3 +1,4 @@
+const util = require('util');
 const metricasModel = require('../models/metricas.model');
 const campaniaModel = require('../models/campania.model');
 const reservaModel = require('../models/reserva.model');
@@ -6,6 +7,8 @@ const XLSX = require('xlsx');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 const calificacionModel = require('../models/calificacion.model');
+
+const obtenerCampaniaActivaAsync = util.promisify(campaniaModel.obtenerCampaniaActiva);
 
 const CRITERIO_NOMBRE_VALIDO = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s.,-]*$/;
 
@@ -71,6 +74,17 @@ function renderRankingProductos(res, payload) {
       });
     });
   });
+}
+
+function renderMetricasRanking(res, opts = {}) {
+    return res.render('marketing/metricasRanking', {
+        campanias:        opts.campanias        || [],
+        sinCampanias:     opts.sinCampanias     || false,
+        resultados:       opts.resultados       || null,
+        filtros:          opts.filtros          || {},
+        campaniaActivaId: opts.campaniaActivaId || null,
+        pageMessage:      opts.pageMessage      || null
+    });
 }
 
 exports.inicio = (req, res) => {
@@ -188,193 +202,130 @@ exports.rankingProductos = (req, res) => {
   });
 };
 
-exports.metricasRanking = (req, res) => {
-    metricasModel.obtenerCampaniasConReservas((err, campanias) => {
-        if (err) {
-            logger.error(err);
-            registrarEvento(req, 'Error al cargar campañas para métricas de ranking');
-            return res.render('marketing/metricasRanking', {
-                campanias: [],
-                sinCampanias: true,
-                resultados: null,
-                filtros: {},
-                campaniaActivaId: null,
-                pageMessage: { tipo: 'danger', texto: 'Error al cargar las campañas.' }
-            });
-        }
+exports.metricasRanking = async (req, res) => {
+    try {
+        const campanias = await metricasModel.obtenerCampaniasConReservas();
 
         if (!campanias || campanias.length === 0) {
             registrarEvento(req, 'Consulta de métricas sin campañas con reservas activas');
-            return res.render('marketing/metricasRanking', {
-                campanias: [],
+            return renderMetricasRanking(res, {
                 sinCampanias: true,
-                resultados: null,
-                filtros: {},
-                campaniaActivaId: null,
                 pageMessage: { tipo: 'warning', texto: 'No hay campañas con reservas registradas.' }
             });
         }
 
-        campaniaModel.obtenerCampaniaActiva((errActiva, activas) => {
-            const campaniaActiva = Array.isArray(activas) && activas.length > 0 ? activas[0] : null;
-            const campaniaActivaId = campaniaActiva ? campaniaActiva.id_campania : null;
+        const activas = await obtenerCampaniaActivaAsync();
+        const campaniaActiva = Array.isArray(activas) && activas.length > 0 ? activas[0] : null;
+        const campaniaActivaId = campaniaActiva ? campaniaActiva.id_campania : null;
 
-            if (!campaniaActivaId) {
-                registrarEvento(req, 'Acceso a consulta de ranking sin campaña activa');
-                return res.render('marketing/metricasRanking', {
-                    campanias,
-                    sinCampanias: false,
-                    resultados: null,
-                    filtros: {},
-                    campaniaActivaId: null,
-                    pageMessage: null
-                });
-            }
+        if (!campaniaActivaId) {
+            registrarEvento(req, 'Acceso a consulta de ranking sin campaña activa');
+            return renderMetricasRanking(res, { campanias });
+        }
 
-            const filtros = { idCampania: campaniaActivaId, fechaInicio: null, fechaFin: null, producto: null };
+        const filtros = { idCampania: campaniaActivaId, fechaInicio: null, fechaFin: null, producto: null };
 
-            metricasModel.consultarRankingProductos(filtros, (errRanking, ranking) => {
-                metricasModel.consultarMetricasComparativas(filtros, (errMetricas, metricas) => {
-                    if (errRanking || errMetricas) {
-                        if (errRanking) logger.error(errRanking);
-                        if (errMetricas) logger.error(errMetricas);
-                    }
+        const ranking  = await metricasModel.consultarRankingProductos(filtros);
+        const metricas = await metricasModel.consultarMetricasComparativas(filtros);
 
-                    registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
-                    return res.render('marketing/metricasRanking', {
-                        campanias,
-                        sinCampanias: false,
-                        resultados: {
-                            ranking: errRanking ? [] : (ranking || []),
-                            metricas: errMetricas ? [] : (metricas || [])
-                        },
-                        filtros: { idCampania: campaniaActivaId },
-                        campaniaActivaId,
-                        pageMessage: null
-                    });
-                });
-            });
+        registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
+        return renderMetricasRanking(res, {
+            campanias,
+            resultados: { ranking, metricas },
+            filtros: { idCampania: campaniaActivaId },
+            campaniaActivaId
         });
-    });
-};
-
-exports.consultarMetricas = (req, res) => {
-    const { idCampania, fechaInicio, fechaFin, producto } = req.body;
-
-    if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
-        return metricasModel.obtenerCampaniasConReservas((err, campanias) => {
-            return res.render('marketing/metricasRanking', {
-                campanias: err ? [] : (campanias || []),
-                sinCampanias: false,
-                resultados: null,
-                filtros: { idCampania, fechaInicio, fechaFin, producto },
-                pageMessage: { tipo: 'danger', texto: 'La fecha de fin no puede ser anterior a la fecha de inicio.' }
-            });
+    } catch (err) {
+        logger.error(err);
+        registrarEvento(req, 'Error al cargar campañas para métricas de ranking');
+        return renderMetricasRanking(res, {
+            sinCampanias: true,
+            pageMessage: { tipo: 'danger', texto: 'Error al cargar las campañas.' }
         });
     }
-
-    const filtros = { idCampania, fechaInicio, fechaFin, producto };
-
-    metricasModel.obtenerCampaniasConReservas((errCamp, campanias) => {
-        if (errCamp) {
-            logger.error(errCamp);
-            registrarEvento(req, 'Error al cargar campañas en consulta de métricas');
-            return res.render('marketing/metricasRanking', {
-                campanias: [],
-                sinCampanias: false,
-                resultados: null,
-                filtros,
-                pageMessage: { tipo: 'danger', texto: 'Error al cargar los datos.' }
-            });
-        }
-
-        metricasModel.consultarRankingProductos(filtros, (errRanking, ranking) => {
-            if (errRanking) {
-                logger.error(errRanking);
-                registrarEvento(req, 'Error al consultar ranking de productos');
-                return res.render('marketing/metricasRanking', {
-                    campanias: campanias || [],
-                    sinCampanias: false,
-                    resultados: null,
-                    filtros,
-                    pageMessage: { tipo: 'danger', texto: 'Error al consultar el ranking.' }
-                });
-            }
-
-            metricasModel.consultarMetricasComparativas(filtros, (errMetricas, metricas) => {
-                if (errMetricas) {
-                    logger.error(errMetricas);
-                    registrarEvento(req, 'Error al consultar métricas comparativas');
-                    return res.render('marketing/metricasRanking', {
-                        campanias: campanias || [],
-                        sinCampanias: false,
-                        resultados: null,
-                        filtros,
-                        pageMessage: { tipo: 'danger', texto: 'Error al consultar las métricas.' }
-                    });
-                }
-
-                registrarEvento(req, 'Consulta de ranking de productos y métricas comparativas por campaña');
-                return res.render('marketing/metricasRanking', {
-                    campanias: campanias || [],
-                    sinCampanias: false,
-                    resultados: { ranking: ranking || [], metricas: metricas || [] },
-                    filtros,
-                    pageMessage: ranking && ranking.length === 0
-                        ? { tipo: 'info', texto: 'No se encontraron productos con los filtros aplicados.' }
-                        : null
-                });
-            });
-        });
-    });
 };
 
-exports.exportarMetricas = (req, res) => {
+exports.consultarMetricas = async (req, res) => {
     const { idCampania, fechaInicio, fechaFin, producto } = req.body;
     const filtros = { idCampania, fechaInicio, fechaFin, producto };
 
-    metricasModel.consultarRankingProductos(filtros, (errRanking, ranking) => {
-        if (errRanking) {
-            logger.error(errRanking);
-            registrarEvento(req, 'Error al exportar ranking de productos');
-            return res.status(500).json({ ok: false, mensaje: 'Error al exportar los datos.' });
+    if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+        try {
+            const campanias = await metricasModel.obtenerCampaniasConReservas();
+            return renderMetricasRanking(res, {
+                campanias,
+                filtros,
+                pageMessage: { tipo: 'danger', texto: 'La fecha de fin no puede ser anterior a la fecha de inicio.' }
+            });
+        } catch (_) {
+            return renderMetricasRanking(res, {
+                filtros,
+                pageMessage: { tipo: 'danger', texto: 'La fecha de fin no puede ser anterior a la fecha de inicio.' }
+            });
         }
+    }
 
-        metricasModel.consultarMetricasComparativas(filtros, (errMetricas, metricas) => {
-            if (errMetricas) {
-                logger.error(errMetricas);
-                registrarEvento(req, 'Error al exportar métricas comparativas');
-                return res.status(500).json({ ok: false, mensaje: 'Error al exportar los datos.' });
-            }
+    try {
+        const campanias = await metricasModel.obtenerCampaniasConReservas();
+        const ranking   = await metricasModel.consultarRankingProductos(filtros);
+        const metricas  = await metricasModel.consultarMetricasComparativas(filtros);
 
-            const wb = XLSX.utils.book_new();
-
-            const rankingData = (ranking || []).map(r => ({
-                'Posición': r.posicion,
-                'SKU': r.SKU,
-                'Producto': r.nombre_comercial,
-                'Unidades vendidas': r.total_unidades,
-                'Campaña': r.nombre_campania,
-                'Total órdenes campaña': r.total_ordenes_campania,
-                'Monto total campaña': r.monto_total_campania
-            }));
-            const wsRanking = XLSX.utils.json_to_sheet(rankingData);
-            XLSX.utils.book_append_sheet(wb, wsRanking, 'Ranking');
-
-            const metricasData = (metricas || []).map(m => ({
-                'Campaña': m.nombre_campania,
-                'Total órdenes': m.total_ordenes,
-                'Monto total': m.monto_total
-            }));
-            const wsMetricas = XLSX.utils.json_to_sheet(metricasData);
-            XLSX.utils.book_append_sheet(wb, wsMetricas, 'Métricas comparativas');
-
-            const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-
-            registrarEvento(req, 'Exportación de ranking de productos y métricas comparativas');
-            res.setHeader('Content-Disposition', 'attachment; filename="metricas_ranking.xlsx"');
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            return res.send(buffer);
+        registrarEvento(req, 'Consulta de ranking de productos y métricas comparativas por campaña');
+        return renderMetricasRanking(res, {
+            campanias,
+            resultados: { ranking, metricas },
+            filtros,
+            pageMessage: ranking && ranking.length === 0
+                ? { tipo: 'info', texto: 'No se encontraron productos con los filtros aplicados.' }
+                : null
         });
-    });
+    } catch (err) {
+        logger.error(err);
+        registrarEvento(req, 'Error al consultar métricas o ranking');
+        return renderMetricasRanking(res, {
+            filtros,
+            pageMessage: { tipo: 'danger', texto: 'Error al cargar los datos.' }
+        });
+    }
+};
+
+exports.exportarMetricas = async (req, res) => {
+    const { idCampania, fechaInicio, fechaFin, producto } = req.body;
+    const filtros = { idCampania, fechaInicio, fechaFin, producto };
+
+    try {
+        const ranking  = await metricasModel.consultarRankingProductos(filtros);
+        const metricas = await metricasModel.consultarMetricasComparativas(filtros);
+
+        const wb = XLSX.utils.book_new();
+
+        const rankingData = ranking.map(r => ({
+            'Posición': r.posicion,
+            'SKU': r.SKU,
+            'Producto': r.nombre_comercial,
+            'Unidades vendidas': r.total_unidades,
+            'Campaña': r.nombre_campania,
+            'Total órdenes campaña': r.total_ordenes_campania,
+            'Monto total campaña': r.monto_total_campania
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rankingData), 'Ranking');
+
+        const metricasData = metricas.map(m => ({
+            'Campaña': m.nombre_campania,
+            'Total órdenes': m.total_ordenes,
+            'Monto total': m.monto_total
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(metricasData), 'Métricas comparativas');
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        registrarEvento(req, 'Exportación de ranking de productos y métricas comparativas');
+        res.setHeader('Content-Disposition', 'attachment; filename="metricas_ranking.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        return res.send(buffer);
+    } catch (err) {
+        logger.error(err);
+        registrarEvento(req, 'Error al exportar métricas');
+        return res.status(500).json({ ok: false, mensaje: 'Error al exportar los datos.' });
+    }
 };
