@@ -225,8 +225,7 @@ exports.metricasRanking = async (req, res) => {
 
         const filtros = { idCampania: campaniaActivaId, fechaInicio: null, fechaFin: null, producto: null };
 
-        const ranking  = await metricasModel.consultarRankingProductos(filtros);
-        const metricas = await metricasModel.consultarMetricasComparativas(filtros);
+        const { ranking, metricas } = await metricasModel.consultarDatos(filtros);
 
         registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
         return renderMetricasRanking(res, {
@@ -266,9 +265,10 @@ exports.consultarMetricas = async (req, res) => {
     }
 
     try {
-        const campanias = await metricasModel.obtenerCampaniasConReservas();
-        const ranking   = await metricasModel.consultarRankingProductos(filtros);
-        const metricas  = await metricasModel.consultarMetricasComparativas(filtros);
+        const [campanias, { ranking, metricas }] = await Promise.all([
+            metricasModel.obtenerCampaniasConReservas(),
+            metricasModel.consultarDatos(filtros)
+        ]);
 
         registrarEvento(req, 'Consulta de ranking de productos y métricas comparativas por campaña');
         return renderMetricasRanking(res, {
@@ -294,8 +294,7 @@ exports.exportarMetricas = async (req, res) => {
     const filtros = { idCampania, fechaInicio, fechaFin, producto };
 
     try {
-        const ranking  = await metricasModel.consultarRankingProductos(filtros);
-        const metricas = await metricasModel.consultarMetricasComparativas(filtros);
+        const { ranking, metricas } = await metricasModel.consultarDatos(filtros);
 
         const wb = XLSX.utils.book_new();
 

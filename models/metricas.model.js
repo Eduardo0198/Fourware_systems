@@ -74,6 +74,12 @@ exports.consultarRankingProductos = (filtros) => new Promise((resolve, reject) =
     db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
 });
 
+exports.consultarDatos = (filtros) =>
+    Promise.all([
+        exports.consultarRankingProductos(filtros),
+        exports.consultarMetricasComparativas(filtros)
+    ]).then(([ranking, metricas]) => ({ ranking, metricas }));
+
 exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {
     const { idCampania, fechaInicio, fechaFin } = filtros;
     const params = [];
