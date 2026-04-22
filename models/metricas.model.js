@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-exports.obtenerCampaniasConReservas = (callback) => {
+exports.obtenerCampaniasConReservas = () => new Promise((resolve, reject) => {
     const query = `
         SELECT DISTINCT
             c.id_campania,
@@ -12,10 +12,10 @@ exports.obtenerCampaniasConReservas = (callback) => {
         WHERE r.estatus = 1
         ORDER BY c.nombre
     `;
-    db.query(query, callback);
-};
+    db.query(query, (err, rows) => err ? reject(err) : resolve(rows));
+});
 
-exports.consultarRankingProductos = (filtros, callback) => {
+exports.consultarRankingProductos = (filtros) => new Promise((resolve, reject) => {
     const { idCampania, fechaInicio, fechaFin, producto } = filtros;
     const params = [];
 
@@ -71,10 +71,10 @@ exports.consultarRankingProductos = (filtros, callback) => {
         ORDER BY total_unidades DESC
     `;
 
-    db.query(query, params, callback);
-};
+    db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
+});
 
-exports.consultarMetricasComparativas = (filtros, callback) => {
+exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {
     const { idCampania, fechaInicio, fechaFin } = filtros;
     const params = [];
 
@@ -109,5 +109,5 @@ exports.consultarMetricasComparativas = (filtros, callback) => {
         ORDER BY c.nombre
     `;
 
-    db.query(query, params, callback);
-};
+    db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
+});
