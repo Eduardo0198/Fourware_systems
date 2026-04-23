@@ -16,6 +16,32 @@ function obtenerPercepcionGeneral(promedio, totalCalificaciones) {
   return 'Área de mejora';
 }
 
+function esPeticionAjax(req) {
+  return req.get('X-Requested-With') === 'XMLHttpRequest';
+}
+
+function normalizarResultadosConsulta(rows) {
+  return (rows || []).map((item) => {
+    const totalCalificaciones = Number(item.total_calificaciones || 0);
+    const promedioEstrellas = Number(item.promedio_estrellas || 0);
+    return {
+      ...item,
+      total_calificaciones: totalCalificaciones,
+      total_comentarios: Number(item.total_comentarios || 0),
+      promedio_estrellas: promedioEstrellas,
+      comentarios: Array.isArray(item.comentarios) ? item.comentarios : [],
+      percepcion_general: obtenerPercepcionGeneral(promedioEstrellas, totalCalificaciones)
+    };
+  });
+}
+
+function responderBusqueda(req, res, payload) {
+  if (esPeticionAjax(req)) {
+    return res.json(payload);
+  }
+  return renderRankingProductos(res, payload);
+}
+
 function normalizarRankingProductos(rows) {
   return (rows || []).map((item) => {
     const promedio = Number(item.promedio_estrellas || 0);
@@ -121,7 +147,7 @@ exports.rankingProductos = (req, res) => {
   const nombre = String(req.query.nombre || '').trim();
 
   if (!nombre) {
-    return renderRankingProductos(res, {
+    return responderBusqueda(req, res, {
       criterios: { nombre: '' },
       resultados: [],
       pageMessage: null
@@ -130,7 +156,7 @@ exports.rankingProductos = (req, res) => {
 
   if (!CRITERIO_NOMBRE_VALIDO.test(nombre)) {
     registrarEvento(req, 'Intento de consulta con criterios inválidos de calificaciones y comentarios');
-    return renderRankingProductos(res, {
+    return responderBusqueda(req, res, {
       criterios: { nombre },
       resultados: [],
       pageMessage: {
@@ -144,7 +170,7 @@ exports.rankingProductos = (req, res) => {
     if (err) {
       logger.error(err);
       registrarEvento(req, 'Error al procesar consulta de calificaciones y comentarios de productos');
-      return renderRankingProductos(res, {
+      return responderBusqueda(req, res, {
         criterios: { nombre },
         resultados: [],
         pageMessage: {
@@ -154,22 +180,11 @@ exports.rankingProductos = (req, res) => {
       });
     }
 
-    const resultadosNormalizados = (resultados || []).map((item) => {
-      const totalCalificaciones = Number(item.total_calificaciones || 0);
-      const promedioEstrellas = Number(item.promedio_estrellas || 0);
-      return {
-        ...item,
-        total_calificaciones: totalCalificaciones,
-        total_comentarios: Number(item.total_comentarios || 0),
-        promedio_estrellas: promedioEstrellas,
-        comentarios: Array.isArray(item.comentarios) ? item.comentarios : [],
-        percepcion_general: obtenerPercepcionGeneral(promedioEstrellas, totalCalificaciones)
-      };
-    });
+    const resultadosNormalizados = normalizarResultadosConsulta(resultados);
 
     if (!resultadosNormalizados.length) {
       registrarEvento(req, 'Consulta sin resultados de calificaciones y comentarios de productos');
-      return renderRankingProductos(res, {
+      return responderBusqueda(req, res, {
         criterios: { nombre },
         resultados: [],
         pageMessage: {
@@ -180,7 +195,7 @@ exports.rankingProductos = (req, res) => {
     }
 
     registrarEvento(req, 'Consulta de resultados de calificaciones y comentarios de productos');
-    return renderRankingProductos(res, {
+    return responderBusqueda(req, res, {
       criterios: { nombre },
       resultados: resultadosNormalizados,
       pageMessage: null
