@@ -55,5 +55,15 @@
             href: '/admin/catalogo/carga-masiva',
             buttonText: 'Subir archivo'
         }) %>
+
+        <%- include('../includes/admin/actionCard', {
+            iconClass: 'bi-toggle-on',
+            iconVariantClass: 'admin-action-icon-alt',
+            tag: 'Visibilidad',
+            title: 'Activar o desactivar producto',
+            description: 'Cambia la visibilidad de un producto en el catálogo sin eliminarlo del sistema.',
+            href: '/admin/catalogo/estado',
+            buttonText: 'Gestionar estado'
+        }) %>
     </div>
 </section>

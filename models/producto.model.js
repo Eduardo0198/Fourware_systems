@@ -165,6 +165,16 @@ exports.actualizarPorSku = (sku, producto, callback) => {
     ], callback);
 };
 
+exports.actualizarEstado = (sku, nuevoEstado, callback) => {
+    const query = `
+        UPDATE "Producto"
+        SET activo = ?
+        WHERE "SKU" = ?
+    `;
+
+    db.query(query, [nuevoEstado, sku], callback);
+};
+
 exports.contarProductos = (callback) => {
     db.query(`SELECT COUNT(*) AS total FROM "Producto"`, callback);
 };

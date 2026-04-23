@@ -72,6 +72,20 @@ router.post('/catalogo/carga-masiva',
     adminController.cargaMasivaPost
 );
 
+router.get('/catalogo/estado',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.estadoCatalogo
+);
+
+router.post('/catalogo/estado/:sku',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.toggleEstadoProducto
+);
+
 router.get('/campanas',
     protegerRuta,
     tieneRol(['Administrador']),

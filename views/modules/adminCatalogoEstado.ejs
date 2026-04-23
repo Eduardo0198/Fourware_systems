@@ -1,0 +1,110 @@
+<h2 class="mb-4">Activar o desactivar producto</h2>
+
+<% if (pageMessage) { %>
+    <div class="alert alert-<%= pageMessage.tipo %>">
+        <%= pageMessage.texto %>
+    </div>
+<% } %>
+
+<div class="card p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">Productos registrados</h4>
+            <p class="text-muted mb-0">
+                Cambia la visibilidad de un producto en el catálogo sin eliminarlo del sistema.
+            </p>
+        </div>
+        <div class="w-100" style="max-width: 360px;">
+            <input
+                id="buscarProductoEstado"
+                type="text"
+                class="form-control"
+                placeholder="Buscar por SKU, nombre o campaña">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Campaña</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="catalogoEstadoBody">
+                <% if (!productos.length) { %>
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            No hay productos registrados en el catálogo.
+                        </td>
+                    </tr>
+                <% } %>
+
+                <% productos.forEach((producto) => { %>
+                    <tr
+                        class="catalogo-estado-row"
+                        data-search="<%= [producto.SKU, producto.nombre_comercial, producto.nombre_campania || '', producto.estatusTexto].join(' ').toLowerCase() %>">
+                        <td><strong><%= producto.SKU %></strong></td>
+                        <td><%= producto.nombre_comercial %></td>
+                        <td><%= producto.nombre_campania || 'Sin campaña' %></td>
+                        <td>
+                            <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
+                                <%= producto.estatusTexto %>
+                            </span>
+                        </td>
+                        <td>
+                            <form
+                                method="post"
+                                action="/admin/catalogo/estado/<%= encodeURIComponent(producto.SKU) %>"
+                                class="catalogo-estado-form">
+                                <div class="form-check form-switch mb-0">
+                                    <input
+                                        class="form-check-input catalogo-estado-switch"
+                                        type="checkbox"
+                                        role="switch"
+                                        <%= producto.activo ? 'checked' : '' %>>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+
+                <tr id="catalogoEstadoSinResultados" style="display: none;">
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Búsqueda sin resultados.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<a href="/admin/catalogo" class="btn btn-outline-secondary">
+    Volver al catálogo
+</a>
+
+<script>
+    document.getElementById('buscarProductoEstado').addEventListener('input', function () {
+        const filtro = this.value.toLowerCase();
+        const filas = document.querySelectorAll('.catalogo-estado-row');
+        const sinResultados = document.getElementById('catalogoEstadoSinResultados');
+        let visibles = 0;
+
+        filas.forEach((fila) => {
+            const coincide = fila.dataset.search.includes(filtro);
+            fila.style.display = coincide ? '' : 'none';
+            if (coincide) visibles++;
+        });
+
+        sinResultados.style.display = visibles === 0 && filas.length > 0 ? '' : 'none';
+    });
+
+    document.querySelectorAll('.catalogo-estado-switch').forEach((switchEl) => {
+        switchEl.addEventListener('change', function () {
+            this.closest('.catalogo-estado-form').submit();
+        });
+    });
+</script>

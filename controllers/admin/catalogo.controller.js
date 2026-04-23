@@ -808,3 +808,64 @@ exports.cargaMasivaPost = (req, res) => {
         }
     });
 };
+
+function renderCatalogoEstado(req, res, options = {}) {
+    productoModel.listarProductosCatalogo((errProductos, productos) => {
+        if (errProductos) {
+            logger.error(errProductos);
+            return res.status(500).send('No fue posible cargar el catalogo.');
+        }
+
+        res.render('modules/adminCatalogoEstado', {
+            pageMessage: options.pageMessage || res.locals.mensaje || null,
+            productos: productos.map(normalizarProducto)
+        });
+    });
+}
+
+exports.estadoCatalogo = (req, res) => {
+    registrarEvento(req, 'Consulta de estado de productos del catalogo');
+    renderCatalogoEstado(req, res);
+};
+
+exports.toggleEstadoProducto = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    productoModel.obtenerPorSku(sku, (errProducto, producto) => {
+        if (errProducto) {
+            logger.error(errProducto);
+            return res.redirect('/admin/catalogo/estado');
+        }
+
+        if (!producto) {
+            registrarBitacora(req, `Intento de cambio de estado de producto no encontrado: ${sku}`);
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'Producto no encontrado.'
+            };
+            return res.redirect('/admin/catalogo/estado');
+        }
+
+        const nuevoEstado = Number(producto.activo) === 1 ? 0 : 1;
+        const accionTexto = nuevoEstado === 1 ? 'activado' : 'desactivado';
+
+        productoModel.actualizarEstado(sku, nuevoEstado, (errActualizar) => {
+            if (errActualizar) {
+                logger.error(errActualizar);
+                registrarBitacora(req, `Error al cambiar estado de producto ${sku}`);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible cambiar el estado del producto. Intente nuevamente.'
+                };
+                return res.redirect('/admin/catalogo/estado');
+            }
+
+            registrarBitacora(req, `Producto ${accionTexto}: ${sku}`);
+            req.session.mensaje = {
+                tipo: 'success',
+                texto: `Producto ${sku} ${accionTexto} correctamente.`
+            };
+            return res.redirect('/admin/catalogo/estado');
+        });
+    });
+};
