@@ -64,6 +64,7 @@
                             </span>
                         </td>
                         <td>
+                            <div class="d-flex flex-wrap gap-2">
                             <% if (producto.activo) { %>
                                 <a
                                     href="/admin/catalogo/modificar?sku=<%= encodeURIComponent(producto.SKU) %>#formularioEdicionProducto"
@@ -75,6 +76,16 @@
                                     No disponible
                                 </button>
                             <% } %>
+                                <form
+                                    method="post"
+                                    action="/admin/catalogo/eliminar/<%= encodeURIComponent(producto.SKU) %>"
+                                    class="m-0"
+                                    onsubmit="return confirm('Deseas eliminar este producto del catalogo? Si tiene historial, solo se retirara para conservar sus registros.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <% }) %>
