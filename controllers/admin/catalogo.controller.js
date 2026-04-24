@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const XLSX = require('xlsx');
 const logger = require('../../utils/logger');
 const {
@@ -389,6 +390,14 @@ exports.registrarSKU = (req, res) => {
 };
 
 exports.registrarSKUPost = (req, res) => {
+    if (req.file) {
+        const sku = String(req.body.sku || '').trim().toUpperCase();
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `${sku}${ext}`;
+        fs.writeFileSync(path.join('public/img/productos', filename), req.file.buffer);
+        req.body.imagen = `/img/productos/${filename}`;
+    }
+
     const validacion = validarProducto(req.body);
 
     if (!validacion.valido) {
@@ -511,6 +520,14 @@ exports.modificarSKU = (req, res) => {
 
 exports.modificarSKUPost = (req, res) => {
     const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `${sku}${ext}`;
+        fs.writeFileSync(path.join('public/img/productos', filename), req.file.buffer);
+        req.body.imagen = `/img/productos/${filename}`;
+    }
+
     const validacion = validarProducto({
         ...req.body,
         sku

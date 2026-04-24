@@ -11,6 +11,15 @@ const uploadCargaMasiva = multer({
     }
 });
 
+const uploadImagenProducto = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        cb(null, allowed.includes(file.mimetype));
+    }
+});
+
 router.get('/dashboard',
     protegerRuta,
     tieneRol(['Administrador']),
@@ -40,6 +49,7 @@ router.post('/catalogo/registrar',
     protegerRuta,
     tieneRol(['Administrador']),
     tienePrivilegio(['registrar_producto_catalogo']),
+    uploadImagenProducto.single('imagenArchivo'),
     adminController.registrarSKUPost
 );
 
@@ -54,6 +64,7 @@ router.post('/catalogo/modificar/:sku',
     protegerRuta,
     tieneRol(['Administrador']),
     tienePrivilegio(['modificar_producto']),
+    uploadImagenProducto.single('imagenArchivo'),
     adminController.modificarSKUPost
 );
 
