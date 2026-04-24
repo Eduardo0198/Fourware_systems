@@ -81,24 +81,20 @@ function renderReportes(res, options = {}) {
 }
 
 function construirNombreArchivo(fechaInicio, fechaFin, formato, tipoReporte, filtroValor, idCampania) {
-    const segmentos = [
-        'reporte_preventas',
-        fechaInicio,
-        fechaFin,
-        tipoReporte
-    ];
+    const abreviarFecha = (f) => {
+        const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        const [anio, mes, dia] = f.split('-');
+        return `${dia}${meses[parseInt(mes, 10) - 1]}${anio.slice(2)}`;
+    };
 
-    if (filtroValor) {
-        segmentos.push(
-            tipoReporte === 'cuenta'
-                ? `cuenta-${filtroValor}`
-                : `concesionario-${String(filtroValor).replace(/[^a-zA-Z0-9_-]/g, '-')}`
-        );
-    }
+    const tipo = tipoReporte === 'general' ? 'gral'
+        : tipoReporte === 'cuenta' ? 'cta'
+        : 'con';
 
-    if (idCampania) {
-        segmentos.push(`campana-${idCampania}`);
-    }
+    const segmentos = ['PPG_preventas', tipo, abreviarFecha(fechaInicio)];
+
+    if (fechaFin !== fechaInicio) segmentos.push(abreviarFecha(fechaFin));
+    if (idCampania) segmentos.push(`c${idCampania}`);
 
     return `${segmentos.join('_')}.${formato}`;
 }
