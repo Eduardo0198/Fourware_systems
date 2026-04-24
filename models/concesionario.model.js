@@ -88,7 +88,7 @@ exports.obtenerProductosPaginados = (
     }
 
     query += ` ORDER BY
-        CASE WHEN p.imagen IS NOT NULL AND p.imagen != '' THEN 0 ELSE 1 END ASC,
+        CASE WHEN p.imagen ILIKE 'https://%' THEN 0 ELSE 1 END ASC,
         p."SKU" ASC
         LIMIT ? OFFSET ?`;
     params.push(limit, offset);
