@@ -22,54 +22,34 @@
         <p class="text-center text-muted py-4">No hay productos registrados en el catálogo.</p>
     <% } %>
 
-    <div class="row g-3" id="catalogoModificarGrid">
-        <% productos.forEach((producto) => { %>
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3 catalogo-modificar-card-col"
-                 data-sku="<%= producto.SKU %>"
-                 data-search="<%= [producto.SKU, producto.nombre_comercial, producto.nombre_campania || '', producto.estatusTexto].join(' ').toLowerCase() %>">
-                <div class="card h-100 shadow-sm catalogo-product-card <%= formData && formData.sku === producto.SKU ? 'border-primary' : '' %>"
-                     style="<%= formData && formData.sku === producto.SKU ? 'box-shadow: 0 0 0 3px rgba(13,110,253,.25) !important;' : '' %>">
-                    <img src="<%= producto.imagen || '/img/ppg-logo.png' %>"
-                         class="card-img-top"
-                         style="height:160px; object-fit:contain; background:#f8fafc;"
-                         onerror="this.src='/img/ppg-logo.png'">
-                    <div class="card-body d-flex flex-column p-3">
-                        <h6 class="card-title mb-1 fw-bold" style="font-size:.9rem;"><%= producto.nombre_comercial %></h6>
-                        <p class="text-muted mb-1" style="font-size:.78rem;">SKU: <strong><%= producto.SKU %></strong></p>
-                        <p class="text-muted mb-2" style="font-size:.78rem;"><%= producto.nombre_campania || 'Sin campaña' %></p>
-                        <div class="mb-3">
-                            <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
-                                <%= producto.estatusTexto %>
-                            </span>
-                        </div>
-                        <div class="mt-auto d-flex gap-2">
-                            <% if (producto.activo) { %>
-                                <a href="/admin/catalogo/modificar?sku=<%= encodeURIComponent(producto.SKU) %>#formularioEdicionProducto"
-                                   class="btn btn-sm btn-primary flex-fill">
-                                    <i class="bi bi-pencil me-1"></i>Modificar
-                                </a>
-                            <% } else { %>
-                                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" disabled>
-                                    No disponible
-                                </button>
-                            <% } %>
-                            <form method="post" action="/admin/catalogo/eliminar/<%= encodeURIComponent(producto.SKU) %>" class="m-0">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                        onclick="return confirm('¿Eliminar este producto? Si tiene historial, solo se retirará para conservar sus registros.')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <% }) %>
-    </div>
+    <div class="row g-3" id="catalogoModificarGrid"></div>
 
     <p id="catalogoModificarSinResultados" class="text-center text-muted py-4 d-none">
         Búsqueda sin resultados.
     </p>
+
+    <nav id="catalogoModificarPaginacion" class="d-flex align-items-center justify-content-between mt-4 d-none">
+        <span id="paginacionInfo" class="text-muted small"></span>
+        <ul class="pagination pagination-sm mb-0" id="paginacionControles"></ul>
+    </nav>
 </div>
+
+<script>
+const PRODUCTOS_DATA = [
+    <% productos.forEach((p, i) => { %>
+    {
+        sku: "<%- p.SKU.replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+        nombre: "<%- (p.nombre_comercial || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+        campania: "<%- (p.nombre_campania || 'Sin campaña').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+        imagen: "<%- (p.imagen || '/img/ppg-logo.png').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+        activo: <%= p.activo ? 'true' : 'false' %>,
+        estatus: "<%= p.estatusTexto %>",
+        search: "<%- [p.SKU, p.nombre_comercial, p.nombre_campania || '', p.estatusTexto].join(' ').toLowerCase().replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>"
+    }<%= i < productos.length - 1 ? ',' : '' %>
+    <% }) %>
+];
+const SKU_SELECCIONADO = "<%= formData && formData.sku ? formData.sku : '' %>";
+</script>
 
 <div class="card p-4 catalogo-modificar-form-card" id="formularioEdicionProducto">
     <% if (formData && formData.sku) { %>
@@ -224,30 +204,106 @@ if (formMod) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('buscarProductoModificar');
-    const cols = Array.from(document.querySelectorAll('.catalogo-modificar-card-col'));
-    const sinResultados = document.getElementById('catalogoModificarSinResultados');
-    const formulario = document.getElementById('formularioEdicionProducto');
-    const skuSeleccionado = '<%= formData && formData.sku ? formData.sku : "" %>';
+    const POR_PAGINA = 12;
+    let paginaActual = 1;
+    let filtrados = [...PRODUCTOS_DATA];
 
-    if (skuSeleccionado && formulario && window.location.hash === '#formularioEdicionProducto') {
-        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const grid = document.getElementById('catalogoModificarGrid');
+    const sinResultados = document.getElementById('catalogoModificarSinResultados');
+    const navPaginacion = document.getElementById('catalogoModificarPaginacion');
+    const infoPaginacion = document.getElementById('paginacionInfo');
+    const controles = document.getElementById('paginacionControles');
+    const input = document.getElementById('buscarProductoModificar');
+    const formulario = document.getElementById('formularioEdicionProducto');
+
+    function renderTarjeta(p) {
+        const seleccionada = p.sku === SKU_SELECCIONADO;
+        const badgeClass = p.activo ? 'bg-success' : 'bg-secondary';
+        const btnAccion = p.activo
+            ? `<a href="/admin/catalogo/modificar?sku=${encodeURIComponent(p.sku)}#formularioEdicionProducto"
+                  class="btn btn-sm btn-primary flex-fill">
+                   <i class="bi bi-pencil me-1"></i>Modificar
+               </a>`
+            : `<button type="button" class="btn btn-sm btn-outline-secondary flex-fill" disabled>No disponible</button>`;
+
+        return `
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm catalogo-product-card${seleccionada ? ' border-primary' : ''}"
+                 ${seleccionada ? 'style="box-shadow:0 0 0 3px rgba(13,110,253,.25)!important;"' : ''}>
+                <img src="${p.imagen}" class="card-img-top"
+                     style="height:160px;object-fit:contain;background:#f8fafc;"
+                     onerror="this.src='/img/ppg-logo.png'">
+                <div class="card-body d-flex flex-column p-3">
+                    <h6 class="card-title mb-1 fw-bold" style="font-size:.9rem;">${p.nombre}</h6>
+                    <p class="text-muted mb-1" style="font-size:.78rem;">SKU: <strong>${p.sku}</strong></p>
+                    <p class="text-muted mb-2" style="font-size:.78rem;">${p.campania}</p>
+                    <div class="mb-3"><span class="badge ${badgeClass}">${p.estatus}</span></div>
+                    <div class="mt-auto d-flex gap-2">
+                        ${btnAccion}
+                        <form method="post" action="/admin/catalogo/eliminar/${encodeURIComponent(p.sku)}" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('¿Eliminar este producto? Si tiene historial, solo se retirará para conservar sus registros.')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>`;
     }
 
-    if (!input) return;
+    function renderPagina() {
+        const total = filtrados.length;
+        const totalPaginas = Math.ceil(total / POR_PAGINA) || 1;
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+        const inicio = (paginaActual - 1) * POR_PAGINA;
+        const slice = filtrados.slice(inicio, inicio + POR_PAGINA);
+
+        grid.innerHTML = slice.map(renderTarjeta).join('');
+        sinResultados.classList.toggle('d-none', total > 0);
+
+        navPaginacion.classList.toggle('d-none', total === 0);
+        infoPaginacion.textContent = `${inicio + 1}–${Math.min(inicio + POR_PAGINA, total)} de ${total} productos`;
+
+        let html = '';
+        html += `<li class="page-item${paginaActual === 1 ? ' disabled' : ''}">
+            <button class="page-link" data-p="${paginaActual - 1}">‹</button></li>`;
+
+        for (let p = 1; p <= totalPaginas; p++) {
+            if (totalPaginas <= 7 || Math.abs(p - paginaActual) <= 1 || p === 1 || p === totalPaginas) {
+                html += `<li class="page-item${p === paginaActual ? ' active' : ''}">
+                    <button class="page-link" data-p="${p}">${p}</button></li>`;
+            } else if (Math.abs(p - paginaActual) === 2) {
+                html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+            }
+        }
+
+        html += `<li class="page-item${paginaActual === totalPaginas ? ' disabled' : ''}">
+            <button class="page-link" data-p="${paginaActual + 1}">›</button></li>`;
+        controles.innerHTML = html;
+    }
+
+    controles.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-p]');
+        if (!btn) return;
+        paginaActual = parseInt(btn.dataset.p, 10);
+        renderPagina();
+        grid.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     input.addEventListener('input', () => {
         const termino = input.value.trim().toLowerCase();
-        let visibles = 0;
-
-        cols.forEach((col) => {
-            const coincide = !termino || col.dataset.search.includes(termino);
-            col.style.display = coincide ? '' : 'none';
-            if (coincide) visibles++;
-        });
-
-        sinResultados.classList.toggle('d-none', visibles > 0 || !termino);
+        filtrados = termino ? PRODUCTOS_DATA.filter(p => p.search.includes(termino)) : [...PRODUCTOS_DATA];
+        paginaActual = 1;
+        renderPagina();
     });
+
+    renderPagina();
+
+    if (SKU_SELECCIONADO && formulario && window.location.hash === '#formularioEdicionProducto') {
+        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 });
 
 document.querySelectorAll('input[name="tipoImagen"]').forEach((radio) => {

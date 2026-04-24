@@ -17,7 +17,9 @@ exports.listarProductosCatalogo = (callback) => {
             c.nombre AS nombre_campania
         FROM "Producto" p
         LEFT JOIN "Campania" c ON c.id_campania = p.id_campania
-        ORDER BY p."SKU" ASC
+        ORDER BY
+            CASE WHEN p.imagen ILIKE 'https://%' OR p.imagen ILIKE '/img/ImagenesPintura/%' THEN 0 ELSE 1 END ASC,
+            p."SKU" ASC
     `;
 
     db.query(query, callback);
