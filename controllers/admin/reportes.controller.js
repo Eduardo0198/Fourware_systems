@@ -145,61 +145,76 @@ async function generarXlsx(registros, metadatos = {}) {
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Preventas', {
-        views: [{ state: 'frozen', ySplit: 5 }]
+        views: [{ state: 'frozen', ySplit: 6 }]
     });
 
-    sheet.columns = [
-        { key: 'folio',         width: 14 },
-        { key: 'cuenta',        width: 28 },
-        { key: 'distribuidor',  width: 28 },
-        { key: 'fecha_reserva', width: 16 },
-        { key: 'estatus',       width: 14 },
-        { key: 'subtotal',      width: 14 },
-        { key: 'iva',           width: 12 },
-        { key: 'total',         width: 14 },
-        { key: 'peso_total',    width: 14 },
-        { key: 'volumen_total', width: 16 },
-        { key: 'campania',      width: 24 }
-    ];
-
-    const totalCols = sheet.columns.length;
-
-    const estiloCeldaMeta = { font: { size: 10, color: { argb: 'FF64748B' } } };
-
-    const fila1 = sheet.addRow(['Reporte Consolidado de Preventas — PPG']);
-    sheet.mergeCells(`A1:K1`);
-    fila1.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF1E3A5F' } };
-    fila1.height = 24;
-
-    const fila2 = sheet.addRow([`Período: ${metadatos.fechaInicio || ''} — ${metadatos.fechaFin || ''}`]);
-    sheet.mergeCells(`A2:K2`);
-    fila2.getCell(1).style = estiloCeldaMeta;
-
-    const fila3 = sheet.addRow([`Tipo: ${metadatos.tipoReporte || 'General'}${metadatos.filtro ? '  |  Filtro: ' + metadatos.filtro : ''}`]);
-    sheet.mergeCells(`A3:K3`);
-    fila3.getCell(1).style = estiloCeldaMeta;
-
-    const fila4 = sheet.addRow([`Generado: ${new Date().toLocaleString('es-MX')}`]);
-    sheet.mergeCells(`A4:K4`);
-    fila4.getCell(1).style = estiloCeldaMeta;
-    fila4.height = 20;
-
+    const claves = ['folio', 'cuenta', 'distribuidor', 'fecha_reserva', 'estatus',
+        'subtotal', 'iva', 'total', 'peso_total', 'volumen_total', 'campania'];
     const encabezados = ['Folio', 'Cuenta', 'Distribuidor', 'Fecha de reserva', 'Estatus',
         'Subtotal ($)', 'IVA ($)', 'Total ($)', 'Peso total (kg)', 'Volumen total (L)', 'Campaña'];
-    const filaEncabezado = sheet.addRow(encabezados);
-    filaEncabezado.height = 20;
-    filaEncabezado.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        cell.border = {
-            bottom: { style: 'medium', color: { argb: 'FF2563EB' } }
-        };
+
+    const anchos = encabezados.map((h) => h.length + 2);
+    registros.forEach((r) => {
+        claves.forEach((k, i) => {
+            const len = String(r[k] ?? '').length;
+            if (len > anchos[i]) anchos[i] = len;
+        });
+    });
+    sheet.columns = claves.map((key, i) => ({
+        key,
+        width: Math.min(Math.max(anchos[i] + 4, 12), 52)
+    }));
+
+    const LAST_COL = 'K';
+    const AZUL_OSCURO = 'FF1E3A5F';
+    const AZUL_ACENTO = 'FF2563EB';
+    const FONDO_META  = 'FFE8EFF8';
+    const FMT_MONEDA  = '"$"#,##0.00';
+    const FMT_DECIMAL = '#,##0.00';
+
+    // ── Fila 1: Título ──────────────────────────────────────────────────────
+    const fila1 = sheet.addRow(['Reporte Consolidado de Preventas  ·  PPG']);
+    sheet.mergeCells(`A1:${LAST_COL}1`);
+    const c1 = fila1.getCell(1);
+    c1.font      = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } };
+    c1.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+    c1.alignment = { vertical: 'middle', horizontal: 'left', indent: 2 };
+    fila1.height = 34;
+
+    // ── Filas 2-4: Metadatos ─────────────────────────────────────────────────
+    const datosMeta = [
+        `Período:    ${metadatos.fechaInicio || ''}  →  ${metadatos.fechaFin || ''}`,
+        `Tipo:       ${metadatos.tipoReporte || 'General'}${metadatos.filtro ? '     |     Filtro: ' + metadatos.filtro : ''}`,
+        `Generado:   ${new Date().toLocaleString('es-MX')}`
+    ];
+    datosMeta.forEach((texto, idx) => {
+        const num = idx + 2;
+        const fila = sheet.addRow([texto]);
+        sheet.mergeCells(`A${num}:${LAST_COL}${num}`);
+        const c = fila.getCell(1);
+        c.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: FONDO_META } };
+        c.font      = { size: 10, color: { argb: AZUL_OSCURO }, italic: idx === 2 };
+        c.alignment = { vertical: 'middle', horizontal: 'left', indent: 2 };
+        fila.height = 17;
     });
 
-    const estiloMoneda = { numFmt: '"$"#,##0.00' };
-    const estiloDecimal = { numFmt: '#,##0.00' };
+    // ── Fila 5: Separador azul ───────────────────────────────────────────────
+    const filaSep = sheet.addRow(['']);
+    sheet.mergeCells(`A5:${LAST_COL}5`);
+    filaSep.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_ACENTO } };
+    filaSep.height = 5;
 
+    // ── Fila 6: Encabezados de columna ──────────────────────────────────────
+    const filaEnc = sheet.addRow(encabezados);
+    filaEnc.height = 22;
+    filaEnc.eachCell({ includeEmpty: true }, (cell) => {
+        cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border    = { bottom: { style: 'medium', color: { argb: AZUL_ACENTO } } };
+    });
+
+    // ── Filas de datos ───────────────────────────────────────────────────────
     registros.forEach((registro, idx) => {
         const fila = sheet.addRow([
             registro.folio,
@@ -214,36 +229,38 @@ async function generarXlsx(registros, metadatos = {}) {
             Number(registro.volumen_total),
             registro.campania
         ]);
-
-        const bgColor = idx % 2 === 0 ? 'FFFAFAFA' : 'FFF1F5F9';
-        fila.eachCell((cell) => {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+        const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF1F5F9';
+        fila.eachCell({ includeEmpty: true }, (cell) => {
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
             cell.alignment = { vertical: 'middle' };
         });
-
-        fila.getCell(6).numFmt = estiloMoneda.numFmt;
-        fila.getCell(7).numFmt = estiloMoneda.numFmt;
-        fila.getCell(8).numFmt = estiloMoneda.numFmt;
-        fila.getCell(9).numFmt = estiloDecimal.numFmt;
-        fila.getCell(10).numFmt = estiloDecimal.numFmt;
+        fila.getCell(6).numFmt = FMT_MONEDA;
+        fila.getCell(7).numFmt = FMT_MONEDA;
+        fila.getCell(8).numFmt = FMT_MONEDA;
+        fila.getCell(9).numFmt = FMT_DECIMAL;
+        fila.getCell(10).numFmt = FMT_DECIMAL;
     });
 
-    const ultimaFila = sheet.rowCount + 1;
+    // ── Fila de totales ──────────────────────────────────────────────────────
+    const primerDato  = 7;
+    const ultimoDato  = 6 + registros.length;
     const filaTotales = sheet.addRow([
-        'TOTAL', '', '', '', `${registros.length} reservas`,
-        { formula: `SUM(F6:F${ultimaFila - 1})` },
-        { formula: `SUM(G6:G${ultimaFila - 1})` },
-        { formula: `SUM(H6:H${ultimaFila - 1})` },
-        { formula: `SUM(I6:I${ultimaFila - 1})` },
-        { formula: `SUM(J6:J${ultimaFila - 1})` },
+        'TOTALES', '', '', '', `${registros.length} reserva(s)`,
+        { formula: `SUM(F${primerDato}:F${ultimoDato})` },
+        { formula: `SUM(G${primerDato}:G${ultimoDato})` },
+        { formula: `SUM(H${primerDato}:H${ultimoDato})` },
+        { formula: `SUM(I${primerDato}:I${ultimoDato})` },
+        { formula: `SUM(J${primerDato}:J${ultimoDato})` },
         ''
     ]);
-    filaTotales.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
+    filaTotales.height = 20;
+    filaTotales.eachCell({ includeEmpty: true }, (cell) => {
+        cell.font  = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+        cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+        cell.alignment = { vertical: 'middle' };
     });
-    [6, 7, 8].forEach((col) => { filaTotales.getCell(col).numFmt = '"$"#,##0.00'; });
-    [9, 10].forEach((col) => { filaTotales.getCell(col).numFmt = '#,##0.00'; });
+    [6, 7, 8].forEach((col) => { filaTotales.getCell(col).numFmt = FMT_MONEDA; });
+    [9, 10].forEach((col) => { filaTotales.getCell(col).numFmt = FMT_DECIMAL; });
 
     return workbook.xlsx.writeBuffer();
 }
