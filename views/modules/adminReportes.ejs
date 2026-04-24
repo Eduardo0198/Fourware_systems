@@ -10,21 +10,19 @@
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">Fecha inicial <span class="text-danger">*</span></label>
-                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>">
-                <small class="form-text text-muted">Primer día del rango a consultar.</small>
+                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>" data-hint="Primer día del rango a consultar.">
                 <div class="invalid-feedback">La fecha inicial es obligatoria.</div>
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">Fecha final <span class="text-danger">*</span></label>
-                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>">
-                <small class="form-text text-muted">Último día del rango. Debe ser igual o posterior a la fecha inicial.</small>
+                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>" data-hint="Último día del rango. Debe ser igual o posterior a la fecha inicial.">
                 <div class="invalid-feedback">La fecha final es obligatoria y debe ser posterior a la inicial.</div>
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">Campaña</label>
-                <select name="id_campania" class="form-select">
+                <select name="id_campania" class="form-select" data-hint="Deja en blanco para incluir todas las campañas.">
                     <option value="">Todas las campañas</option>
                     <% campanias.forEach((campania) => { %>
                         <option
@@ -34,25 +32,23 @@
                         </option>
                     <% }) %>
                 </select>
-                <small class="form-text text-muted">Deja en blanco para incluir todas las campañas.</small>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">Tipo de reporte <span class="text-danger">*</span></label>
-                <select name="tipo_reporte" id="tipoReporte" class="form-select">
+                <select name="tipo_reporte" id="tipoReporte" class="form-select" data-hint="General incluye todas las reservas. Los otros filtran por cuenta o concesionario.">
                     <option value="general"        <%= formData.tipo_reporte === 'general'        ? 'selected' : '' %>>General</option>
                     <option value="cuenta"         <%= formData.tipo_reporte === 'cuenta'         ? 'selected' : '' %>>Por cuenta</option>
                     <option value="concesionario"  <%= formData.tipo_reporte === 'concesionario'  ? 'selected' : '' %>>Por concesionario</option>
                 </select>
-                <small class="form-text text-muted">General incluye todas las reservas. Los otros filtran por cuenta o concesionario.</small>
                 <div class="invalid-feedback">Selecciona un tipo de reporte.</div>
             </div>
 
             <div class="col-md-4 mb-3" id="filtroCuentaWrap">
                 <label class="form-label">Cuenta <span class="text-danger">*</span></label>
-                <select name="id_cuenta" id="filtroCuenta" class="form-select">
+                <select name="id_cuenta" id="filtroCuenta" class="form-select" data-hint="Cuenta distribuidora a filtrar en el reporte.">
                     <option value="">-- Selecciona una cuenta --</option>
                     <% cuentas.forEach((cuenta) => { %>
                         <option
@@ -62,13 +58,12 @@
                         </option>
                     <% }) %>
                 </select>
-                <small class="form-text text-muted">Cuenta distribuidora a filtrar en el reporte.</small>
                 <div class="invalid-feedback">Debes seleccionar una cuenta.</div>
             </div>
 
             <div class="col-md-4 mb-3" id="filtroConcesionarioWrap">
                 <label class="form-label">Concesionario <span class="text-danger">*</span></label>
-                <select name="correo_concesionario" id="filtroConcesionario" class="form-select">
+                <select name="correo_concesionario" id="filtroConcesionario" class="form-select" data-hint="Concesionario específico a incluir en el reporte.">
                     <option value="">-- Selecciona un concesionario --</option>
                     <% concesionarios.forEach((concesionario) => { %>
                         <option
@@ -78,25 +73,23 @@
                         </option>
                     <% }) %>
                 </select>
-                <small class="form-text text-muted">Concesionario específico a incluir en el reporte.</small>
                 <div class="invalid-feedback">Debes seleccionar un concesionario.</div>
             </div>
 
             <div class="col-md-4 mb-3">
                 <label class="form-label">Formato de descarga <span class="text-danger">*</span></label>
-                <select name="formato" class="form-select">
+                <select name="formato" class="form-select" data-hint="CSV para hojas de cálculo. Excel para formato con estilo visual.">
                     <option value="">-- Selecciona un formato --</option>
                     <option value="csv"  <%= formData.formato === 'csv'  ? 'selected' : '' %>>CSV</option>
                     <option value="xlsx" <%= formData.formato === 'xlsx' ? 'selected' : '' %>>Excel (.xlsx)</option>
                 </select>
-                <small class="form-text text-muted">CSV para hojas de cálculo. Excel para formato con formato visual.</small>
                 <div class="invalid-feedback">Selecciona un formato de descarga.</div>
             </div>
         </div>
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">Generar reporte</button>
-            <a href="/admin" class="btn btn-outline-secondary">Volver</a>
+            <a href="/admin" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
         </div>
     </form>
 </div>

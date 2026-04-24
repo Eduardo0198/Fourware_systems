@@ -50,8 +50,8 @@
                     class="form-control"
                     placeholder="Ej. admin@ppg.com"
                     value="<%= filtrosVista.correo || '' %>"
+                    data-hint="Deja vacío para consultar todos los usuarios."
                 >
-                <small class="form-text text-muted">Deja vacío para consultar todos los usuarios.</small>
             </label>
             <label class="audit-field">
                 <span>Fecha de inicio</span>
@@ -61,8 +61,8 @@
                     name="fecha_inicio"
                     class="form-control"
                     value="<%= filtrosVista.fechaInicio || '' %>"
+                    data-hint="Fecha desde la que deseas ver eventos."
                 >
-                <small class="form-text text-muted">Fecha desde la que deseas ver eventos.</small>
             </label>
             <label class="audit-field">
                 <span>Fecha de fin</span>
@@ -72,8 +72,8 @@
                     name="fecha_fin"
                     class="form-control"
                     value="<%= filtrosVista.fechaFin || '' %>"
+                    data-hint="Debe ser igual o posterior a la fecha de inicio."
                 >
-                <small class="form-text text-muted">Debe ser igual o posterior a la fecha de inicio.</small>
                 <div class="invalid-feedback">La fecha de fin no puede ser anterior a la de inicio.</div>
             </label>
             <div class="audit-actions">

@@ -10,32 +10,28 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Nombre de la campaña <span class="text-danger">*</span></label>
-                <input type="text" name="nombre" class="form-control" value="<%= formData.nombre || '' %>" placeholder="Ej. Preventa Primavera 2025">
-                <small class="form-text text-muted">Nombre con el que identificarás la campaña en el sistema.</small>
+                <input type="text" name="nombre" class="form-control" value="<%= formData.nombre || '' %>" placeholder="Ej. Preventa Primavera 2025" data-hint="Nombre con el que identificarás la campaña en el sistema.">
                 <div class="invalid-feedback">El nombre de la campaña es obligatorio.</div>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">Fecha de inicio <span class="text-danger">*</span></label>
-                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>">
-                <small class="form-text text-muted">Día en que inicia la campaña de preventa.</small>
+                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>" data-hint="Día en que inicia la campaña de preventa.">
                 <div class="invalid-feedback">La fecha de inicio es obligatoria.</div>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">Fecha de fin <span class="text-danger">*</span></label>
-                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>">
-                <small class="form-text text-muted">Día en que finaliza la campaña. Debe ser posterior al inicio.</small>
+                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>" data-hint="Día en que finaliza la campaña. Debe ser posterior al inicio.">
                 <div class="invalid-feedback">La fecha de fin es obligatoria y debe ser posterior al inicio.</div>
             </div>
         </div>
         <div class="mb-3">
             <label class="form-label">URL del banner <span class="text-danger">*</span></label>
-            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="Ej. https://dominio.com/img/banner-primavera.jpg">
-            <small class="form-text text-muted">Dirección web de la imagen que se mostrará como banner de la campaña.</small>
+            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="Ej. https://dominio.com/img/banner-primavera.jpg" data-hint="Dirección web de la imagen que se mostrará como banner de la campaña.">
             <div class="invalid-feedback">La URL del banner es obligatoria.</div>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" type="submit">Guardar campaña</button>
-            <a href="/admin/campanas" class="btn btn-outline-secondary">Volver a campañas</a>
+            <a href="/admin/campanas" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver a campañas</a>
         </div>
     </form>
 </div>
