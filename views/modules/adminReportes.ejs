@@ -1,37 +1,31 @@
 <%- include('../includes/admin/pageIntro', {
     title: 'Reporte Consolidado de Preventas',
-    subtitle: 'CU-13. Genera un archivo CSV o Excel con las reservas confirmadas dentro de un rango de fechas.'
+    subtitle: 'Genera un archivo con las reservas confirmadas dentro de un rango de fechas. Los campos marcados con * son obligatorios.'
 }) %>
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
 <div class="card p-4 mb-4">
-    <form method="post" action="/admin/reportes">
+    <form id="formReportes" method="post" action="/admin/reportes" novalidate>
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha inicial</label>
-                <input
-                    type="date"
-                    name="fecha_inicio"
-                    class="form-control"
-                    value="<%= formData.fecha_inicio || '' %>"
-                    required>
+                <label class="form-label">Fecha inicial <span class="text-danger">*</span></label>
+                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>">
+                <small class="form-text text-muted">Primer día del rango a consultar.</small>
+                <div class="invalid-feedback">La fecha inicial es obligatoria.</div>
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha final</label>
-                <input
-                    type="date"
-                    name="fecha_fin"
-                    class="form-control"
-                    value="<%= formData.fecha_fin || '' %>"
-                    required>
+                <label class="form-label">Fecha final <span class="text-danger">*</span></label>
+                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>">
+                <small class="form-text text-muted">Último día del rango. Debe ser igual o posterior a la fecha inicial.</small>
+                <div class="invalid-feedback">La fecha final es obligatoria y debe ser posterior a la inicial.</div>
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label">Campana</label>
+                <label class="form-label">Campaña</label>
                 <select name="id_campania" class="form-select">
-                    <option value="">Todas las campanas</option>
+                    <option value="">Todas las campañas</option>
                     <% campanias.forEach((campania) => { %>
                         <option
                             value="<%= campania.id_campania %>"
@@ -40,23 +34,26 @@
                         </option>
                     <% }) %>
                 </select>
+                <small class="form-text text-muted">Deja en blanco para incluir todas las campañas.</small>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo de reporte</label>
-                <select name="tipo_reporte" id="tipoReporte" class="form-select" required>
-                    <option value="general" <%= formData.tipo_reporte === 'general' ? 'selected' : '' %>>General</option>
-                    <option value="cuenta" <%= formData.tipo_reporte === 'cuenta' ? 'selected' : '' %>>Por cuenta</option>
-                    <option value="concesionario" <%= formData.tipo_reporte === 'concesionario' ? 'selected' : '' %>>Por concesionario</option>
+                <label class="form-label">Tipo de reporte <span class="text-danger">*</span></label>
+                <select name="tipo_reporte" id="tipoReporte" class="form-select">
+                    <option value="general"        <%= formData.tipo_reporte === 'general'        ? 'selected' : '' %>>General</option>
+                    <option value="cuenta"         <%= formData.tipo_reporte === 'cuenta'         ? 'selected' : '' %>>Por cuenta</option>
+                    <option value="concesionario"  <%= formData.tipo_reporte === 'concesionario'  ? 'selected' : '' %>>Por concesionario</option>
                 </select>
+                <small class="form-text text-muted">General incluye todas las reservas. Los otros filtran por cuenta o concesionario.</small>
+                <div class="invalid-feedback">Selecciona un tipo de reporte.</div>
             </div>
 
             <div class="col-md-4 mb-3" id="filtroCuentaWrap">
-                <label class="form-label">Cuenta</label>
+                <label class="form-label">Cuenta <span class="text-danger">*</span></label>
                 <select name="id_cuenta" id="filtroCuenta" class="form-select">
-                    <option value="">Selecciona una cuenta</option>
+                    <option value="">-- Selecciona una cuenta --</option>
                     <% cuentas.forEach((cuenta) => { %>
                         <option
                             value="<%= cuenta.id_cuenta %>"
@@ -65,12 +62,14 @@
                         </option>
                     <% }) %>
                 </select>
+                <small class="form-text text-muted">Cuenta distribuidora a filtrar en el reporte.</small>
+                <div class="invalid-feedback">Debes seleccionar una cuenta.</div>
             </div>
 
             <div class="col-md-4 mb-3" id="filtroConcesionarioWrap">
-                <label class="form-label">Concesionario</label>
+                <label class="form-label">Concesionario <span class="text-danger">*</span></label>
                 <select name="correo_concesionario" id="filtroConcesionario" class="form-select">
-                    <option value="">Selecciona un concesionario</option>
+                    <option value="">-- Selecciona un concesionario --</option>
                     <% concesionarios.forEach((concesionario) => { %>
                         <option
                             value="<%= concesionario.correo %>"
@@ -79,31 +78,31 @@
                         </option>
                     <% }) %>
                 </select>
+                <small class="form-text text-muted">Concesionario específico a incluir en el reporte.</small>
+                <div class="invalid-feedback">Debes seleccionar un concesionario.</div>
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label">Formato</label>
-                <select name="formato" class="form-select" required>
-                    <option value="">Selecciona un formato</option>
-                    <option value="csv" <%= formData.formato === 'csv' ? 'selected' : '' %>>CSV</option>
-                    <option value="xlsx" <%= formData.formato === 'xlsx' ? 'selected' : '' %>>Excel</option>
+                <label class="form-label">Formato de descarga <span class="text-danger">*</span></label>
+                <select name="formato" class="form-select">
+                    <option value="">-- Selecciona un formato --</option>
+                    <option value="csv"  <%= formData.formato === 'csv'  ? 'selected' : '' %>>CSV</option>
+                    <option value="xlsx" <%= formData.formato === 'xlsx' ? 'selected' : '' %>>Excel (.xlsx)</option>
                 </select>
+                <small class="form-text text-muted">CSV para hojas de cálculo. Excel para formato con formato visual.</small>
+                <div class="invalid-feedback">Selecciona un formato de descarga.</div>
             </div>
         </div>
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
-                Generar reporte
-            </button>
-            <a href="/admin" class="btn btn-outline-secondary">
-                Volver
-            </a>
+            <button type="submit" class="btn btn-primary">Generar reporte</button>
+            <a href="/admin" class="btn btn-outline-secondary">Volver</a>
         </div>
     </form>
 </div>
 
 <div class="card p-4">
-    <h4 class="mb-3">Columnas incluidas</h4>
+    <h4 class="mb-3">Columnas incluidas en el reporte</h4>
     <div class="d-flex flex-wrap gap-2">
         <span class="badge bg-secondary">Folio</span>
         <span class="badge bg-secondary">Cuenta</span>
@@ -115,37 +114,57 @@
         <span class="badge bg-secondary">Total</span>
         <span class="badge bg-secondary">Peso total</span>
         <span class="badge bg-secondary">Volumen total</span>
-        <span class="badge bg-secondary">Campana</span>
+        <span class="badge bg-secondary">Campaña</span>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const tipoReporte = document.getElementById('tipoReporte');
-    const filtroCuentaWrap = document.getElementById('filtroCuentaWrap');
-    const filtroCuenta = document.getElementById('filtroCuenta');
+    const tipoReporte          = document.getElementById('tipoReporte');
+    const filtroCuentaWrap     = document.getElementById('filtroCuentaWrap');
+    const filtroCuenta         = document.getElementById('filtroCuenta');
     const filtroConcesionarioWrap = document.getElementById('filtroConcesionarioWrap');
-    const filtroConcesionario = document.getElementById('filtroConcesionario');
+    const filtroConcesionario  = document.getElementById('filtroConcesionario');
 
     function actualizarFiltros() {
         const tipo = tipoReporte.value;
-
-        filtroCuentaWrap.style.display = tipo === 'cuenta' ? '' : 'none';
+        filtroCuentaWrap.style.display        = tipo === 'cuenta'        ? '' : 'none';
         filtroConcesionarioWrap.style.display = tipo === 'concesionario' ? '' : 'none';
-
-        filtroCuenta.required = tipo === 'cuenta';
+        filtroCuenta.required        = tipo === 'cuenta';
         filtroConcesionario.required = tipo === 'concesionario';
-
-        if (tipo !== 'cuenta') {
-            filtroCuenta.value = '';
-        }
-
-        if (tipo !== 'concesionario') {
-            filtroConcesionario.value = '';
-        }
+        if (tipo !== 'cuenta')        filtroCuenta.value = '';
+        if (tipo !== 'concesionario') filtroConcesionario.value = '';
     }
 
     tipoReporte.addEventListener('change', actualizarFiltros);
     actualizarFiltros();
+
+    document.getElementById('formReportes').addEventListener('submit', function (e) {
+        let valido = true;
+        this.querySelectorAll('input, select').forEach((c) => c.classList.remove('is-invalid'));
+
+        const fechaInicio = this.querySelector('[name="fecha_inicio"]');
+        const fechaFin    = this.querySelector('[name="fecha_fin"]');
+        const formato     = this.querySelector('[name="formato"]');
+
+        if (!fechaInicio.value) { fechaInicio.classList.add('is-invalid'); valido = false; }
+        if (!fechaFin.value)    { fechaFin.classList.add('is-invalid');    valido = false; }
+        if (!formato.value)     { formato.classList.add('is-invalid');     valido = false; }
+
+        if (fechaInicio.value && fechaFin.value && fechaFin.value < fechaInicio.value) {
+            fechaFin.classList.add('is-invalid');
+            valido = false;
+        }
+
+        const tipo = tipoReporte.value;
+        if (tipo === 'cuenta' && !filtroCuenta.value) {
+            filtroCuenta.classList.add('is-invalid'); valido = false;
+        }
+        if (tipo === 'concesionario' && !filtroConcesionario.value) {
+            filtroConcesionario.classList.add('is-invalid'); valido = false;
+        }
+
+        if (!valido) e.preventDefault();
+    });
 });
 </script>
