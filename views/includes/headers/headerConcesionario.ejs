@@ -61,34 +61,44 @@
                 <% } %>
 
                 <% cuentas.forEach(cuenta => { %>
+                    <% const esActiva = cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta; %>
                     <li>
-                        <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
-                            <input type="hidden" name="id_cuenta" value="<%= cuenta.id_cuenta %>">
+                        <% if (esActiva) { %>
                             <button
-                                type="submit"
-                                class="dropdown-item account-option <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? 'active-account' : '' %> <%= !cuenta.activo ? 'inactive-account' : '' %>"
+                                type="button"
+                                class="dropdown-item account-option active-account"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalPerfilCuenta"
                             >
-                                <span class="account-avatar <%= cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta ? 'account-avatar-selected' : '' %>">
+                                <span class="account-avatar account-avatar-selected">
                                     <%= getInitials(cuenta.nombre) %>
                                 </span>
                                 <span class="account-option-copy">
-                                    <span class="account-option-title">
-                                        <%= cuenta.nombre %>
-                                    </span>
-                                    <small class="account-option-subtitle">
-                                        <%= cuenta.codigo %> · <%= cuenta.estatus %>
-                                    </small>
+                                    <span class="account-option-title"><%= cuenta.nombre %></span>
+                                    <small class="account-option-subtitle"><%= cuenta.codigo %> · <%= cuenta.estatus %></small>
                                 </span>
-                                <% if (cuentaActiva && cuentaActiva.id_cuenta === cuenta.id_cuenta) { %>
-                                    <span class="account-check">
-                                        <i class="bi bi-check-circle-fill"></i>
-                                    </span>
-                                <% } %>
-                                <% if (!cuenta.activo) { %>
-                                    <span class="account-inactive-pill">Inactiva</span>
-                                <% } %>
+                                <span class="account-check">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </span>
                             </button>
-                        </form>
+                        <% } else { %>
+                            <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
+                                <input type="hidden" name="id_cuenta" value="<%= cuenta.id_cuenta %>">
+                                <button
+                                    type="submit"
+                                    class="dropdown-item account-option <%= !cuenta.activo ? 'inactive-account' : '' %>"
+                                >
+                                    <span class="account-avatar"><%= getInitials(cuenta.nombre) %></span>
+                                    <span class="account-option-copy">
+                                        <span class="account-option-title"><%= cuenta.nombre %></span>
+                                        <small class="account-option-subtitle"><%= cuenta.codigo %> · <%= cuenta.estatus %></small>
+                                    </span>
+                                    <% if (!cuenta.activo) { %>
+                                        <span class="account-inactive-pill">Inactiva</span>
+                                    <% } %>
+                                </button>
+                            </form>
+                        <% } %>
                     </li>
                 <% }) %>
                 <li><hr class="dropdown-divider"></li>
@@ -102,3 +112,62 @@
         </div>
     </div>
 </header>
+
+<% if (cuentaActiva) { %>
+<div class="modal fade" id="modalPerfilCuenta" tabindex="-1" aria-labelledby="modalPerfilCuentaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+            <div class="modal-header border-0 px-4 pt-4 pb-3" style="background:linear-gradient(135deg,#0f172a 0%,#163a63 60%,#14532d 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="account-avatar account-avatar-selected fs-4" style="width:52px;height:52px;font-size:1.2rem;">
+                        <%= getInitials(cuentaActiva.nombre) %>
+                    </div>
+                    <div>
+                        <h5 class="modal-title text-white fw-bold mb-0" id="modalPerfilCuentaLabel"><%= cuentaActiva.nombre %></h5>
+                        <span class="badge rounded-pill mt-1" style="background:rgba(255,255,255,0.15);color:#fff;font-size:11px;">
+                            <i class="bi bi-circle-fill me-1" style="font-size:7px;color:#4ade80;"></i><%= cuentaActiva.estatus %>
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body px-4 py-3">
+                <p class="text-muted small mb-3 fw-semibold text-uppercase" style="letter-spacing:.06em;">Datos de la cuenta</p>
+                <ul class="list-group list-group-flush border rounded-3 overflow-hidden mb-4">
+                    <li class="list-group-item d-flex justify-content-between align-items-start gap-3 py-3">
+                        <span class="text-muted small" style="min-width:110px;">RFC</span>
+                        <strong class="text-end"><%= cuentaActiva.codigo %></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start gap-3 py-3 bg-light">
+                        <span class="text-muted small" style="min-width:110px;">Razón social</span>
+                        <strong class="text-end"><%= cuentaActiva.razon_social || '—' %></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start gap-3 py-3">
+                        <span class="text-muted small" style="min-width:110px;">Dirección</span>
+                        <span class="text-end text-body-secondary small"><%= cuentaActiva.direccion || '—' %></span>
+                    </li>
+                </ul>
+
+                <p class="text-muted small mb-3 fw-semibold text-uppercase" style="letter-spacing:.06em;">Usuario</p>
+                <ul class="list-group list-group-flush border rounded-3 overflow-hidden">
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3">
+                        <span class="text-muted small" style="min-width:110px;">Nombre</span>
+                        <strong><%= usuario.nombre %></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3 bg-light">
+                        <span class="text-muted small" style="min-width:110px;">Correo</span>
+                        <span class="text-body-secondary small"><%= usuario.correo %></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="modal-footer border-0 px-4 pb-4 pt-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<% } %>
