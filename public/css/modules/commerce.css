@@ -388,3 +388,43 @@
     animation: cartBadgePop 0.5s ease-in-out;
 }
 
+
+/* ================= COUNTDOWN CANCELACIÓN ================= */
+
+.cancel-countdown {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cancel-countdown-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
+.cancel-countdown-digits {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    font-variant-numeric: tabular-nums;
+}
+
+.cancel-countdown-digits .cd-d,
+.cancel-countdown-digits .cd-h,
+.cancel-countdown-digits .cd-m,
+.cancel-countdown-digits .cd-s {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a5f;
+    min-width: 22px;
+    text-align: right;
+}
+
+.cancel-countdown-digits .cd-unit {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-right: 3px;
+}

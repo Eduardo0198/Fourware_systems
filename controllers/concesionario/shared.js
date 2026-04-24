@@ -47,6 +47,7 @@ function normalizarReserva(reserva, horasCancelacion = 24) {
         horasCancelacion,
         fechaTexto: formatearFecha(reserva.fecha),
         fechaCancelacionTexto: formatearFecha(reserva.fecha_cancelacion_reserva, true),
+        fechaCancelacionISO: limiteValida ? fechaLimite.toISOString() : null,
         fechaSucursalTexto: reserva.nombre_sucursal
             ? `${reserva.nombre_sucursal}`
             : 'Sucursal no disponible',

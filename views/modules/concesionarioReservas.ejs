@@ -36,12 +36,20 @@
                     <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
                     <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
                     <td>
-                        <% if (reserva.puedeCancelar) { %>
-                            Disponible hasta <%= reserva.fechaCancelacionTexto %>
+                        <% if (reserva.puedeCancelar && reserva.fechaCancelacionISO) { %>
+                            <div class="cancel-countdown" data-deadline="<%= reserva.fechaCancelacionISO %>">
+                                <span class="cancel-countdown-label">Cancela en</span>
+                                <div class="cancel-countdown-digits">
+                                    <span class="cd-d">--</span><span class="cd-unit">d</span>
+                                    <span class="cd-h">--</span><span class="cd-unit">h</span>
+                                    <span class="cd-m">--</span><span class="cd-unit">m</span>
+                                    <span class="cd-s">--</span><span class="cd-unit">s</span>
+                                </div>
+                            </div>
                         <% } else if (reserva.estatusNumerico === 0) { %>
-                            Ya cancelada
+                            <span class="text-muted">Ya cancelada</span>
                         <% } else { %>
-                            Venció el <%= reserva.fechaCancelacionTexto %>
+                            <span class="text-danger small">Venció el <%= reserva.fechaCancelacionTexto %></span>
                         <% } %>
                     </td>
                     <td class="d-flex gap-2">
@@ -65,3 +73,32 @@
         </div>
     <% } %>
 <% } %>
+
+<script>
+document.querySelectorAll('.cancel-countdown').forEach(function (el) {
+    const deadline = new Date(el.dataset.deadline).getTime();
+    const dEl = el.querySelector('.cd-d');
+    const hEl = el.querySelector('.cd-h');
+    const mEl = el.querySelector('.cd-m');
+    const sEl = el.querySelector('.cd-s');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tick() {
+        const dist = deadline - Date.now();
+        if (dist <= 0) {
+            dEl.textContent = '00'; hEl.textContent = '00';
+            mEl.textContent = '00'; sEl.textContent = '00';
+            clearInterval(timer);
+            return;
+        }
+        dEl.textContent = pad(Math.floor(dist / 86400000));
+        hEl.textContent = pad(Math.floor((dist / 3600000) % 24));
+        mEl.textContent = pad(Math.floor((dist / 60000) % 60));
+        sEl.textContent = pad(Math.floor((dist / 1000) % 60));
+    }
+
+    tick();
+    var timer = setInterval(tick, 1000);
+});
+</script>
