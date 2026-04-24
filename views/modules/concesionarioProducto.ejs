@@ -92,20 +92,17 @@
         <div id="alertaCarrito" class="d-none" role="alert"></div>
 
         <div class="mt-2">
-            <div class="row g-3 align-items-end justify-content-end">
-                <div class="col-sm-4 col-md-3">
-                    <label for="cantidad" class="form-label fw-semibold">Cantidad</label>
-                    <input type="number"
-                           id="cantidad"
-                           name="cantidad"
-                           class="form-control"
-                           min="1"
-                           step="1"
-                           value="1">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div>
+                    <label class="form-label fw-semibold mb-1 d-block">Cantidad</label>
+                    <div class="d-flex align-items-center gap-0 border rounded-3 overflow-hidden" style="width:fit-content;">
+                        <button type="button" id="btnMenos" class="btn btn-outline-secondary border-0 px-3 py-2 fs-5 lh-1" style="border-radius:0;">−</button>
+                        <span id="cantidad" class="px-3 py-2 fw-bold text-center" style="min-width:48px; font-size:1.1rem; user-select:none;">1</span>
+                        <button type="button" id="btnMas" class="btn btn-outline-secondary border-0 px-3 py-2 fs-5 lh-1" style="border-radius:0;">+</button>
+                    </div>
                 </div>
-
-                <div class="col-sm-8 col-md-auto">
-                    <button id="btnAgregarCarrito" class="btn btn-primary w-100 px-4">
+                <div class="mt-auto">
+                    <button id="btnAgregarCarrito" class="btn btn-primary px-4">
                         <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
                     </button>
                 </div>
@@ -113,9 +110,21 @@
         </div>
 
         <script>
+        (function () {
+            const spanCantidad = document.getElementById('cantidad');
+            let qty = 1;
+            document.getElementById('btnMenos').addEventListener('click', () => {
+                if (qty > 1) { qty--; spanCantidad.textContent = qty; }
+            });
+            document.getElementById('btnMas').addEventListener('click', () => {
+                qty++;
+                spanCantidad.textContent = qty;
+            });
+        })();
+
         document.getElementById('btnAgregarCarrito').addEventListener('click', async () => {
             const btn = document.getElementById('btnAgregarCarrito');
-            const cantidad = document.getElementById('cantidad').value;
+            const cantidad = document.getElementById('cantidad').textContent.trim();
             const sku = '<%= producto.SKU %>';
             const returnTo = '<%= returnTo || "/concesionario/catalogo" %>';
 
