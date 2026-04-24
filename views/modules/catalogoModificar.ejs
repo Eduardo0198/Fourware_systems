@@ -103,7 +103,7 @@
             </a>
         </div>
 
-        <form method="post" action="/admin/catalogo/modificar/<%= encodeURIComponent(formData.sku) %>">
+        <form method="post" action="/admin/catalogo/modificar/<%= encodeURIComponent(formData.sku) %>" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">SKU</label>
@@ -148,8 +148,19 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Ruta de imagen</label>
-                    <input type="text" name="imagen" class="form-control" value="<%= formData.imagen || '' %>" placeholder="/img/productos/producto.png" required>
+                    <label class="form-label">Imagen del producto</label>
+                    <div class="mb-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="tipoImagen" id="tipoImagenArchivoMod" value="archivo" checked>
+                            <label class="form-check-label" for="tipoImagenArchivoMod">Subir archivo</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="tipoImagen" id="tipoImagenUrlMod" value="url">
+                            <label class="form-check-label" for="tipoImagenUrlMod">Usar URL</label>
+                        </div>
+                    </div>
+                    <input type="file" name="imagenArchivo" id="inputArchivoMod" class="form-control" accept="image/jpeg,image/png,image/webp">
+                    <input type="text" name="imagen" id="inputUrlMod" class="form-control" style="display:none;" value="<%= formData.imagen || '' %>" placeholder="https://ejemplo.com/imagen.jpg">
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Campaña asociada</label>
@@ -263,6 +274,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (vacio) {
             vacio.style.display = 'none';
         }
+    });
+});
+
+document.querySelectorAll('input[name="tipoImagen"]').forEach((radio) => {
+    radio.addEventListener('change', function () {
+        const esArchivo = this.value === 'archivo';
+        document.getElementById('inputArchivoMod').style.display = esArchivo ? '' : 'none';
+        document.getElementById('inputUrlMod').style.display = esArchivo ? 'none' : '';
+        document.getElementById('inputArchivoMod').required = esArchivo;
+        document.getElementById('inputUrlMod').required = !esArchivo;
     });
 });
 </script>

@@ -12,7 +12,7 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
 <% } %>
 
 <div class="card p-4 mb-4">
-    <form method="post" action="/admin/catalogo/registrar">
+    <form method="post" action="/admin/catalogo/registrar" enctype="multipart/form-data">
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">SKU</label>
@@ -53,8 +53,19 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
         </div>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Ruta de imagen</label>
-                <input type="text" name="imagen" class="form-control" value="<%= formData.imagen || '' %>" placeholder="/img/productos/nuevo-producto.png" required>
+                <label class="form-label">Imagen del producto</label>
+                <div class="mb-2">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipoImagen" id="tipoImagenArchivoReg" value="archivo" checked>
+                        <label class="form-check-label" for="tipoImagenArchivoReg">Subir archivo</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipoImagen" id="tipoImagenUrlReg" value="url">
+                        <label class="form-check-label" for="tipoImagenUrlReg">Usar URL</label>
+                    </div>
+                </div>
+                <input type="file" name="imagenArchivo" id="inputArchivoReg" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <input type="text" name="imagen" id="inputUrlReg" class="form-control" style="display:none;" value="<%= formData.imagen || '' %>" placeholder="https://ejemplo.com/imagen.jpg">
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">Campaña asociada</label>
@@ -112,3 +123,15 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
         </table>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('input[name="tipoImagen"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+            const esArchivo = this.value === 'archivo';
+            document.getElementById('inputArchivoReg').style.display = esArchivo ? '' : 'none';
+            document.getElementById('inputUrlReg').style.display = esArchivo ? 'none' : '';
+            document.getElementById('inputArchivoReg').required = esArchivo;
+            document.getElementById('inputUrlReg').required = !esArchivo;
+        });
+    });
+</script>
