@@ -41,6 +41,9 @@
 }
 
 .reviews-cta-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
     min-height:52px;
     padding:0 28px;
     border-radius:999px;
