@@ -1,9 +1,5 @@
-<h2 class="mb-4">
-Registrar Producto
-</h2>
-<p class="text-muted">
-CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida y el sistema lo deja inicialmente inactivo.
-</p>
+<h2 class="mb-1">Registrar producto</h2>
+<p class="text-muted mb-4">Completa todos los campos para dar de alta un nuevo producto. Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
 <% if (pageMessage) { %>
     <div class="alert alert-<%= pageMessage.tipo %>">
@@ -12,48 +8,64 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
 <% } %>
 
 <div class="card p-4 mb-4">
-    <form method="post" action="/admin/catalogo/registrar" enctype="multipart/form-data">
+    <form id="formRegistrarProducto" method="post" action="/admin/catalogo/registrar" enctype="multipart/form-data" novalidate>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">SKU</label>
-                <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" placeholder="Ej. PPG-LT-001" required>
+                <label class="form-label">SKU <span class="text-danger">*</span></label>
+                <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" placeholder="Ej. PPG-LT-001">
+                <small class="form-text text-muted">Código único del producto. No podrá modificarse después de registrarlo.</small>
+                <div class="invalid-feedback">El SKU es obligatorio.</div>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre comercial</label>
-                <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" placeholder="Ej. Pintura Látex Interior Blanco" required>
+                <label class="form-label">Nombre comercial <span class="text-danger">*</span></label>
+                <input type="text" name="nombre_comercial" class="form-control" value="<%= formData.nombre_comercial || '' %>" placeholder="Ej. Pintura Látex Interior Blanco">
+                <small class="form-text text-muted">Nombre con el que el producto aparecerá en el catálogo.</small>
+                <div class="invalid-feedback">El nombre comercial es obligatorio.</div>
             </div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Descripción</label>
-            <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej. Pintura de alta cobertura para interiores, resistente a la humedad." required><%= formData.descripcion || '' %></textarea>
+            <label class="form-label">Descripción <span class="text-danger">*</span></label>
+            <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej. Pintura de alta cobertura para interiores, resistente a la humedad."><%= formData.descripcion || '' %></textarea>
+            <small class="form-text text-muted">Describe las características principales del producto.</small>
+            <div class="invalid-feedback">La descripción es obligatoria.</div>
         </div>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Unidad de venta</label>
-                <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" placeholder="Ej. Cubeta 19L" required>
+                <label class="form-label">Presentación de venta <span class="text-danger">*</span></label>
+                <input type="text" name="unidad_venta" class="form-control" value="<%= formData.unidad_venta || '' %>" placeholder="Ej. Cubeta 19L">
+                <small class="form-text text-muted">Cómo se vende el producto (cubeta, caja, rollo, etc.).</small>
+                <div class="invalid-feedback">La presentación de venta es obligatoria.</div>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Unidad de medida primaria</label>
-                <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" placeholder="Ej. Litro" required>
+                <label class="form-label">Unidad de medida <span class="text-danger">*</span></label>
+                <input type="text" name="medida_primaria" class="form-control" value="<%= formData.medida_primaria || '' %>" placeholder="Ej. Litro">
+                <small class="form-text text-muted">Unidad con la que se mide el producto (litros, kg, metros, piezas).</small>
+                <div class="invalid-feedback">La unidad de medida es obligatoria.</div>
             </div>
         </div>
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Precio unitario</label>
-                <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" placeholder="Ej. 450.00" required>
+                <label class="form-label">Precio unitario ($) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="0.01" name="precio_unitario" class="form-control" value="<%= formData.precio_unitario || '' %>" placeholder="Ej. 450.00">
+                <small class="form-text text-muted">Precio de venta en pesos mexicanos.</small>
+                <div class="invalid-feedback">Ingresa un precio mayor a cero.</div>
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Peso unitario</label>
-                <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" placeholder="Ej. 22.50" required>
+                <label class="form-label">Peso unitario (kg) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="0.01" name="peso_unitario" class="form-control" value="<%= formData.peso_unitario || '' %>" placeholder="Ej. 22.50">
+                <small class="form-text text-muted">Peso del producto en kilogramos.</small>
+                <div class="invalid-feedback">Ingresa un peso mayor a cero.</div>
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Volumen unitario</label>
-                <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" placeholder="Ej. 19.00" required>
+                <label class="form-label">Volumen unitario (L) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="0.01" name="volumen_unitario" class="form-control" value="<%= formData.volumen_unitario || '' %>" placeholder="Ej. 19.00">
+                <small class="form-text text-muted">Volumen del producto en litros.</small>
+                <div class="invalid-feedback">Ingresa un volumen mayor a cero.</div>
             </div>
         </div>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Imagen del producto</label>
+                <label class="form-label">Imagen del producto <span class="text-danger">*</span></label>
                 <div class="mb-2">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="tipoImagen" id="tipoImagenArchivoReg" value="archivo" checked>
@@ -66,11 +78,13 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                 </div>
                 <input type="file" name="imagenArchivo" id="inputArchivoReg" class="form-control" accept="image/jpeg,image/png,image/webp">
                 <input type="text" name="imagen" id="inputUrlReg" class="form-control" style="display:none;" value="<%= formData.imagen || '' %>" placeholder="https://ejemplo.com/imagen.jpg">
+                <small class="form-text text-muted">Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo 2 MB.</small>
+                <div class="invalid-feedback" id="errorImagenReg">Selecciona una imagen o ingresa una URL válida.</div>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Campaña asociada</label>
-                <select name="id_campania" class="form-select" required>
-                    <option value="">Selecciona una campaña</option>
+                <label class="form-label">Campaña asociada <span class="text-danger">*</span></label>
+                <select name="id_campania" class="form-select">
+                    <option value="">-- Selecciona una campaña --</option>
                     <% campanias.forEach((campania) => { %>
                         <option
                             value="<%= campania.id_campania %>"
@@ -79,23 +93,19 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
                         </option>
                     <% }) %>
                 </select>
+                <small class="form-text text-muted">El producto quedará vinculado a esta campaña de preventa.</small>
+                <div class="invalid-feedback">Debes seleccionar una campaña.</div>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
-                Registrar producto
-            </button>
-            <a href="/admin/catalogo" class="btn btn-outline-secondary">
-                Volver al catálogo
-            </a>
+            <button type="submit" class="btn btn-primary">Registrar producto</button>
+            <a href="/admin/catalogo" class="btn btn-outline-secondary">Volver al catálogo</a>
         </div>
     </form>
 </div>
 
 <div class="card p-4">
-    <h4 class="mb-3">
-    Productos registrados
-    </h4>
+    <h4 class="mb-3">Productos registrados</h4>
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
@@ -125,13 +135,56 @@ CU-06. El administrador registra un nuevo SKU, lo asocia a una campaña válida 
 </div>
 
 <script>
+    const form = document.getElementById('formRegistrarProducto');
+
+    const mensajes = {
+        sku:             'El SKU es obligatorio.',
+        nombre_comercial:'El nombre comercial es obligatorio.',
+        descripcion:     'La descripción es obligatoria.',
+        unidad_venta:    'La presentación de venta es obligatoria.',
+        medida_primaria: 'La unidad de medida es obligatoria.',
+        precio_unitario: 'Ingresa un precio mayor a cero.',
+        peso_unitario:   'Ingresa un peso mayor a cero.',
+        volumen_unitario:'Ingresa un volumen mayor a cero.',
+        id_campania:     'Debes seleccionar una campaña.'
+    };
+
+    form.addEventListener('submit', function (e) {
+        let valido = true;
+
+        form.querySelectorAll('input, select, textarea').forEach((campo) => {
+            campo.classList.remove('is-invalid');
+        });
+
+        Object.entries(mensajes).forEach(([nombre, mensaje]) => {
+            const campo = form.querySelector(`[name="${nombre}"]`);
+            if (!campo) return;
+            if (!campo.value.trim()) {
+                campo.classList.add('is-invalid');
+                campo.nextElementSibling?.classList.contains('invalid-feedback') && (campo.nextElementSibling.textContent = mensaje);
+                valido = false;
+            }
+        });
+
+        const esArchivo = document.getElementById('tipoImagenArchivoReg').checked;
+        const archivo = document.getElementById('inputArchivoReg');
+        const url = document.getElementById('inputUrlReg');
+        if (esArchivo && !archivo.files.length) {
+            archivo.classList.add('is-invalid');
+            valido = false;
+        } else if (!esArchivo && !url.value.trim()) {
+            url.classList.add('is-invalid');
+            valido = false;
+        }
+
+        if (!valido) e.preventDefault();
+    });
+
     document.querySelectorAll('input[name="tipoImagen"]').forEach((radio) => {
         radio.addEventListener('change', function () {
             const esArchivo = this.value === 'archivo';
             document.getElementById('inputArchivoReg').style.display = esArchivo ? '' : 'none';
             document.getElementById('inputUrlReg').style.display = esArchivo ? 'none' : '';
-            document.getElementById('inputArchivoReg').required = esArchivo;
-            document.getElementById('inputUrlReg').required = !esArchivo;
         });
     });
 </script>
