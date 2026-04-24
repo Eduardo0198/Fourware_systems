@@ -80,17 +80,17 @@
 }
 
 .admin-stats-grid,
-.admin-action-grid{
+.admin-stats-grid{
     display:grid;
     gap:18px;
-}
-
-.admin-stats-grid{
     grid-template-columns:repeat(2, minmax(0, 1fr));
 }
 
 .admin-action-grid{
+    display:grid;
+    gap:18px;
     grid-template-columns:repeat(3, minmax(0, 1fr));
+    align-items:stretch;
 }
 
 .admin-stat-card,
@@ -162,6 +162,7 @@
     display:flex;
     flex-direction:column;
     gap:10px;
+    flex:1;
 }
 
 .admin-action-tag{
