@@ -98,8 +98,11 @@
         </div>
 
         <% if (registrosVista.length > 0) { %>
-            <div class="audit-table-wrap">
-                <table class="table audit-table align-middle mb-0">
+            <div class="audit-scroll-top" id="auditScrollTop">
+                <div class="audit-scroll-inner" id="auditScrollInner"></div>
+            </div>
+            <div class="audit-table-wrap" id="auditTableWrap">
+                <table class="table audit-table align-middle mb-0" id="auditTable">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -155,4 +158,32 @@
             e.preventDefault();
         }
     });
+
+    (function () {
+        const scrollTop  = document.getElementById('auditScrollTop');
+        const scrollInner = document.getElementById('auditScrollInner');
+        const tableWrap  = document.getElementById('auditTableWrap');
+        const table      = document.getElementById('auditTable');
+        if (!scrollTop || !tableWrap || !table) return;
+
+        function sincronizarAncho() {
+            scrollInner.style.width = table.scrollWidth + 'px';
+        }
+        sincronizarAncho();
+        new ResizeObserver(sincronizarAncho).observe(table);
+
+        let syncingTop = false, syncingWrap = false;
+        scrollTop.addEventListener('scroll', () => {
+            if (syncingWrap) return;
+            syncingTop = true;
+            tableWrap.scrollLeft = scrollTop.scrollLeft;
+            syncingTop = false;
+        });
+        tableWrap.addEventListener('scroll', () => {
+            if (syncingTop) return;
+            syncingWrap = true;
+            scrollTop.scrollLeft = tableWrap.scrollLeft;
+            syncingWrap = false;
+        });
+    })();
 </script>
