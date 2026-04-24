@@ -39,18 +39,19 @@
             </div>
             <span class="audit-chip">Vista profesional</span>
         </div>
-        <form method="GET" action="/admin/auditoria" class="audit-filters-grid">
+        <form id="formAuditoria" method="GET" action="/admin/auditoria" class="audit-filters-grid" novalidate>
             <input type="hidden" name="consultar" value="1">
             <label class="audit-field">
-                <span>Usuario</span>
+                <span>Usuario (correo electrónico)</span>
                 <input
                     type="text"
                     id="usuario"
                     name="usuario"
                     class="form-control"
-                    placeholder="correo@ppg.com"
+                    placeholder="Ej. admin@ppg.com"
                     value="<%= filtrosVista.correo || '' %>"
                 >
+                <small class="form-text text-muted">Deja vacío para consultar todos los usuarios.</small>
             </label>
             <label class="audit-field">
                 <span>Fecha de inicio</span>
@@ -61,6 +62,7 @@
                     class="form-control"
                     value="<%= filtrosVista.fechaInicio || '' %>"
                 >
+                <small class="form-text text-muted">Fecha desde la que deseas ver eventos.</small>
             </label>
             <label class="audit-field">
                 <span>Fecha de fin</span>
@@ -71,6 +73,8 @@
                     class="form-control"
                     value="<%= filtrosVista.fechaFin || '' %>"
                 >
+                <small class="form-text text-muted">Debe ser igual o posterior a la fecha de inicio.</small>
+                <div class="invalid-feedback">La fecha de fin no puede ser anterior a la de inicio.</div>
             </label>
             <div class="audit-actions">
                 <button type="submit" class="btn btn-primary audit-primary-btn">
@@ -139,3 +143,16 @@
         <% } %>
     </div>
 </section>
+
+<script>
+    document.getElementById('formAuditoria').addEventListener('submit', function (e) {
+        const fi = document.getElementById('fecha_inicio').value;
+        const ff = document.getElementById('fecha_fin').value;
+        const campoFf = document.getElementById('fecha_fin');
+        campoFf.classList.remove('is-invalid');
+        if (fi && ff && ff < fi) {
+            campoFf.classList.add('is-invalid');
+            e.preventDefault();
+        }
+    });
+</script>

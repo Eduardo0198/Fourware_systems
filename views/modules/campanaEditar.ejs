@@ -1,9 +1,10 @@
 <%- include('../includes/admin/pageIntro', {
     title: 'Editar Campaña',
-    subtitle: ''
+    subtitle: 'Selecciona una campaña de la lista para editar sus datos. Los campos marcados con * son obligatorios.'
 }) %>
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
+
 <div id="avisoActivar" class="alert alert-warning d-flex align-items-center gap-2 d-none">
     <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
     <span>Ya hay una campaña activa. Desactívala primero para poder activar esta.</span>
@@ -48,23 +49,14 @@
                             <% if (campania.estatus) { %>
                                 <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/desactivar" class="m-0 d-flex align-items-center gap-2">
                                     <div class="form-check form-switch m-0">
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"
-                                            role="switch"
-                                            checked
-                                            onchange="this.form.submit()">
+                                        <input class="form-check-input" type="checkbox" role="switch" checked onchange="this.form.submit()">
                                     </div>
                                     <span class="badge bg-success">Activa</span>
                                 </form>
                             <% } else { %>
                                 <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar" class="m-0 d-flex align-items-center gap-2 form-activar-campana" data-hay-activa="<%= hayUnaActiva %>">
                                     <div class="form-check form-switch m-0">
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"
-                                            role="switch"
-                                            onchange="intentarActivar(this)">
+                                        <input class="form-check-input" type="checkbox" role="switch" onchange="intentarActivar(this)">
                                     </div>
                                     <span class="badge bg-secondary">Inactiva</span>
                                 </form>
@@ -79,53 +71,42 @@
 
 <% if (campaniaSeleccionada) { %>
     <div class="card p-4">
-        <h4 class="mb-3">
-        Editando: <%= campaniaSeleccionada.nombre %>
-        </h4>
-        <form method="post" action="/admin/campanas/editar/<%= campaniaSeleccionada.id_campania %>">
+        <h4 class="mb-1">Editando: <%= campaniaSeleccionada.nombre %></h4>
+        <p class="text-muted mb-3">Modifica los datos de la campaña y guarda los cambios.</p>
+        <form id="formEditarCampana" method="post" action="/admin/campanas/editar/<%= campaniaSeleccionada.id_campania %>" novalidate>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Nombre de la campaña</label>
-                    <input
-                        type="text"
-                        name="nombre"
-                        class="form-control"
+                    <label class="form-label">Nombre de la campaña <span class="text-danger">*</span></label>
+                    <input type="text" name="nombre" class="form-control"
                         value="<%= formData && formData.nombre ? formData.nombre : campaniaSeleccionada.nombre %>"
-                        placeholder="Ej. Preventa Primavera 2025"
-                        required>
+                        placeholder="Ej. Preventa Primavera 2025">
+                    <small class="form-text text-muted">Nombre con el que identificarás la campaña en el sistema.</small>
+                    <div class="invalid-feedback">El nombre de la campaña es obligatorio.</div>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">Fecha de inicio</label>
-                    <input
-                        type="date"
-                        name="fecha_inicio"
-                        class="form-control"
-                        value="<%= formData && formData.fecha_inicio ? formData.fecha_inicio : campaniaSeleccionada.fecha_inicio_input %>"
-                        required>
+                    <label class="form-label">Fecha de inicio <span class="text-danger">*</span></label>
+                    <input type="date" name="fecha_inicio" class="form-control"
+                        value="<%= formData && formData.fecha_inicio ? formData.fecha_inicio : campaniaSeleccionada.fecha_inicio_input %>">
+                    <small class="form-text text-muted">Día en que inicia la campaña.</small>
+                    <div class="invalid-feedback">La fecha de inicio es obligatoria.</div>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">Fecha de fin</label>
-                    <input
-                        type="date"
-                        name="fecha_fin"
-                        class="form-control"
-                        value="<%= formData && formData.fecha_fin ? formData.fecha_fin : campaniaSeleccionada.fecha_fin_input %>"
-                        required>
+                    <label class="form-label">Fecha de fin <span class="text-danger">*</span></label>
+                    <input type="date" name="fecha_fin" class="form-control"
+                        value="<%= formData && formData.fecha_fin ? formData.fecha_fin : campaniaSeleccionada.fecha_fin_input %>">
+                    <small class="form-text text-muted">Debe ser posterior a la fecha de inicio.</small>
+                    <div class="invalid-feedback">La fecha de fin es obligatoria y debe ser posterior al inicio.</div>
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Banner</label>
-                <input
-                    type="text"
-                    name="banner"
-                    class="form-control"
+                <label class="form-label">URL del banner <span class="text-danger">*</span></label>
+                <input type="text" name="banner" class="form-control"
                     value="<%= formData && formData.banner ? formData.banner : campaniaSeleccionada.banner %>"
-                    placeholder="Ej. https://dominio.com/img/banner-primavera.jpg"
-                    required>
+                    placeholder="Ej. https://dominio.com/img/banner-primavera.jpg">
+                <small class="form-text text-muted">Dirección web de la imagen que se mostrará como banner.</small>
+                <div class="invalid-feedback">La URL del banner es obligatoria.</div>
             </div>
-            <button class="btn btn-primary" type="submit">
-                Guardar cambios
-            </button>
+            <button class="btn btn-primary" type="submit">Guardar cambios</button>
         </form>
     </div>
 <% } %>
@@ -143,4 +124,36 @@ function intentarActivar(checkbox) {
     }
     form.submit();
 }
+
+<% if (campaniaSeleccionada) { %>
+const formEditar = document.getElementById('formEditarCampana');
+const mensajesEditar = {
+    nombre:      'El nombre de la campaña es obligatorio.',
+    fecha_inicio:'La fecha de inicio es obligatoria.',
+    fecha_fin:   'La fecha de fin es obligatoria.',
+    banner:      'La URL del banner es obligatoria.'
+};
+
+formEditar.addEventListener('submit', function (e) {
+    let valido = true;
+    formEditar.querySelectorAll('input').forEach((c) => c.classList.remove('is-invalid'));
+
+    Object.entries(mensajesEditar).forEach(([nombre]) => {
+        const campo = formEditar.querySelector(`[name="${nombre}"]`);
+        if (!campo || !campo.value.trim()) {
+            campo?.classList.add('is-invalid');
+            valido = false;
+        }
+    });
+
+    const fi = formEditar.querySelector('[name="fecha_inicio"]').value;
+    const ff = formEditar.querySelector('[name="fecha_fin"]').value;
+    if (fi && ff && ff < fi) {
+        formEditar.querySelector('[name="fecha_fin"]').classList.add('is-invalid');
+        valido = false;
+    }
+
+    if (!valido) e.preventDefault();
+});
+<% } %>
 </script>

@@ -1,45 +1,47 @@
 <%- include('../includes/admin/pageIntro', {
     title: 'Configurar Campaña',
-    subtitle: 'El administrador configura campañas con nombre, fechas y banner. La activación exclusiva se gestiona en el módulo de estado.'
+    subtitle: 'Completa todos los campos para registrar una nueva campaña. Los campos marcados con * son obligatorios.'
 }) %>
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
 <div class="card p-4 mb-4">
-    <form method="post" action="/admin/campanas/crear">
+    <form id="formCrearCampana" method="post" action="/admin/campanas/crear" novalidate>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre de la campaña</label>
-                <input type="text" name="nombre" class="form-control" value="<%= formData.nombre || '' %>" placeholder="Ej. Preventa Primavera 2025" required>
+                <label class="form-label">Nombre de la campaña <span class="text-danger">*</span></label>
+                <input type="text" name="nombre" class="form-control" value="<%= formData.nombre || '' %>" placeholder="Ej. Preventa Primavera 2025">
+                <small class="form-text text-muted">Nombre con el que identificarás la campaña en el sistema.</small>
+                <div class="invalid-feedback">El nombre de la campaña es obligatorio.</div>
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha de inicio</label>
-                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>" required>
+                <label class="form-label">Fecha de inicio <span class="text-danger">*</span></label>
+                <input type="date" name="fecha_inicio" class="form-control" value="<%= formData.fecha_inicio || '' %>">
+                <small class="form-text text-muted">Día en que inicia la campaña de preventa.</small>
+                <div class="invalid-feedback">La fecha de inicio es obligatoria.</div>
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha de fin</label>
-                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>" required>
+                <label class="form-label">Fecha de fin <span class="text-danger">*</span></label>
+                <input type="date" name="fecha_fin" class="form-control" value="<%= formData.fecha_fin || '' %>">
+                <small class="form-text text-muted">Día en que finaliza la campaña. Debe ser posterior al inicio.</small>
+                <div class="invalid-feedback">La fecha de fin es obligatoria y debe ser posterior al inicio.</div>
             </div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Banner de la campaña</label>
-            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="Ej. https://dominio.com/img/banner-primavera.jpg" required>
+            <label class="form-label">URL del banner <span class="text-danger">*</span></label>
+            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="Ej. https://dominio.com/img/banner-primavera.jpg">
+            <small class="form-text text-muted">Dirección web de la imagen que se mostrará como banner de la campaña.</small>
+            <div class="invalid-feedback">La URL del banner es obligatoria.</div>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-primary" type="submit">
-                Guardar campaña
-            </button>
-            <a href="/admin/campanas" class="btn btn-outline-secondary">
-                Volver a campañas
-            </a>
+            <button class="btn btn-primary" type="submit">Guardar campaña</button>
+            <a href="/admin/campanas" class="btn btn-outline-secondary">Volver a campañas</a>
         </div>
     </form>
 </div>
 
 <div class="card p-4">
-    <h4 class="mb-3">
-    Campañas existentes
-    </h4>
+    <h4 class="mb-3">Campañas existentes</h4>
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
@@ -67,3 +69,38 @@
         </table>
     </div>
 </div>
+
+<script>
+    const form = document.getElementById('formCrearCampana');
+
+    const mensajes = {
+        nombre:      'El nombre de la campaña es obligatorio.',
+        fecha_inicio:'La fecha de inicio es obligatoria.',
+        fecha_fin:   'La fecha de fin es obligatoria.',
+        banner:      'La URL del banner es obligatoria.'
+    };
+
+    form.addEventListener('submit', function (e) {
+        let valido = true;
+
+        form.querySelectorAll('input').forEach((campo) => campo.classList.remove('is-invalid'));
+
+        Object.entries(mensajes).forEach(([nombre, mensaje]) => {
+            const campo = form.querySelector(`[name="${nombre}"]`);
+            if (!campo || !campo.value.trim()) {
+                campo?.classList.add('is-invalid');
+                valido = false;
+            }
+        });
+
+        const fechaInicio = form.querySelector('[name="fecha_inicio"]').value;
+        const fechaFin    = form.querySelector('[name="fecha_fin"]').value;
+        if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+            form.querySelector('[name="fecha_fin"]').classList.add('is-invalid');
+            form.querySelector('[name="fecha_fin"]').nextElementSibling.nextElementSibling.textContent = 'La fecha de fin debe ser posterior a la fecha de inicio.';
+            valido = false;
+        }
+
+        if (!valido) e.preventDefault();
+    });
+</script>
