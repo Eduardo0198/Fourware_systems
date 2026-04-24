@@ -183,6 +183,13 @@ exports.crearCampana = (req, res) => {
 };
 
 exports.crearCampanaPost = (req, res) => {
+    if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `banner_${Date.now()}${ext}`;
+        fs.writeFileSync(path.join(BANNERS_DIR, filename), req.file.buffer);
+        req.body.banner = `/img/banners/${filename}`;
+    }
+
     const validacion = validarCampania(req.body);
 
     if (!validacion.valido) {

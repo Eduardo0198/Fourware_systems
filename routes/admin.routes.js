@@ -121,6 +121,7 @@ router.post('/campanas/crear',
     protegerRuta,
     tieneRol(['Administrador']),
     tienePrivilegio(['configurar_campania']),
+    uploadImagenProducto.single('bannerArchivo'),
     adminController.crearCampanaPost
 );
 

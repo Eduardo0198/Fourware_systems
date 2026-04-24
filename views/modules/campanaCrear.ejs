@@ -6,7 +6,7 @@
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
 <div class="card p-4 mb-4">
-    <form id="formCrearCampana" method="post" action="/admin/campanas/crear" novalidate>
+    <form id="formCrearCampana" method="post" action="/admin/campanas/crear" enctype="multipart/form-data" novalidate>
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Nombre de la campaña <span class="text-danger">*</span></label>
@@ -25,9 +25,27 @@
             </div>
         </div>
         <div class="mb-3">
-            <label class="form-label">URL del banner <span class="text-danger">*</span></label>
-            <input type="text" name="banner" class="form-control" value="<%= formData.banner || '' %>" placeholder="Ej. https://dominio.com/img/banner-primavera.jpg" data-hint="Dirección web de la imagen que se mostrará como banner de la campaña.">
-            <div class="invalid-feedback">La URL del banner es obligatoria.</div>
+            <label class="form-label fw-semibold">Banner</label>
+
+            <img src="" alt="" id="bannerPreview" class="rounded-3 border mb-2 d-none"
+                 style="max-height:120px; max-width:100%; object-fit:cover; display:block;">
+
+            <div class="mb-2">
+                <label class="form-label small text-muted mb-1">Subir imagen desde tu equipo</label>
+                <input type="file" name="bannerArchivo" id="bannerArchivo"
+                       class="form-control"
+                       accept="image/jpeg,image/png,image/webp"
+                       data-hint="Sube un JPG, PNG o WEBP. Si subes imagen, no es necesario llenar la URL.">
+            </div>
+
+            <div>
+                <label class="form-label small text-muted mb-1">O ingresa una URL</label>
+                <input type="text" name="banner" id="bannerUrl" class="form-control"
+                       value="<%= formData.banner || '' %>"
+                       placeholder="Ej. https://dominio.com/img/banner-primavera.jpg"
+                       data-hint="URL de la imagen del banner. Se ignora si subes una imagen.">
+                <div class="invalid-feedback">Debes subir una imagen o ingresar una URL de banner.</div>
+            </div>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" type="submit">Guardar campaña</button>
@@ -67,21 +85,23 @@
 </div>
 
 <script>
-    const form = document.getElementById('formCrearCampana');
+    const bannerArchivo = document.getElementById('bannerArchivo');
+    const bannerPreview = document.getElementById('bannerPreview');
+    bannerArchivo.addEventListener('change', () => {
+        const file = bannerArchivo.files[0];
+        if (file) {
+            bannerPreview.src = URL.createObjectURL(file);
+            bannerPreview.classList.remove('d-none');
+        }
+    });
 
-    const mensajes = {
-        nombre:      'El nombre de la campaña es obligatorio.',
-        fecha_inicio:'La fecha de inicio es obligatoria.',
-        fecha_fin:   'La fecha de fin es obligatoria.',
-        banner:      'La URL del banner es obligatoria.'
-    };
+    const form = document.getElementById('formCrearCampana');
 
     form.addEventListener('submit', function (e) {
         let valido = true;
+        form.querySelectorAll('input').forEach((c) => c.classList.remove('is-invalid'));
 
-        form.querySelectorAll('input').forEach((campo) => campo.classList.remove('is-invalid'));
-
-        Object.entries(mensajes).forEach(([nombre, mensaje]) => {
+        ['nombre', 'fecha_inicio', 'fecha_fin'].forEach((nombre) => {
             const campo = form.querySelector(`[name="${nombre}"]`);
             if (!campo || !campo.value.trim()) {
                 campo?.classList.add('is-invalid');
@@ -89,11 +109,17 @@
             }
         });
 
+        const tieneArchivo = bannerArchivo.files && bannerArchivo.files.length > 0;
+        const urlInput = form.querySelector('[name="banner"]');
+        if (!tieneArchivo && !urlInput.value.trim()) {
+            urlInput.classList.add('is-invalid');
+            valido = false;
+        }
+
         const fechaInicio = form.querySelector('[name="fecha_inicio"]').value;
         const fechaFin    = form.querySelector('[name="fecha_fin"]').value;
         if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
             form.querySelector('[name="fecha_fin"]').classList.add('is-invalid');
-            form.querySelector('[name="fecha_fin"]').nextElementSibling.nextElementSibling.textContent = 'La fecha de fin debe ser posterior a la fecha de inicio.';
             valido = false;
         }
 
