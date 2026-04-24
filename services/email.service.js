@@ -37,7 +37,8 @@ async function renderizarPlantillaReserva(reserva) {
     });
 
     const html = await ejs.renderFile(templatePath, {
-        reserva: { ...reserva, productos: productosCorreo }
+        reserva: { ...reserva, productos: productosCorreo },
+        urlDetalle: appBaseUrl ? `${appBaseUrl}/concesionario/reserva/${reserva.folio}` : null
     });
 
     return html;
