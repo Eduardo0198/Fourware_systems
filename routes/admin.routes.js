@@ -135,6 +135,7 @@ router.post('/campanas/editar/:id',
     protegerRuta,
     tieneRol(['Administrador']),
     tienePrivilegio(['configurar_campania']),
+    uploadImagenProducto.single('bannerArchivo'),
     adminController.editarCampanaPost
 );
 

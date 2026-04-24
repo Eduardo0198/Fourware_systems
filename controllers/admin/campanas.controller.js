@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const {
     campaniaModel,
     cancelacionModel,
@@ -7,6 +9,9 @@ const {
     registrarEvento
 } = require('./shared');
 const logger = require('../../utils/logger');
+
+const BANNERS_DIR = path.join('public', 'img', 'banners');
+if (!fs.existsSync(BANNERS_DIR)) fs.mkdirSync(BANNERS_DIR, { recursive: true });
 
 function renderCampaniaCrear(res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
@@ -254,6 +259,13 @@ exports.editarCampana = (req, res) => {
 };
 
 exports.editarCampanaPost = (req, res) => {
+    if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `banner_${Date.now()}${ext}`;
+        fs.writeFileSync(path.join(BANNERS_DIR, filename), req.file.buffer);
+        req.body.banner = `/img/banners/${filename}`;
+    }
+
     const idCampania = parseInt(req.params.id, 10);
     const validacion = validarCampania(req.body);
 

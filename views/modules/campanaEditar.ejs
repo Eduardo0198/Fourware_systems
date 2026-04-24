@@ -73,7 +73,7 @@
     <div class="card p-4">
         <h4 class="mb-1">Editando: <%= campaniaSeleccionada.nombre %></h4>
         <p class="text-muted mb-3">Modifica los datos de la campaña y guarda los cambios.</p>
-        <form id="formEditarCampana" method="post" action="/admin/campanas/editar/<%= campaniaSeleccionada.id_campania %>" novalidate>
+        <form id="formEditarCampana" method="post" action="/admin/campanas/editar/<%= campaniaSeleccionada.id_campania %>" enctype="multipart/form-data" novalidate>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre de la campaña <span class="text-danger">*</span></label>
@@ -99,12 +99,37 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">URL del banner <span class="text-danger">*</span></label>
-                <input type="text" name="banner" class="form-control"
-                    value="<%= formData && formData.banner ? formData.banner : campaniaSeleccionada.banner %>"
-                    placeholder="Ej. https://dominio.com/img/banner-primavera.jpg"
-                    data-hint="Dirección web de la imagen que se mostrará como banner.">
-                <div class="invalid-feedback">La URL del banner es obligatoria.</div>
+                <label class="form-label fw-semibold">Banner</label>
+
+                <% const bannerActual = formData && formData.banner ? formData.banner : campaniaSeleccionada.banner; %>
+                <% if (bannerActual) { %>
+                    <div class="mb-2">
+                        <img src="<%= bannerActual %>" alt="Banner actual"
+                             id="bannerPreview"
+                             class="rounded-3 border"
+                             style="max-height:120px; max-width:100%; object-fit:cover; display:block;">
+                    </div>
+                <% } else { %>
+                    <img src="" alt="" id="bannerPreview" class="rounded-3 border mb-2 d-none"
+                         style="max-height:120px; max-width:100%; object-fit:cover; display:block;">
+                <% } %>
+
+                <div class="mb-2">
+                    <label class="form-label small text-muted mb-1">Subir imagen desde tu equipo</label>
+                    <input type="file" name="bannerArchivo" id="bannerArchivo"
+                           class="form-control"
+                           accept="image/jpeg,image/png,image/webp"
+                           data-hint="Sube un JPG, PNG o WEBP. Si subes imagen, no es necesario llenar la URL.">
+                </div>
+
+                <div>
+                    <label class="form-label small text-muted mb-1">O ingresa una URL</label>
+                    <input type="text" name="banner" id="bannerUrl" class="form-control"
+                        value="<%= bannerActual %>"
+                        placeholder="Ej. https://dominio.com/img/banner.jpg"
+                        data-hint="URL de la imagen del banner. Se ignora si subes una imagen.">
+                    <div class="invalid-feedback">Debes subir una imagen o ingresar una URL de banner.</div>
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" type="submit">Guardar cambios</button>
@@ -129,6 +154,21 @@ function intentarActivar(checkbox) {
 }
 
 <% if (campaniaSeleccionada) { %>
+document.getElementById('formEditarCampana')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+const bannerArchivo = document.getElementById('bannerArchivo');
+const bannerPreview = document.getElementById('bannerPreview');
+if (bannerArchivo && bannerPreview) {
+    bannerArchivo.addEventListener('change', () => {
+        const file = bannerArchivo.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            bannerPreview.src = url;
+            bannerPreview.classList.remove('d-none');
+        }
+    });
+}
+
 const formEditar = document.getElementById('formEditarCampana');
 const mensajesEditar = {
     nombre:      'El nombre de la campaña es obligatorio.',
@@ -142,6 +182,17 @@ formEditar.addEventListener('submit', function (e) {
     formEditar.querySelectorAll('input').forEach((c) => c.classList.remove('is-invalid'));
 
     Object.entries(mensajesEditar).forEach(([nombre]) => {
+        if (nombre === 'banner') {
+            const archivoInput = formEditar.querySelector('[name="bannerArchivo"]');
+                const urlInput = formEditar.querySelector('[name="banner"]');
+            const tieneArchivo = archivoInput && archivoInput.files && archivoInput.files.length > 0;
+            const tieneUrl = urlInput && urlInput.value.trim();
+            if (!tieneArchivo && !tieneUrl) {
+                urlInput?.classList.add('is-invalid');
+                valido = false;
+            }
+            return;
+        }
         const campo = formEditar.querySelector(`[name="${nombre}"]`);
         if (!campo || !campo.value.trim()) {
             campo?.classList.add('is-invalid');
