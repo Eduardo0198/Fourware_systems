@@ -10,39 +10,39 @@
 
                 <p class="section-title">Administrador</p>
 
-                <a href="/admin/inicio" class="menu">
+                <a href="/admin/inicio" class="menu <%= req.path === '/admin/inicio' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/admin/catalogo" class="menu">
+                <a href="/admin/catalogo" class="menu <%= req.path.startsWith('/admin/catalogo') ? 'active' : '' %>">
                     <i class="bi bi-box"></i>
                     <span>Catálogo</span>
                 </a>
 
-                <a href="/admin/campanas" class="menu">
+                <a href="/admin/campanas" class="menu <%= req.path.startsWith('/admin/campanas') ? 'active' : '' %>">
                     <i class="bi bi-megaphone"></i>
                     <span>Campañas</span>
                 </a>
 
-                <a href="/admin/reportes" class="menu">
+                <a href="/admin/reportes" class="menu <%= req.path.startsWith('/admin/reportes') ? 'active' : '' %>">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
                 </a>
-      
-                <a href="/admin/auditoria" class="menu">
+
+                <a href="/admin/auditoria" class="menu <%= req.path.startsWith('/admin/auditoria') ? 'active' : '' %>">
                     <i class="bi bi-journal-text"></i>
                     <span>Bitácora</span>
                 </a>
 
                 <p class="section-title">Vista concesionario</p>
 
-                <a href="/concesionario/home" class="menu">
+                <a href="/concesionario/home" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
                     <i class="bi bi-eye"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/concesionario/catalogo" class="menu">
+                <a href="/concesionario/catalogo" class="menu <%= req.path === '/concesionario/catalogo' ? 'active' : '' %>">
                     <i class="bi bi-grid"></i>
                     <span>Catálogo</span>
                 </a>
@@ -53,12 +53,12 @@
 
                 <p class="section-title">Logística</p>
 
-                <a href="/logistica/reservas-confirmadas" class="menu">
+                <a href="/logistica/reservas-confirmadas" class="menu <%= req.path.startsWith('/logistica/reservas') ? 'active' : '' %>">
                     <i class="bi bi-truck"></i>
                     <span>Reservas</span>
                 </a>
 
-                <a href="/logistica/metricas" class="menu">
+                <a href="/logistica/metricas" class="menu <%= req.path.startsWith('/logistica/metricas') ? 'active' : '' %>">
                     <i class="bi bi-speedometer"></i>
                     <span>Métricas</span>
                 </a>
@@ -69,17 +69,17 @@
 
                 <p class="section-title">Marketing</p>
 
-                <a href="/marketing/inicio" class="menu">
+                <a href="/marketing/inicio" class="menu <%= req.path === '/marketing/inicio' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/marketing/ranking-productos" class="menu">
+                <a href="/marketing/ranking-productos" class="menu <%= req.path.startsWith('/marketing/ranking') ? 'active' : '' %>">
                     <i class="bi bi-star"></i>
                     <span>Calificaciones</span>
                 </a>
 
-                <a href="/marketing/metricas-ranking" class="menu">
+                <a href="/marketing/metricas-ranking" class="menu <%= req.path.startsWith('/marketing/metricas') ? 'active' : '' %>">
                     <i class="bi bi-trophy"></i>
                     <span>Ranking</span>
                 </a>
@@ -90,22 +90,22 @@
 
                 <p class="section-title">Concesionario</p>
 
-                <a href="/concesionario/home" class="menu">
+                <a href="/concesionario/home" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/concesionario/catalogo" class="menu">
+                <a href="/concesionario/catalogo" class="menu <%= req.path.startsWith('/concesionario/catalogo') ? 'active' : '' %>">
                     <i class="bi bi-grid"></i>
                     <span>Catálogo</span>
                 </a>
 
-                <a href="/concesionario/carrito" class="menu"> 
+                <a href="/concesionario/carrito" class="menu <%= req.path.startsWith('/concesionario/carrito') ? 'active' : '' %>">
                     <i class="bi bi-cart"></i>
                     <span>Carrito</span>
                 </a>
 
-                <a href="/concesionario/reservas" class="menu">
+                <a href="/concesionario/reservas" class="menu <%= req.path.startsWith('/concesionario/reservas') ? 'active' : '' %>">
                     <i class="bi bi-person-check"></i>
                     <span>Mis Reservas</span>
                 </a>
