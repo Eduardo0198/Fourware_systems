@@ -7,97 +7,68 @@
 <% } %>
 
 <div class="card p-4 mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h4 class="mb-1">Productos registrados</h4>
-            <p class="text-muted mb-0">
-                Selecciona un producto activo del catálogo para editar sus atributos.
-            </p>
+            <p class="text-muted mb-0">Selecciona un producto para editar sus atributos.</p>
         </div>
         <div class="w-100" style="max-width: 360px;">
-            <input
-                id="buscarProductoModificar"
-                type="text"
-                class="form-control"
-                placeholder="Buscar por SKU, nombre o campaña">
+            <input id="buscarProductoModificar" type="text" class="form-control"
+                   placeholder="Buscar por SKU, nombre o campaña">
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>SKU</th>
-                    <th>Nombre</th>
-                    <th>Campaña</th>
-                    <th>Estatus</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="catalogoModificarBody">
-                <tr id="catalogoModificarInicial">
-                    <td colspan="5" class="text-center text-muted py-4">
-                        Escribe para buscar un producto y comenzar la edición.
-                    </td>
-                </tr>
+    <% if (!productos.length) { %>
+        <p class="text-center text-muted py-4">No hay productos registrados en el catálogo.</p>
+    <% } %>
 
-                <% if (!productos.length) { %>
-                    <tr id="catalogoModificarVacio" style="display: none;">
-                        <td colspan="5" class="text-center text-muted py-4">
-                            No hay productos registrados en el catálogo.
-                        </td>
-                    </tr>
-                <% } %>
-
-                <% productos.forEach((producto) => { %>
-                    <tr
-                        class="catalogo-modificar-row"
-                        data-sku="<%= producto.SKU %>"
-                        style="display: none;"
-                        data-search="<%= [producto.SKU, producto.nombre_comercial, producto.nombre_campania || '', producto.estatusTexto].join(' ').toLowerCase() %>">
-                        <td><strong><%= producto.SKU %></strong></td>
-                        <td><%= producto.nombre_comercial %></td>
-                        <td><%= producto.nombre_campania || 'Sin campaña' %></td>
-                        <td>
+    <div class="row g-3" id="catalogoModificarGrid">
+        <% productos.forEach((producto) => { %>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 catalogo-modificar-card-col"
+                 data-sku="<%= producto.SKU %>"
+                 data-search="<%= [producto.SKU, producto.nombre_comercial, producto.nombre_campania || '', producto.estatusTexto].join(' ').toLowerCase() %>">
+                <div class="card h-100 shadow-sm catalogo-product-card <%= formData && formData.sku === producto.SKU ? 'border-primary' : '' %>"
+                     style="<%= formData && formData.sku === producto.SKU ? 'box-shadow: 0 0 0 3px rgba(13,110,253,.25) !important;' : '' %>">
+                    <img src="<%= producto.imagen || '/img/ppg-logo.png' %>"
+                         class="card-img-top"
+                         style="height:160px; object-fit:contain; background:#f8fafc;"
+                         onerror="this.src='/img/ppg-logo.png'">
+                    <div class="card-body d-flex flex-column p-3">
+                        <h6 class="card-title mb-1 fw-bold" style="font-size:.9rem;"><%= producto.nombre_comercial %></h6>
+                        <p class="text-muted mb-1" style="font-size:.78rem;">SKU: <strong><%= producto.SKU %></strong></p>
+                        <p class="text-muted mb-2" style="font-size:.78rem;"><%= producto.nombre_campania || 'Sin campaña' %></p>
+                        <div class="mb-3">
                             <span class="badge <%= producto.activo ? 'bg-success' : 'bg-secondary' %>">
                                 <%= producto.estatusTexto %>
                             </span>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-wrap gap-2">
+                        </div>
+                        <div class="mt-auto d-flex gap-2">
                             <% if (producto.activo) { %>
-                                <a
-                                    href="/admin/catalogo/modificar?sku=<%= encodeURIComponent(producto.SKU) %>#formularioEdicionProducto"
-                                    class="btn btn-sm btn-primary">
-                                    Editar
+                                <a href="/admin/catalogo/modificar?sku=<%= encodeURIComponent(producto.SKU) %>#formularioEdicionProducto"
+                                   class="btn btn-sm btn-primary flex-fill">
+                                    <i class="bi bi-pencil me-1"></i>Modificar
                                 </a>
                             <% } else { %>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" disabled>
                                     No disponible
                                 </button>
                             <% } %>
-                                <form
-                                    method="post"
-                                    action="/admin/catalogo/eliminar/<%= encodeURIComponent(producto.SKU) %>"
-                                    class="m-0"
-                                    onsubmit="return confirm('Deseas eliminar este producto del catalogo? Si tiene historial, solo se retirara para conservar sus registros.');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                <% }) %>
-
-                <tr id="catalogoModificarSinResultados" style="display: none;">
-                    <td colspan="5" class="text-center text-muted py-4">
-                        Búsqueda sin resultados
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                            <form method="post" action="/admin/catalogo/eliminar/<%= encodeURIComponent(producto.SKU) %>" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('¿Eliminar este producto? Si tiene historial, solo se retirará para conservar sus registros.')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
     </div>
+
+    <p id="catalogoModificarSinResultados" class="text-center text-muted py-4 d-none">
+        Búsqueda sin resultados.
+    </p>
 </div>
 
 <div class="card p-4 catalogo-modificar-form-card" id="formularioEdicionProducto">
@@ -254,83 +225,28 @@ if (formMod) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('buscarProductoModificar');
-    const rows = Array.from(document.querySelectorAll('.catalogo-modificar-row'));
+    const cols = Array.from(document.querySelectorAll('.catalogo-modificar-card-col'));
     const sinResultados = document.getElementById('catalogoModificarSinResultados');
-    const vacio = document.getElementById('catalogoModificarVacio');
-    const inicial = document.getElementById('catalogoModificarInicial');
     const formulario = document.getElementById('formularioEdicionProducto');
     const skuSeleccionado = '<%= formData && formData.sku ? formData.sku : "" %>';
-    const debeIrAlFormulario = window.location.hash === '#formularioEdicionProducto';
 
-    if (!input || !rows.length) {
-        if (formulario && skuSeleccionado && debeIrAlFormulario) {
-            formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        return;
+    if (skuSeleccionado && formulario && window.location.hash === '#formularioEdicionProducto') {
+        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    if (skuSeleccionado) {
-        const filaSeleccionada = rows.find((row) => row.dataset.sku === skuSeleccionado);
-        if (filaSeleccionada) {
-            filaSeleccionada.classList.add('catalogo-modificar-row-selected');
-            filaSeleccionada.style.display = '';
-        }
-        if (inicial) {
-            inicial.style.display = 'none';
-        }
-        if (formulario && debeIrAlFormulario) {
-            formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
+    if (!input) return;
 
     input.addEventListener('input', () => {
         const termino = input.value.trim().toLowerCase();
         let visibles = 0;
 
-        if (!termino) {
-            rows.forEach((row) => {
-                if (skuSeleccionado && row.dataset.sku === skuSeleccionado) {
-                    row.style.display = '';
-                    visibles += 1;
-                    return;
-                }
-
-                row.style.display = 'none';
-            });
-
-            if (inicial) {
-                inicial.style.display = skuSeleccionado ? 'none' : '';
-            }
-
-            if (sinResultados) {
-                sinResultados.style.display = 'none';
-            }
-
-            if (vacio) {
-                vacio.style.display = 'none';
-            }
-            return;
-        }
-
-        if (inicial) {
-            inicial.style.display = 'none';
-        }
-
-        rows.forEach((row) => {
-            const coincide = !termino || row.dataset.search.includes(termino);
-            row.style.display = coincide ? '' : 'none';
-            if (coincide) {
-                visibles += 1;
-            }
+        cols.forEach((col) => {
+            const coincide = !termino || col.dataset.search.includes(termino);
+            col.style.display = coincide ? '' : 'none';
+            if (coincide) visibles++;
         });
 
-        if (sinResultados) {
-            sinResultados.style.display = visibles === 0 ? '' : 'none';
-        }
-
-        if (vacio) {
-            vacio.style.display = 'none';
-        }
+        sinResultados.classList.toggle('d-none', visibles > 0 || !termino);
     });
 });
 
