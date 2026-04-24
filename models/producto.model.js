@@ -175,6 +175,57 @@ exports.actualizarEstado = (sku, nuevoEstado, callback) => {
     db.query(query, [nuevoEstado, sku], callback);
 };
 
+exports.contarHistorialPorSku = (sku, callback) => {
+    const query = `
+        SELECT
+            (
+                SELECT COUNT(*)
+                FROM "Reserva_Producto"
+                WHERE "SKU" = ?
+            ) AS total_reservas,
+            (
+                SELECT COUNT(*)
+                FROM "Calificacion"
+                WHERE "SKU" = ?
+            ) AS total_calificaciones
+    `;
+
+    db.query(query, [sku, sku], (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+
+        const resumen = rows && rows.length ? rows[0] : {};
+        const totalReservas = Number(resumen.total_reservas || 0);
+        const totalCalificaciones = Number(resumen.total_calificaciones || 0);
+
+        callback(null, {
+            totalReservas,
+            totalCalificaciones,
+            total: totalReservas + totalCalificaciones
+        });
+    });
+};
+
+exports.retirarDelCatalogo = (sku, callback) => {
+    const query = `
+        UPDATE "Producto"
+        SET activo = 0
+        WHERE "SKU" = ?
+    `;
+
+    db.query(query, [sku], callback);
+};
+
+exports.eliminarPorSku = (sku, callback) => {
+    const query = `
+        DELETE FROM "Producto"
+        WHERE "SKU" = ?
+    `;
+
+    db.query(query, [sku], callback);
+};
+
 exports.contarProductos = (callback) => {
     db.query(`SELECT COUNT(*) AS total FROM "Producto"`, callback);
 };

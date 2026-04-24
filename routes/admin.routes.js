@@ -68,6 +68,13 @@ router.post('/catalogo/modificar/:sku',
     adminController.modificarSKUPost
 );
 
+router.post('/catalogo/eliminar/:sku',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['modificar_producto']),
+    adminController.eliminarSKUPost
+);
+
 router.get('/catalogo/carga-masiva',
     protegerRuta,
     tieneRol(['Administrador']),

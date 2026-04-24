@@ -14,7 +14,7 @@
 
 <%- include('../includes/shared/pageMessage', { pageMessage }) %>
 
-<form method="GET" action="/marketing/ranking-productos" class="card border-0 shadow-sm mb-4">
+<form method="GET" action="/marketing/ranking-productos" class="card border-0 shadow-sm mb-4" id="buscador-calificaciones-form">
     <div class="card-body row g-3 align-items-end">
         <div class="col-md-9">
             <label for="nombre" class="form-label fw-semibold">Criterio de búsqueda</label>
@@ -29,11 +29,14 @@
             >
         </div>
         <div class="col-md-3 d-grid">
-            <button type="submit" class="btn btn-dark">Consultar</button>
+            <button type="submit" class="btn btn-dark" id="buscador-calificaciones-btn">Consultar</button>
         </div>
     </div>
 </form>
 
+<div id="buscador-calificaciones-feedback"></div>
+
+<div id="buscador-calificaciones-resultados">
 <% if (resultados && resultados.length) { %>
     <div class="row g-3 mb-4">
         <% resultados.forEach((producto) => { %>
@@ -86,6 +89,7 @@
         <% }) %>
     </div>
 <% } %>
+</div>
 
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body">
@@ -194,6 +198,93 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('[data-bs-toggle="popover"]').forEach((elemento) => {
             bootstrap.Popover.getOrCreateInstance(elemento);
+        });
+
+        const form = document.getElementById('buscador-calificaciones-form');
+        const boton = document.getElementById('buscador-calificaciones-btn');
+        const feedback = document.getElementById('buscador-calificaciones-feedback');
+        const resultados = document.getElementById('buscador-calificaciones-resultados');
+        if (!form || !boton || !feedback || !resultados) return;
+
+        const escapeHtml = (texto = '') => String(texto)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const renderResultados = (items = []) => {
+            if (!items.length) {
+                resultados.innerHTML = '';
+                return;
+            }
+
+            resultados.innerHTML = `<div class="row g-3 mb-4">${items.map((producto) => `
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-3">
+                                <div>
+                                    <h5 class="mb-1">${escapeHtml(producto.nombre_comercial)}</h5>
+                                    <p class="text-muted mb-0">SKU: ${escapeHtml(producto.SKU)} | Campaña: ${escapeHtml(producto.campania)}</p>
+                                </div>
+                                <div class="text-md-end">
+                                    <div class="fw-semibold fs-5">${Number(producto.promedio_estrellas || 0).toFixed(1)} / 5</div>
+                                    <div class="text-muted small">${Number(producto.total_calificaciones || 0)} calificaciones | ${Number(producto.total_comentarios || 0)} comentarios</div>
+                                    <span class="badge text-bg-light border mt-2">${escapeHtml(producto.percepcion_general)}</span>
+                                </div>
+                            </div>
+                            ${producto.mensaje_estado ? `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(producto.mensaje_estado)}</div>` : ''}
+                            ${Array.isArray(producto.comentarios) && producto.comentarios.length ? `
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead><tr><th>Estrellas</th><th>Comentario</th><th>Correo</th><th>Fecha</th></tr></thead>
+                                        <tbody>${producto.comentarios.map((comentario) => `
+                                            <tr>
+                                                <td><strong>${escapeHtml(comentario.estrellas)}★</strong></td>
+                                                <td>${escapeHtml(comentario.comentario)}</td>
+                                                <td>${escapeHtml(comentario.correo)}</td>
+                                                <td>${escapeHtml(comentario.fecha)}</td>
+                                            </tr>
+                                        `).join('')}</tbody>
+                                    </table>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        };
+
+        const renderFeedback = (pageMessage) => {
+            feedback.innerHTML = pageMessage
+                ? `<div class="alert alert-${escapeHtml(pageMessage.tipo)}" role="alert">${escapeHtml(pageMessage.texto)}</div>`
+                : '';
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const params = new URLSearchParams(new FormData(form));
+            boton.disabled = true;
+            boton.textContent = 'Consultando...';
+
+            try {
+                const response = await fetch(`${form.action}?${params.toString()}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                renderFeedback(data.pageMessage);
+                renderResultados(Array.isArray(data.resultados) ? data.resultados : []);
+                history.replaceState(null, '', `${form.action}?${params.toString()}`);
+            } catch (error) {
+                renderFeedback({ tipo: 'danger', texto: 'No fue posible realizar la búsqueda en este momento.' });
+            } finally {
+                boton.disabled = false;
+                boton.textContent = 'Consultar';
+            }
         });
     });
 </script>

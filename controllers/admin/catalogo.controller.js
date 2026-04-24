@@ -626,6 +626,83 @@ exports.modificarSKUPost = (req, res) => {
     });
 };
 
+exports.eliminarSKUPost = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    if (!sku) {
+        req.session.mensaje = {
+            tipo: 'danger',
+            texto: 'Debes seleccionar un producto valido para eliminar.'
+        };
+        return res.redirect('/admin/catalogo/modificar');
+    }
+
+    productoModel.obtenerPorSku(sku, (errProducto, productoExistente) => {
+        if (errProducto) {
+            logger.error(errProducto);
+            registrarBitacora(req, `Error al consultar producto ${sku} para eliminacion`);
+            req.session.mensaje = {
+                tipo: 'danger',
+                texto: 'No fue posible validar el producto seleccionado.'
+            };
+            return res.redirect('/admin/catalogo/modificar');
+        }
+
+        if (!productoExistente) {
+            registrarBitacora(req, `Intento de eliminacion de producto inexistente ${sku}`);
+            req.session.mensaje = {
+                tipo: 'warning',
+                texto: 'El producto seleccionado no existe en el catalogo.'
+            };
+            return res.redirect('/admin/catalogo/modificar');
+        }
+
+        productoModel.contarHistorialPorSku(sku, (errHistorial, historial) => {
+            if (errHistorial) {
+                logger.error(errHistorial);
+                registrarBitacora(req, `Error al validar historial del producto ${sku}`);
+                req.session.mensaje = {
+                    tipo: 'danger',
+                    texto: 'No fue posible validar el historial del producto.'
+                };
+                return res.redirect('/admin/catalogo/modificar');
+            }
+
+            const tieneHistorial = Number(historial.total || 0) > 0;
+            const operacion = tieneHistorial
+                ? productoModel.retirarDelCatalogo
+                : productoModel.eliminarPorSku;
+
+            operacion(sku, (errEliminacion) => {
+                if (errEliminacion) {
+                    logger.error(errEliminacion);
+                    registrarBitacora(req, `Error al eliminar producto ${sku} del catalogo`);
+                    req.session.mensaje = {
+                        tipo: 'danger',
+                        texto: 'No fue posible eliminar el producto del catalogo. Intente nuevamente.'
+                    };
+                    return res.redirect('/admin/catalogo/modificar');
+                }
+
+                const accion = tieneHistorial
+                    ? `Retiro logico de producto ${sku} del catalogo conservando historial`
+                    : `Eliminacion fisica de producto ${sku} del catalogo`;
+
+                registrarBitacora(req, accion);
+
+                req.session.mensaje = {
+                    tipo: 'success',
+                    texto: tieneHistorial
+                        ? 'El producto fue retirado del catalogo conservando su historial.'
+                        : 'Producto eliminado correctamente del catalogo.'
+                };
+
+                return res.redirect('/admin/catalogo/modificar');
+            });
+        });
+    });
+};
+
 exports.cargaMasiva = (req, res) => {
     registrarEvento(req, 'Consulta de carga masiva de productos');
     renderCatalogoCargaMasiva(res);
