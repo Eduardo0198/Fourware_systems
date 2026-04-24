@@ -87,7 +87,10 @@ exports.obtenerProductosPaginados = (
         params.push(unidadVenta);
     }
 
-    query += ` ORDER BY p."SKU" LIMIT ? OFFSET ?`;
+    query += ` ORDER BY
+        CASE WHEN p.imagen IS NOT NULL AND p.imagen != '' THEN 0 ELSE 1 END ASC,
+        p."SKU" ASC
+        LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     db.query(query, params, (err, productos) => {
