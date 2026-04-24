@@ -461,7 +461,9 @@ exports.confirmarReserva = (req, res) => {
                                 req.session.carritoCuentaId = cuentaActivaId;
                                 req.session.mensaje = {
                                     tipo: 'success',
-                                    texto: `Reserva confirmada exitosamente. Folio: ${folio}`
+                                    texto: 'Reserva confirmada exitosamente. Folio:',
+                                    link: `/concesionario/reserva/${folio}`,
+                                    linkTexto: folio
                                 };
 
                                 notificarReservaConfirmada(req, {

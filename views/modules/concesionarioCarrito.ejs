@@ -2,6 +2,9 @@
     <% if (mensaje) { %>
         <div class="alert alert-<%= mensaje.tipo %> mb-0" role="alert">
             <%= mensaje.texto %>
+            <% if (mensaje.link && mensaje.linkTexto) { %>
+                <a href="<%= mensaje.link %>" class="alert-link fw-bold ms-1"><%= mensaje.linkTexto %></a>
+            <% } %>
         </div>
     <% } %>
 
