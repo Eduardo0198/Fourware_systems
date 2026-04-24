@@ -70,6 +70,26 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const hint = document.createElement('div');
+        hint.id = 'campo-ayuda';
+        hint.style.cssText = 'display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;max-width:420px;text-align:center;pointer-events:none;';
+        document.body.appendChild(hint);
+
+        document.addEventListener('focusin', (e) => {
+            const texto = e.target.dataset?.hint;
+            if (texto) {
+                hint.textContent = texto;
+                hint.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('focusout', () => {
+            hint.style.display = 'none';
+        });
+    });
+    </script>
     <% if (campania) { %>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
