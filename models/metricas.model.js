@@ -116,7 +116,7 @@ exports.consultarDatos = (filtros) =>
     Promise.all([
         exports.consultarRankingProductos(filtros),
         exports.consultarMetricasComparativas(filtros),
-        exports.consultarRankingGeografico(filtros)
+        exports.consultarRankingGeografico(filtros).catch((err) => { require('../utils/logger').error('consultarRankingGeografico:', err); return []; })
     ]).then(([ranking, metricas, geografico]) => ({ ranking, metricas, geografico }));
 
 exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {

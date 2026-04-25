@@ -69,6 +69,7 @@
     <% const hayRanking  = resultados.ranking.length > 0; %>
     <% const hayMetricas = resultados.metricas.length > 0; %>
     <% const hayGeo      = resultados.geografico && resultados.geografico.estados.length > 0; %>
+    <% const mostrarTabGeo = hayRanking || hayMetricas; %>
 
     <% if (hayRanking || hayMetricas || hayGeo) { %>
     <div class="card shadow-sm mb-4">
@@ -93,7 +94,7 @@
                     </button>
                 </li>
                 <% } %>
-                <% if (hayGeo) { %>
+                <% if (mostrarTabGeo) { %>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-geo" data-bs-toggle="tab"
                             data-bs-target="#pane-geo" type="button" role="tab" data-tab="geo">
@@ -113,8 +114,14 @@
                     <canvas id="chartMetricas"></canvas>
                 </div>
                 <% } %>
-                <% if (hayGeo) { %>
+                <% if (mostrarTabGeo) { %>
                 <div class="tab-pane fade" id="pane-geo" role="tabpanel">
+                    <% if (!hayGeo) { %>
+                    <p class="text-muted text-center py-4">
+                        <i class="bi bi-geo-alt me-1"></i>Sin datos geográficos para los filtros aplicados.
+                        Las reservas deben tener sucursal asignada para mostrar esta segmentación.
+                    </p>
+                    <% } else { %>
                     <canvas id="chartGeo" class="mb-4"></canvas>
                     <h6 class="fw-semibold mb-2">Tabla de calor: unidades por estado y producto</h6>
                     <div class="table-responsive">
@@ -148,6 +155,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <% } %>
                 </div>
                 <% } %>
             </div>
@@ -258,7 +266,7 @@
     <% } %>
 </div>
 
-<% if (resultados && (resultados.ranking.length > 0 || resultados.metricas.length > 0 || (resultados.geografico && resultados.geografico.estados.length > 0))) { %>
+<% if (resultados && (resultados.ranking.length > 0 || resultados.metricas.length > 0)) { %>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 const TAB_ACTIVO = '<%= filtros.tabActivo || (resultados.ranking.length > 0 ? "ranking" : resultados.metricas.length > 0 ? "metricas" : "geo") %>';
