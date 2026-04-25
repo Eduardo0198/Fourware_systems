@@ -12,6 +12,9 @@ const {
     registrarEvento
 } = require('./shared');
 
+const PRODUCTOS_DIR = path.join('public', 'img', 'productos');
+if (!fs.existsSync(PRODUCTOS_DIR)) fs.mkdirSync(PRODUCTOS_DIR, { recursive: true });
+
 const COLUMNAS_CARGA_MASIVA = [
     'SKU',
     'nombre_comercial',
@@ -394,7 +397,7 @@ exports.registrarSKUPost = (req, res) => {
         const sku = String(req.body.sku || '').trim().toUpperCase();
         const ext = path.extname(req.file.originalname).toLowerCase();
         const filename = `${sku}${ext}`;
-        fs.writeFileSync(path.join('public/img/productos', filename), req.file.buffer);
+        fs.writeFileSync(path.join(PRODUCTOS_DIR, filename), req.file.buffer);
         req.body.imagen = `/img/productos/${filename}`;
     }
 
@@ -524,7 +527,7 @@ exports.modificarSKUPost = (req, res) => {
     if (req.file) {
         const ext = path.extname(req.file.originalname).toLowerCase();
         const filename = `${sku}${ext}`;
-        fs.writeFileSync(path.join('public/img/productos', filename), req.file.buffer);
+        fs.writeFileSync(path.join(PRODUCTOS_DIR, filename), req.file.buffer);
         req.body.imagen = `/img/productos/${filename}`;
     }
 
@@ -581,13 +584,7 @@ exports.modificarSKUPost = (req, res) => {
                 });
             }
 
-            const hoy = new Date(new Date().toDateString());
-            const campaniaInvalida = !campania
-                || Number(campania.estatus) !== 1
-                || new Date(campania.fecha_inicio) > hoy
-                || new Date(campania.fecha_fin) < hoy;
-
-            if (campaniaInvalida) {
+            if (!campania) {
                 registrarBitacora(req, `Intento de actualizacion con campania invalida para producto ${sku}`);
                 return renderCatalogoModificar(req, res, {
                     skuSeleccionado: sku,
