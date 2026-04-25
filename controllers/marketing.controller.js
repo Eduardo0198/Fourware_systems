@@ -102,6 +102,40 @@ function renderRankingProductos(res, payload) {
   });
 }
 
+function procesarGeografico(rows) {
+    if (!rows || rows.length === 0) {
+        return { estados: [], productos: [], matrix: {}, maxVal: 1, totalesPorEstado: {} };
+    }
+    const byEstado = {};
+    const totalesPorProducto = {};
+    const infoProducto = {};
+    const totalesPorEstado = {};
+
+    rows.forEach(r => {
+        const estado = r.estado || 'Sin estado';
+        const sku = r.SKU;
+        const unidades = Number(r.total_unidades || 0);
+        if (!byEstado[estado]) byEstado[estado] = {};
+        byEstado[estado][sku] = unidades;
+        totalesPorProducto[sku] = (totalesPorProducto[sku] || 0) + unidades;
+        totalesPorEstado[estado] = (totalesPorEstado[estado] || 0) + unidades;
+        if (!infoProducto[sku]) infoProducto[sku] = r.nombre_comercial;
+    });
+
+    const topProductos = Object.entries(totalesPorProducto)
+        .sort((a, b) => b[1] - a[1]).slice(0, 7)
+        .map(([sku]) => ({ sku, nombre: infoProducto[sku] || sku }));
+
+    const estados = Object.keys(byEstado).sort();
+    let maxVal = 1;
+    estados.forEach(e => topProductos.forEach(p => {
+        const v = byEstado[e][p.sku] || 0;
+        if (v > maxVal) maxVal = v;
+    }));
+
+    return { estados, productos: topProductos, matrix: byEstado, maxVal, totalesPorEstado };
+}
+
 function renderMetricasRanking(res, opts = {}) {
     return res.render('marketing/metricasRanking', {
         campanias:        opts.campanias        || [],
@@ -240,12 +274,12 @@ exports.metricasRanking = async (req, res) => {
 
         const filtros = { idCampania: campaniaActivaId, fechaInicio: null, fechaFin: null, producto: null };
 
-        const { ranking, metricas } = await metricasModel.consultarDatos(filtros);
+        const { ranking, metricas, geografico } = await metricasModel.consultarDatos(filtros);
 
         registrarEvento(req, 'Acceso a consulta de ranking de productos y métricas comparativas');
         return renderMetricasRanking(res, {
             campanias,
-            resultados: { ranking, metricas },
+            resultados: { ranking, metricas, geografico: procesarGeografico(geografico) },
             filtros: { idCampania: campaniaActivaId },
             campaniaActivaId
         });
@@ -260,8 +294,8 @@ exports.metricasRanking = async (req, res) => {
 };
 
 exports.consultarMetricas = async (req, res) => {
-    const { idCampania, fechaInicio, fechaFin, producto } = req.body;
-    const filtros = { idCampania, fechaInicio, fechaFin, producto };
+    const { idCampania, fechaInicio, fechaFin, producto, tabActivo } = req.body;
+    const filtros = { idCampania, fechaInicio, fechaFin, producto, tabActivo };
 
     if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
         try {
@@ -280,7 +314,7 @@ exports.consultarMetricas = async (req, res) => {
     }
 
     try {
-        const [campanias, { ranking, metricas }] = await Promise.all([
+        const [campanias, { ranking, metricas, geografico }] = await Promise.all([
             metricasModel.obtenerCampaniasConReservas(),
             metricasModel.consultarDatos(filtros)
         ]);
@@ -288,7 +322,7 @@ exports.consultarMetricas = async (req, res) => {
         registrarEvento(req, 'Consulta de ranking de productos y métricas comparativas por campaña');
         return renderMetricasRanking(res, {
             campanias,
-            resultados: { ranking, metricas },
+            resultados: { ranking, metricas, geografico: procesarGeografico(geografico) },
             filtros,
             pageMessage: ranking && ranking.length === 0
                 ? { tipo: 'info', texto: 'No se encontraron productos con los filtros aplicados.' }

@@ -74,11 +74,50 @@ exports.consultarRankingProductos = (filtros) => new Promise((resolve, reject) =
     db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
 });
 
+exports.consultarRankingGeografico = (filtros) => new Promise((resolve, reject) => {
+    const { idCampania, fechaInicio, fechaFin } = filtros;
+    const params = [];
+
+    let condiciones = `WHERE r.estatus = 1`;
+
+    if (idCampania) {
+        params.push(idCampania);
+        condiciones += ` AND ca.id_campania = ?`;
+    }
+    if (fechaInicio) {
+        params.push(fechaInicio);
+        condiciones += ` AND r.fecha >= ?`;
+    }
+    if (fechaFin) {
+        params.push(fechaFin);
+        condiciones += ` AND r.fecha <= ?`;
+    }
+
+    const query = `
+        SELECT
+            COALESCE(s.estado, 'Sin estado') AS estado,
+            p."SKU",
+            p.nombre_comercial,
+            SUM(rp.cantidad) AS total_unidades
+        FROM "Reserva_Producto" rp
+        JOIN "Reserva"  r  ON r.folio         = rp.folio
+        JOIN "Producto" p  ON p."SKU"          = rp."SKU"
+        JOIN "Campania" ca ON ca.id_campania   = p.id_campania
+        LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
+        ${condiciones}
+        GROUP BY COALESCE(s.estado, 'Sin estado'), p."SKU", p.nombre_comercial
+        ORDER BY estado ASC, total_unidades DESC
+    `;
+
+    db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
+});
+
 exports.consultarDatos = (filtros) =>
     Promise.all([
         exports.consultarRankingProductos(filtros),
-        exports.consultarMetricasComparativas(filtros)
-    ]).then(([ranking, metricas]) => ({ ranking, metricas }));
+        exports.consultarMetricasComparativas(filtros),
+        exports.consultarRankingGeografico(filtros)
+    ]).then(([ranking, metricas, geografico]) => ({ ranking, metricas, geografico }));
 
 exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {
     const { idCampania, fechaInicio, fechaFin } = filtros;
