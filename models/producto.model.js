@@ -25,6 +25,61 @@ exports.listarProductosCatalogo = (callback) => {
     db.query(query, callback);
 };
 
+exports.listarProductosCatalogoRecientes = (callback) => {
+    const query = `
+        SELECT
+            p."SKU",
+            p.nombre_comercial,
+            p.descripcion,
+            p.precio_unitario,
+            p.peso_unitario,
+            p.volumen_unitario,
+            p.medida_primaria,
+            p.unidad_venta,
+            p.imagen,
+            p.activo,
+            p.id_campania,
+            c.nombre AS nombre_campania
+        FROM "Producto" p
+        LEFT JOIN "Campania" c ON c.id_campania = p.id_campania
+        ORDER BY p."SKU" DESC
+    `;
+
+    db.query(query, callback);
+};
+
+exports.actualizarSkuCompleto = (oldSku, newSku, producto, callback) => {
+    const query = `
+        UPDATE "Producto"
+        SET
+            "SKU" = ?,
+            nombre_comercial = ?,
+            descripcion = ?,
+            precio_unitario = ?,
+            peso_unitario = ?,
+            volumen_unitario = ?,
+            medida_primaria = ?,
+            unidad_venta = ?,
+            imagen = ?,
+            id_campania = ?
+        WHERE "SKU" = ?
+    `;
+
+    db.query(query, [
+        newSku,
+        producto.nombre_comercial,
+        producto.descripcion,
+        producto.precio_unitario,
+        producto.peso_unitario,
+        producto.volumen_unitario,
+        producto.medida_primaria,
+        producto.unidad_venta,
+        producto.imagen,
+        producto.id_campania,
+        oldSku
+    ], callback);
+};
+
 exports.obtenerPorSku = (sku, callback) => {
     const query = `
         SELECT *

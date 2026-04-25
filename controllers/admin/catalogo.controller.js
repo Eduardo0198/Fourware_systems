@@ -182,7 +182,7 @@ function validarProducto(input) {
             volumen_unitario: volumen,
             imagen: formData.imagen,
             id_campania: idCampania,
-            activo: 0
+            activo: 1
         }
     };
 }
@@ -281,7 +281,7 @@ function renderCatalogoRegistro(res, options = {}) {
             return res.status(500).send('No fue posible cargar las campanas.');
         }
 
-        productoModel.listarProductosCatalogo((errProductos, productos) => {
+        productoModel.listarProductosCatalogoRecientes((errProductos, productos) => {
             if (errProductos) {
                 logger.error(errProductos);
                 return res.status(500).send('No fue posible cargar los productos.');
@@ -596,28 +596,43 @@ exports.modificarSKUPost = (req, res) => {
                 });
             }
 
-            productoModel.actualizarPorSku(sku, validacion.producto, (errActualizacion) => {
+            const nuevoSku = validacion.producto.sku;
+            const skuCambio = nuevoSku !== sku;
+
+            function guardarProducto(cb) {
+                if (!skuCambio) {
+                    return productoModel.actualizarPorSku(sku, validacion.producto, cb);
+                }
+                productoModel.obtenerPorSku(nuevoSku, (errExiste, yaExiste) => {
+                    if (errExiste) return cb(errExiste);
+                    if (yaExiste) {
+                        return cb({ skuDuplicado: true });
+                    }
+                    productoModel.actualizarSkuCompleto(sku, nuevoSku, validacion.producto, cb);
+                });
+            }
+
+            guardarProducto((errActualizacion) => {
+                if (errActualizacion?.skuDuplicado) {
+                    return renderCatalogoModificar(req, res, {
+                        skuSeleccionado: sku,
+                        formData: validacion.formData,
+                        pageMessage: { tipo: 'danger', texto: 'El nuevo SKU ya existe en el catálogo.' }
+                    });
+                }
                 if (errActualizacion) {
                     logger.error(errActualizacion);
                     registrarBitacora(req, `Error al actualizar la informacion del producto ${sku}`);
                     return renderCatalogoModificar(req, res, {
                         skuSeleccionado: sku,
                         formData: validacion.formData,
-                        pageMessage: {
-                            tipo: 'danger',
-                            texto: 'No fue posible actualizar la informacion del producto. Intente nuevamente.'
-                        }
+                        pageMessage: { tipo: 'danger', texto: 'No fue posible actualizar la informacion del producto. Intente nuevamente.' }
                     });
                 }
 
-                registrarBitacora(req, `Actualizacion de atributos del producto ${sku}`);
-
-                req.session.mensaje = {
-                    tipo: 'success',
-                    texto: 'Informacion del producto actualizada correctamente.'
-                };
-
-                return res.redirect(`/admin/catalogo/modificar?sku=${encodeURIComponent(sku)}`);
+                registrarBitacora(req, `Actualizacion de atributos del producto ${sku}${skuCambio ? ` → ${nuevoSku}` : ''}`);
+                req.session.mensaje = { tipo: 'success', texto: 'Informacion del producto actualizada correctamente.' };
+                return res.redirect(`/admin/catalogo/modificar?sku=${encodeURIComponent(nuevoSku)}`);
             });
         });
     });

@@ -70,7 +70,8 @@ const SKU_SELECCIONADO = "<%= formData && formData.sku ? formData.sku : '' %>";
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">SKU</label>
-                    <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" readonly data-hint="El SKU es un identificador permanente y no puede modificarse.">
+                    <input type="text" name="sku" class="form-control" value="<%= formData.sku || '' %>" data-hint="Puedes cambiar el SKU siempre que el nuevo no exista en el catálogo.">
+                    <div class="invalid-feedback">El SKU es obligatorio.</div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre comercial <span class="text-danger">*</span></label>
@@ -166,6 +167,7 @@ const SKU_SELECCIONADO = "<%= formData && formData.sku ? formData.sku : '' %>";
 const formMod = document.getElementById('formModificarProducto');
 if (formMod) {
     const mensajesMod = {
+        sku:              'El SKU es obligatorio.',
         nombre_comercial: 'El nombre comercial es obligatorio.',
         descripcion:      'La descripción es obligatoria.',
         unidad_venta:     'La presentación de venta es obligatoria.',
