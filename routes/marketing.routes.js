@@ -31,6 +31,12 @@ router.post('/consultar-metricas',
     marketingController.consultarMetricas
 );
 
+router.get('/debug-geo',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    marketingController.debugGeo
+);
+
 router.post('/exportar-metricas',
     protegerRuta,
     tieneRol(['Marketing']),

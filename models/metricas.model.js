@@ -95,18 +95,16 @@ exports.consultarRankingGeografico = (filtros) => new Promise((resolve, reject) 
 
     const query = `
         SELECT
-            COALESCE(s.estado, 'Sin estado') AS estado,
+            s.estado,
             p."SKU",
             p.nombre_comercial,
-            SUM(rp.cantidad) AS total_unidades
+            rp.cantidad
         FROM "Reserva_Producto" rp
-        JOIN "Reserva"  r  ON r.folio         = rp.folio
-        JOIN "Producto" p  ON p."SKU"          = rp."SKU"
-        JOIN "Campania" ca ON ca.id_campania   = p.id_campania
+        JOIN "Reserva"  r  ON r.folio        = rp.folio
+        JOIN "Producto" p  ON p."SKU"        = rp."SKU"
+        JOIN "Campania" ca ON ca.id_campania = p.id_campania
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         ${condiciones}
-        GROUP BY COALESCE(s.estado, 'Sin estado'), p."SKU", p.nombre_comercial
-        ORDER BY estado ASC, total_unidades DESC
     `;
 
     db.query(query, params, (err, rows) => err ? reject(err) : resolve(rows));
@@ -116,7 +114,9 @@ exports.consultarDatos = (filtros) =>
     Promise.all([
         exports.consultarRankingProductos(filtros),
         exports.consultarMetricasComparativas(filtros),
-        exports.consultarRankingGeografico(filtros).catch((err) => { require('../utils/logger').error('consultarRankingGeografico:', err); return []; })
+        exports.consultarRankingGeografico(filtros)
+            .then((rows) => { require('../utils/logger').info('geo rows:', rows.length); return rows; })
+            .catch((err) => { require('../utils/logger').error('consultarRankingGeografico error:', err.message, err.stack); return []; })
     ]).then(([ranking, metricas, geografico]) => ({ ranking, metricas, geografico }));
 
 exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {

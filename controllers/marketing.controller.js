@@ -114,9 +114,9 @@ function procesarGeografico(rows) {
     rows.forEach(r => {
         const estado = r.estado || 'Sin estado';
         const sku = r.SKU;
-        const unidades = Number(r.total_unidades || 0);
+        const unidades = Number(r.cantidad || 0);
         if (!byEstado[estado]) byEstado[estado] = {};
-        byEstado[estado][sku] = unidades;
+        byEstado[estado][sku] = (byEstado[estado][sku] || 0) + unidades;
         totalesPorProducto[sku] = (totalesPorProducto[sku] || 0) + unidades;
         totalesPorEstado[estado] = (totalesPorEstado[estado] || 0) + unidades;
         if (!infoProducto[sku]) infoProducto[sku] = r.nombre_comercial;
@@ -335,6 +335,15 @@ exports.consultarMetricas = async (req, res) => {
             filtros,
             pageMessage: { tipo: 'danger', texto: 'Error al cargar los datos.' }
         });
+    }
+};
+
+exports.debugGeo = async (req, res) => {
+    try {
+        const rows = await metricasModel.consultarRankingGeografico({ idCampania: null, fechaInicio: null, fechaFin: null });
+        return res.json({ ok: true, count: rows.length, sample: rows.slice(0, 5) });
+    } catch (err) {
+        return res.json({ ok: false, error: err.message, stack: err.stack });
     }
 };
 
