@@ -3,7 +3,7 @@ const metricasModel = require('../models/metricas.model');
 const campaniaModel = require('../models/campania.model');
 const reservaModel = require('../models/reserva.model');
 const concesionarioModel = require('../models/concesionario.model');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 const calificacionModel = require('../models/calificacion.model');
@@ -343,37 +343,134 @@ exports.consultarMetricas = async (req, res) => {
 };
 
 
+const AZUL        = 'FF1A3A5C';
+const AZUL_MEDIO  = 'FF2E6DA4';
+const BLANCO      = 'FFFFFFFF';
+const GRIS_FILA   = 'FFF0F4F8';
+
+function excelEncabezado(ws, nRow, columnas) {
+    const fila = ws.getRow(nRow);
+    fila.height = 26;
+    columnas.forEach((txt, i) => {
+        const c = fila.getCell(i + 1);
+        c.value = txt;
+        c.font  = { bold: true, color: { argb: BLANCO }, size: 11 };
+        c.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL } };
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        c.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    });
+}
+
+function excelFila(ws, nRow, valores, formatos) {
+    const fila = ws.getRow(nRow);
+    fila.height = 18;
+    const bg = nRow % 2 === 0 ? GRIS_FILA : BLANCO;
+    valores.forEach((val, i) => {
+        const c = fila.getCell(i + 1);
+        c.value = val;
+        c.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+        c.alignment = { vertical: 'middle', horizontal: typeof val === 'number' ? 'right' : 'left' };
+        c.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } };
+        if (formatos && formatos[i]) c.numFmt = formatos[i];
+    });
+}
+
+function excelTitulo(ws, celda, hasta, texto) {
+    ws.mergeCells(`${celda}:${hasta}`);
+    const c = ws.getCell(celda);
+    c.value = texto;
+    c.font  = { bold: true, size: 13, color: { argb: BLANCO } };
+    c.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL } };
+    c.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 34;
+}
+
 exports.exportarMetricas = async (req, res) => {
-    const { idCampania, fechaInicio, fechaFin, producto } = req.body;
+    const { idCampania, fechaInicio, fechaFin, producto, chartRankingImg, chartMetricasImg } = req.body;
     const filtros = { idCampania, fechaInicio, fechaFin, producto };
 
     try {
         const { ranking, metricas } = await metricasModel.consultarDatos(filtros);
 
-        const wb = XLSX.utils.book_new();
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'PPG Preventa';
 
-        const rankingData = ranking.map(r => ({
-            'Posición': r.posicion,
-            'SKU': r.SKU,
-            'Producto': r.nombre_comercial,
-            'Unidades vendidas': r.total_unidades,
-            'Campaña': r.nombre_campania,
-            'Total órdenes campaña': r.total_ordenes_campania,
-            'Monto total campaña': r.monto_total_campania
-        }));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rankingData), 'Ranking');
+        const fechaGen = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
-        const metricasData = metricas.map(m => ({
-            'Campaña': m.nombre_campania,
-            'Total órdenes': m.total_ordenes,
-            'Monto total': m.monto_total
-        }));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(metricasData), 'Métricas comparativas');
+        // ── HOJA 1: RANKING ──────────────────────────────────────────────
+        const wsR = wb.addWorksheet('Ranking');
+        wsR.columns = [
+            { width: 9 }, { width: 14 }, { width: 36 },
+            { width: 18 }, { width: 28 }, { width: 18 }, { width: 20 }
+        ];
+        excelTitulo(wsR, 'A1', 'G1', 'RANKING DE PRODUCTOS — PPG Preventa');
+        wsR.mergeCells('A2:G2');
+        Object.assign(wsR.getCell('A2'), {
+            value: `Generado: ${fechaGen}`,
+            font: { italic: true, size: 9, color: { argb: 'FF888888' } },
+            alignment: { horizontal: 'right' }
+        });
+        excelEncabezado(wsR, 3, ['#', 'SKU', 'Producto', 'Unidades vendidas', 'Campaña', 'Órdenes campaña', 'Monto campaña']);
+        wsR.views = [{ state: 'frozen', xSplit: 0, ySplit: 3 }];
+        ranking.forEach((r, i) => excelFila(wsR, i + 4,
+            [Number(r.posicion), r.SKU, r.nombre_comercial, Number(r.total_unidades),
+             r.nombre_campania, Number(r.total_ordenes_campania), Number(r.monto_total_campania)],
+            [null, null, null, '#,##0', null, '#,##0', '"$"#,##0.00']
+        ));
 
-        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        // ── HOJA 2: MÉTRICAS ─────────────────────────────────────────────
+        const wsM = wb.addWorksheet('Métricas');
+        wsM.columns = [{ width: 32 }, { width: 18 }, { width: 22 }];
+        excelTitulo(wsM, 'A1', 'C1', 'MÉTRICAS COMPARATIVAS POR CAMPAÑA');
+        wsM.mergeCells('A2:C2');
+        Object.assign(wsM.getCell('A2'), {
+            value: `Generado: ${fechaGen}`,
+            font: { italic: true, size: 9, color: { argb: 'FF888888' } },
+            alignment: { horizontal: 'right' }
+        });
+        excelEncabezado(wsM, 3, ['Campaña', 'Total órdenes', 'Monto total']);
+        wsM.views = [{ state: 'frozen', xSplit: 0, ySplit: 3 }];
+        metricas.forEach((m, i) => excelFila(wsM, i + 4,
+            [m.nombre_campania, Number(m.total_ordenes), Number(m.monto_total)],
+            [null, '#,##0', '"$"#,##0.00']
+        ));
+        const nTotal = metricas.length + 4;
+        const totOrd = metricas.reduce((s, m) => s + Number(m.total_ordenes), 0);
+        const totMon = metricas.reduce((s, m) => s + Number(m.monto_total), 0);
+        ['TOTAL', totOrd, totMon].forEach((val, i) => {
+            const c = wsM.getRow(nTotal).getCell(i + 1);
+            c.value = val;
+            c.font  = { bold: true, color: { argb: BLANCO } };
+            c.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_MEDIO } };
+            c.alignment = { horizontal: i === 0 ? 'left' : 'right', vertical: 'middle' };
+            if (i === 1) c.numFmt = '#,##0';
+            if (i === 2) c.numFmt = '"$"#,##0.00';
+        });
+        wsM.getRow(nTotal).height = 22;
+
+        // ── HOJA 3: GRÁFICAS ─────────────────────────────────────────────
+        if (chartRankingImg || chartMetricasImg) {
+            const wsG = wb.addWorksheet('Gráficas');
+            wsG.columns = Array(10).fill({ width: 12 });
+            excelTitulo(wsG, 'A1', 'J1', 'GRÁFICAS DE ANÁLISIS');
+            let rowOff = 2;
+            for (const [img, label] of [[chartRankingImg, 'Top 10 productos por unidades vendidas'], [chartMetricasImg, 'Comparativa de campañas']]) {
+                if (!img) continue;
+                wsG.getCell(`A${rowOff}`).value = label;
+                wsG.getCell(`A${rowOff}`).font  = { bold: true, size: 11, color: { argb: AZUL } };
+                rowOff++;
+                const imgId = wb.addImage({ base64: img.replace(/^data:image\/png;base64,/, ''), extension: 'png' });
+                wsG.addImage(imgId, { tl: { col: 0, row: rowOff }, ext: { width: 680, height: 340 } });
+                rowOff += 20;
+            }
+        }
+
+        const d = new Date();
+        const hoy = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+        const buffer = await wb.xlsx.writeBuffer();
 
         registrarEvento(req, 'Exportación de ranking de productos y métricas comparativas');
-        res.setHeader('Content-Disposition', 'attachment; filename="metricas_ranking.xlsx"');
+        res.setHeader('Content-Disposition', `attachment; filename="ranking_PPG_${hoy}.xlsx"`);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         return res.send(buffer);
     } catch (err) {

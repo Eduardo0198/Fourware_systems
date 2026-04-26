@@ -47,7 +47,7 @@ app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

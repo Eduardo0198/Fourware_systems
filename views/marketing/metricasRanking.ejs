@@ -167,15 +167,9 @@
         <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
             <span><i class="bi bi-list-ol me-2"></i>Ranking de Productos</span>
             <% if (resultados.ranking.length > 0) { %>
-            <form method="POST" action="/marketing/exportar-metricas" class="d-inline">
-                <input type="hidden" name="idCampania" value="<%= filtros.idCampania || '' %>">
-                <input type="hidden" name="fechaInicio" value="<%= filtros.fechaInicio || '' %>">
-                <input type="hidden" name="fechaFin" value="<%= filtros.fechaFin || '' %>">
-                <input type="hidden" name="producto" value="<%= filtros.producto || '' %>">
-                <button type="submit" class="btn btn-sm btn-success">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
-                </button>
-            </form>
+            <button id="btnExportar" class="btn btn-sm btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+            </button>
             <% } %>
         </div>
         <div class="card-body p-0">
@@ -370,5 +364,95 @@ function iniciarChart(tab) {
 
 // Restaurar tab activo al cargar
 document.addEventListener('DOMContentLoaded', () => activarTab(TAB_ACTIVO));
+
+// ── EXPORTAR EXCEL ────────────────────────────────────────────────────────────
+const btnExportar = document.getElementById('btnExportar');
+if (btnExportar) {
+    btnExportar.addEventListener('click', async () => {
+        btnExportar.disabled = true;
+        btnExportar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
+
+        const [imgRanking, imgMetricas] = await Promise.all([
+            capturarGraficaExport('ranking'),
+            capturarGraficaExport('metricas')
+        ]);
+
+        try {
+            const res = await fetch('/marketing/exportar-metricas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idCampania:  '<%= filtros.idCampania  || "" %>',
+                    fechaInicio: '<%= filtros.fechaInicio || "" %>',
+                    fechaFin:    '<%= filtros.fechaFin    || "" %>',
+                    producto:    '<%= filtros.producto    || "" %>',
+                    chartRankingImg:  imgRanking  || '',
+                    chartMetricasImg: imgMetricas || ''
+                })
+            });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const cd   = res.headers.get('Content-Disposition') || '';
+            const name = (cd.match(/filename="([^"]+)"/) || [])[1] || 'ranking_PPG.xlsx';
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = name; a.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            alert('Error al exportar. Intente nuevamente.');
+        } finally {
+            btnExportar.disabled = false;
+            btnExportar.innerHTML = '<i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel';
+        }
+    });
+}
+
+async function capturarGraficaExport(tab) {
+    return new Promise(resolve => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800; canvas.height = 380;
+
+        let cfg = null;
+        <% if (resultados.ranking.length > 0) { %>
+        if (tab === 'ranking') {
+            const labels = <%- JSON.stringify(resultados.ranking.slice(0,10).map(r => r.nombre_comercial)) %>;
+            const data   = <%- JSON.stringify(resultados.ranking.slice(0,10).map(r => Number(r.total_unidades))) %>;
+            cfg = {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Unidades vendidas', data,
+                    backgroundColor: data.map((_,i) => i===0?'rgba(255,193,7,0.85)':i===1?'rgba(173,181,189,0.85)':i===2?'rgba(205,127,50,0.85)':'rgba(13,110,253,0.72)'),
+                    borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: false, animation: false,
+                    plugins: { legend: { display: false }, title: { display: true, text: 'Top 10 productos por unidades vendidas', font: { size: 14 } } },
+                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+            };
+        }
+        <% } %>
+        <% if (resultados.metricas.length > 0) { %>
+        if (tab === 'metricas') {
+            cfg = {
+                type: 'bar',
+                data: {
+                    labels: <%- JSON.stringify(resultados.metricas.map(m => m.nombre_campania)) %>,
+                    datasets: [
+                        { label: 'Total órdenes', data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.total_ordenes))) %>, backgroundColor: 'rgba(25,135,84,0.75)', borderRadius: 4, yAxisID: 'yOrdenes' },
+                        { label: 'Monto total ($)', data: <%- JSON.stringify(resultados.metricas.map(m => Number(m.monto_total))) %>, backgroundColor: 'rgba(255,193,7,0.75)', borderRadius: 4, yAxisID: 'yMonto' }
+                    ]
+                },
+                options: { responsive: false, animation: false,
+                    plugins: { title: { display: true, text: 'Comparativa de campañas: órdenes vs monto', font: { size: 14 } } },
+                    scales: {
+                        yOrdenes: { type: 'linear', position: 'left',  beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Órdenes' } },
+                        yMonto:   { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Monto ($)' } }
+                    } }
+            };
+        }
+        <% } %>
+
+        if (!cfg) return resolve(null);
+        const chart = new Chart(canvas, cfg);
+        setTimeout(() => { resolve(canvas.toDataURL('image/png')); chart.destroy(); }, 150);
+    });
+}
 </script>
 <% } %>
