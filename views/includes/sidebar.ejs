@@ -63,6 +63,11 @@
                     <span>Métricas</span>
                 </a>
 
+                <a href="/logistica/reporte-operativo" class="menu <%= req.path.startsWith('/logistica/reporte-operativo') ? 'active' : '' %>">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>Reporte operativo</span>
+                </a>
+
             <% } %>
 
             <% if (usuario.roles.includes('Marketing')) { %>
