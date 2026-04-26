@@ -289,8 +289,13 @@ exports.actualizarCantidad = (req, res) => {
                 return res.redirect('/concesionario/carrito');
             }
 
-            const cambio = accion === 'incrementar' ? 1 : -1;
-            const nuevaCantidad = carrito[index].cantidad + cambio;
+            let nuevaCantidad;
+            if (accion === 'establecer') {
+                nuevaCantidad = parseInt(req.body.cantidad, 10);
+            } else {
+                const cambio = accion === 'incrementar' ? 1 : -1;
+                nuevaCantidad = carrito[index].cantidad + cambio;
+            }
 
             if (nuevaCantidad <= 0) {
                 req.session.mensaje = {

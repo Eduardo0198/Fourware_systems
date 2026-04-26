@@ -82,6 +82,23 @@
     cursor:not-allowed;
 }
 
+.cart-qty-input{
+    width:64px;
+    height:42px;
+    text-align:center;
+    border:none;
+    border-left:1px solid #cbd5e1;
+    border-right:1px solid #cbd5e1;
+    font-weight:700;
+    font-size:1rem;
+    background:#f8fafc;
+    -moz-appearance:textfield;
+    outline:none;
+}
+.cart-qty-input::-webkit-inner-spin-button,
+.cart-qty-input::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+.cart-qty-input:focus{ background:#fff; border-color:#6366f1; }
+
 .cart-qty-value{
     min-width:56px;
     height:42px;
