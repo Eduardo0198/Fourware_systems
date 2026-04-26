@@ -3,6 +3,7 @@ const campaniaModel = require('../models/campania.model');
 const cancelacionModel = require('../models/cancelacion.model');
 const concesionarioModel = require('../models/concesionario.model');
 const cuentaModel = require('../models/cuenta.model');
+const carritoModel = require('../models/carrito.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 const { obtenerDetalleReservaParaCorreo } = require('../services/reservaDetalle.service');
@@ -114,6 +115,11 @@ exports.agregarProducto = (req, res) => {
             const correo = req.session.usuario?.correo || req.session.usuario?.usuario?.correo;
             registrarEvento(req, `Agregó producto ${sku} al carrito`, correo);
 
+            if (correo) {
+                const item = req.session.carrito.find(p => p.sku === sku);
+                if (item) carritoModel.guardarItem(correo, sku, item.cantidad).catch(e => logger.error(e));
+            }
+
             if (esAjax) return res.json({ ok: true, carritoCount: req.session.carrito.length, sku });
 
             req.session.mensaje = { tipo: 'success', texto: 'Producto agregado correctamente al carrito.' };
@@ -192,6 +198,11 @@ exports.eliminarProducto = (req, res) => {
 
         const [productoEliminado] = carrito.splice(index, 1);
         req.session.carrito = carrito;
+
+        const correoEliminado = req.session.usuario?.correo;
+        if (correoEliminado) {
+            carritoModel.eliminarItem(correoEliminado, sku).catch(e => logger.error(e));
+        }
 
         registrarEvento(
             req,
@@ -292,6 +303,11 @@ exports.actualizarCantidad = (req, res) => {
             carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
             carrito[index].cantidad = nuevaCantidad;
             req.session.carrito = carrito;
+
+            const correoActualizar = req.session.usuario?.correo;
+            if (correoActualizar) {
+                carritoModel.guardarItem(correoActualizar, sku, nuevaCantidad).catch(e => logger.error(e));
+            }
 
             registrarEvento(req, 'Modificación de productos en carrito');
 
@@ -457,6 +473,7 @@ exports.confirmarReserva = (req, res) => {
 
                                 registrarEvento(req, `Confirmó reserva ${folio}`, usuario.correo);
 
+                                carritoModel.limpiarCarrito(usuario.correo).catch(e => logger.error(e));
                                 req.session.carrito = [];
                                 req.session.carritoCuentaId = cuentaActivaId;
                                 req.session.mensaje = {

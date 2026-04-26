@@ -1,7 +1,10 @@
 const usuarioModel = require('../models/usuario.model');
 const cuentaModel = require('../models/cuenta.model');
+const concesionarioModel = require('../models/concesionario.model');
+const carritoModel = require('../models/carrito.model');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const { construirItemCarrito } = require('../services/carrito.service');
 const {
     registrarEvento,
     incrementarIntento,
@@ -113,7 +116,22 @@ exports.doLogin = (req, res) => {
                     req.session.carritoCuentaId = usuarioSesion.cuentaActiva?.id_cuenta || null;
                     reiniciarIntento(req, 'login_fallido');
                     registrarEvento(req, 'Inicio de sesión exitoso', usuarioSesion.correo);
-                    return redirigirSegunRol(roles, res);
+
+                    carritoModel.obtenerCarrito(usuarioSesion.correo)
+                        .then(items => {
+                            if (!items || items.length === 0) return redirigirSegunRol(roles, res);
+                            const promesas = items.map(item => new Promise(resolve => {
+                                concesionarioModel.obtenerProductoPorSku(item.SKU, (err, producto) => {
+                                    if (err || !producto) return resolve(null);
+                                    resolve(construirItemCarrito(producto, item.cantidad));
+                                });
+                            }));
+                            return Promise.all(promesas).then(cartItems => {
+                                req.session.carrito = cartItems.filter(Boolean);
+                                return redirigirSegunRol(roles, res);
+                            });
+                        })
+                        .catch(() => redirigirSegunRol(roles, res));
                 });
             });
         });
