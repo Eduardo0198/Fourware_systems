@@ -1,11 +1,105 @@
-<header class="topbar d-flex justify-content-between align-items-center px-4">
-    <div class="d-flex align-items-center gap-3">
-        <span class="fw-bold text-white">🚚 Logística</span>
+<header class="topbar">
+    <% function getInitialsLogistica(nombre) {
+        if (!nombre) return 'L';
+        return nombre
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(parte => parte.charAt(0).toUpperCase())
+            .join('');
+    } %>
+    <div class="left-section">
+        <button id="toggleSidebar" class="btn btn-light px-2" title="Menú">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+        <div class="d-flex align-items-center gap-2">
+            <img src="/img/ppg-logo.png" class="logo">
+            <span class="fw-bold">PPG Preventa</span>
+        </div>
     </div>
-    <div class="d-flex align-items-center gap-3">
-        <span class="text-white small">Operaciones</span>
-        <a href="/logout" class="btn btn-light">
-            Salir
-        </a>
+    <div class="actions">
+        <div class="dropdown">
+            <button class="btn btn-light account-trigger" data-bs-toggle="dropdown">
+                <span class="account-trigger-avatar" style="background: linear-gradient(135deg, #0f766e, #2dd4bf);">
+                    <%= getInitialsLogistica(usuario?.nombre) %>
+                </span>
+                <span class="account-trigger-text">
+                    <strong><%= usuario?.nombre %></strong>
+                    <small>Logística</small>
+                </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end account-dropdown">
+                <li class="account-dropdown-header">
+                    <div class="account-current-card">
+                        <span class="account-avatar account-avatar-current">
+                            <%= getInitialsLogistica(usuario?.nombre) %>
+                        </span>
+                        <div class="account-current-copy">
+                            <strong><%= usuario?.nombre %></strong>
+                            <small>Panel Logística</small>
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button type="button" class="dropdown-item account-option" data-bs-toggle="modal" data-bs-target="#modalPerfilUsuario">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span>Mi perfil</span>
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a href="/logout" class="dropdown-item logout-account-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Cerrar sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 </header>
+
+<div class="modal fade" id="modalPerfilUsuario" tabindex="-1" aria-labelledby="modalPerfilUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+            <div class="modal-header border-0 px-4 pt-4 pb-3" style="background: linear-gradient(135deg, #042f2e 0%, #0f766e 60%, #2dd4bf 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="account-avatar account-avatar-selected" style="width:52px;height:52px;font-size:1.2rem;background:linear-gradient(135deg,#0f766e,#2dd4bf);">
+                        <%= getInitialsLogistica(usuario?.nombre) %>
+                    </div>
+                    <div>
+                        <h5 class="modal-title text-white fw-bold mb-0" id="modalPerfilUsuarioLabel"><%= usuario?.nombre %></h5>
+                        <span class="badge rounded-pill mt-1" style="background:rgba(255,255,255,0.15);color:#fff;font-size:11px;">
+                            <i class="bi bi-circle-fill me-1" style="font-size:7px;color:#4ade80;"></i>Logística
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body px-4 py-3">
+                <p class="text-muted small mb-3 fw-semibold text-uppercase" style="letter-spacing:.06em;">Información del usuario</p>
+                <ul class="list-group list-group-flush border rounded-3 overflow-hidden">
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3">
+                        <span class="text-muted small" style="min-width:110px;">Nombre</span>
+                        <strong><%= usuario?.nombre %></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3 bg-light">
+                        <span class="text-muted small" style="min-width:110px;">Correo</span>
+                        <span class="text-body-secondary small"><%= usuario?.correo %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3">
+                        <span class="text-muted small" style="min-width:110px;">Rol</span>
+                        <span class="badge" style="background:#0f766e;">Logística</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="modal-footer border-0 px-4 pb-4 pt-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
