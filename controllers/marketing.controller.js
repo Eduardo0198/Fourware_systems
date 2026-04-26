@@ -112,13 +112,13 @@ function procesarGeografico(rows) {
     const totalesPorEstado = {};
 
     rows.forEach(r => {
-        const estado = r.estado || 'Sin estado';
+        const region = r.region || 'Sin región';
         const sku = r.SKU;
         const unidades = Number(r.cantidad || 0);
-        if (!byEstado[estado]) byEstado[estado] = {};
-        byEstado[estado][sku] = (byEstado[estado][sku] || 0) + unidades;
+        if (!byEstado[region]) byEstado[region] = {};
+        byEstado[region][sku] = (byEstado[region][sku] || 0) + unidades;
         totalesPorProducto[sku] = (totalesPorProducto[sku] || 0) + unidades;
-        totalesPorEstado[estado] = (totalesPorEstado[estado] || 0) + unidades;
+        totalesPorEstado[region] = (totalesPorEstado[region] || 0) + unidades;
         if (!infoProducto[sku]) infoProducto[sku] = r.nombre_comercial;
     });
 
@@ -137,10 +137,14 @@ function procesarGeografico(rows) {
 }
 
 function renderMetricasRanking(res, opts = {}) {
+    let resultados = opts.resultados || null;
+    if (resultados && !resultados.geografico) {
+        resultados = { ...resultados, geografico: procesarGeografico([]) };
+    }
     return res.render('marketing/metricasRanking', {
         campanias:        opts.campanias        || [],
         sinCampanias:     opts.sinCampanias     || false,
-        resultados:       opts.resultados       || null,
+        resultados,
         filtros:          opts.filtros          || {},
         campaniaActivaId: opts.campaniaActivaId || null,
         pageMessage:      opts.pageMessage      || null
@@ -338,14 +342,6 @@ exports.consultarMetricas = async (req, res) => {
     }
 };
 
-exports.debugGeo = async (req, res) => {
-    try {
-        const rows = await metricasModel.consultarRankingGeografico({ idCampania: null, fechaInicio: null, fechaFin: null });
-        return res.json({ ok: true, count: rows.length, sample: rows.slice(0, 5) });
-    } catch (err) {
-        return res.json({ ok: false, error: err.message, stack: err.stack });
-    }
-};
 
 exports.exportarMetricas = async (req, res) => {
     const { idCampania, fechaInicio, fechaFin, producto } = req.body;

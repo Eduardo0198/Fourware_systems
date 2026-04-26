@@ -82,7 +82,7 @@ exports.consultarRankingGeografico = (filtros) => new Promise((resolve, reject) 
 
     if (idCampania) {
         params.push(idCampania);
-        condiciones += ` AND ca.id_campania = ?`;
+        condiciones += ` AND p.id_campania = ?`;
     }
     if (fechaInicio) {
         params.push(fechaInicio);
@@ -95,14 +95,13 @@ exports.consultarRankingGeografico = (filtros) => new Promise((resolve, reject) 
 
     const query = `
         SELECT
-            s.estado,
+            s.region,
             p."SKU",
             p.nombre_comercial,
             rp.cantidad
         FROM "Reserva_Producto" rp
-        JOIN "Reserva"  r  ON r.folio        = rp.folio
-        JOIN "Producto" p  ON p."SKU"        = rp."SKU"
-        JOIN "Campania" ca ON ca.id_campania = p.id_campania
+        JOIN "Reserva"  r ON r.folio = rp.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         ${condiciones}
     `;
@@ -115,8 +114,7 @@ exports.consultarDatos = (filtros) =>
         exports.consultarRankingProductos(filtros),
         exports.consultarMetricasComparativas(filtros),
         exports.consultarRankingGeografico(filtros)
-            .then((rows) => { require('../utils/logger').info('geo rows:', rows.length); return rows; })
-            .catch((err) => { require('../utils/logger').error('consultarRankingGeografico error:', err.message, err.stack); return []; })
+            .catch((err) => { require('../utils/logger').error('consultarRankingGeografico:', err); return []; })
     ]).then(([ranking, metricas, geografico]) => ({ ranking, metricas, geografico }));
 
 exports.consultarMetricasComparativas = (filtros) => new Promise((resolve, reject) => {

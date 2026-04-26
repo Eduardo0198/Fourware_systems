@@ -123,12 +123,12 @@
                     </p>
                     <% } else { %>
                     <canvas id="chartGeo" class="mb-4"></canvas>
-                    <h6 class="fw-semibold mb-2">Tabla de calor: unidades por estado y producto</h6>
+                    <h6 class="fw-semibold mb-2">Tabla de calor: unidades por región y producto</h6>
                     <div class="table-responsive">
                         <table class="table table-bordered table-sm align-middle mb-0" id="tablaGeo">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Estado</th>
+                                    <th>Región</th>
                                     <% resultados.geografico.productos.forEach(p => { %>
                                     <th class="text-center" title="<%= p.nombre %>">
                                         <span style="font-size:.75rem;"><%= p.nombre.length > 18 ? p.nombre.slice(0,18)+'…' : p.nombre %></span>
@@ -358,7 +358,7 @@ function iniciarChart(tab) {
                 responsive: true,
                 plugins: {
                     legend: { display: false },
-                    title: { display: true, text: 'Unidades vendidas por estado', font: { size: 14 } },
+                    title: { display: true, text: 'Unidades vendidas por región', font: { size: 14 } },
                     tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toLocaleString('es-MX')} unidades` } }
                 },
                 scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
