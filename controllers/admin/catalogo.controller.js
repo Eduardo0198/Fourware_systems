@@ -1,7 +1,7 @@
 const path = require('path');
-const fs = require('fs');
 const XLSX = require('xlsx');
 const logger = require('../../utils/logger');
+const { subirImagenProducto } = require('../../services/storage.service');
 const {
     aNumeroDecimal,
     campaniaModel,
@@ -11,9 +11,6 @@ const {
     registrarBitacora,
     registrarEvento
 } = require('./shared');
-
-const PRODUCTOS_DIR = path.join('public', 'img', 'productos');
-if (!fs.existsSync(PRODUCTOS_DIR)) fs.mkdirSync(PRODUCTOS_DIR, { recursive: true });
 
 const COLUMNAS_CARGA_MASIVA = [
     'SKU',
@@ -392,13 +389,18 @@ exports.registrarSKU = (req, res) => {
     renderCatalogoRegistro(res);
 };
 
-exports.registrarSKUPost = (req, res) => {
+exports.registrarSKUPost = async (req, res) => {
     if (req.file) {
-        const sku = String(req.body.sku || '').trim().toUpperCase();
-        const ext = path.extname(req.file.originalname).toLowerCase();
-        const filename = `${sku}${ext}`;
-        fs.writeFileSync(path.join(PRODUCTOS_DIR, filename), req.file.buffer);
-        req.body.imagen = `/img/productos/${filename}`;
+        try {
+            const sku = String(req.body.sku || '').trim().toUpperCase();
+            req.body.imagen = await subirImagenProducto(req.file.buffer, sku, req.file.mimetype);
+        } catch (err) {
+            logger.error(err);
+            return renderCatalogoRegistro(res, {
+                pageMessage: { tipo: 'danger', texto: 'No fue posible subir la imagen. Intente nuevamente.' },
+                formData: req.body
+            });
+        }
     }
 
     const validacion = validarProducto(req.body);
@@ -521,14 +523,20 @@ exports.modificarSKU = (req, res) => {
     });
 };
 
-exports.modificarSKUPost = (req, res) => {
+exports.modificarSKUPost = async (req, res) => {
     const sku = String(req.params.sku || '').trim().toUpperCase();
 
     if (req.file) {
-        const ext = path.extname(req.file.originalname).toLowerCase();
-        const filename = `${sku}${ext}`;
-        fs.writeFileSync(path.join(PRODUCTOS_DIR, filename), req.file.buffer);
-        req.body.imagen = `/img/productos/${filename}`;
+        try {
+            req.body.imagen = await subirImagenProducto(req.file.buffer, sku, req.file.mimetype);
+        } catch (err) {
+            logger.error(err);
+            return renderCatalogoModificar(req, res, {
+                skuSeleccionado: sku,
+                formData: req.body,
+                pageMessage: { tipo: 'danger', texto: 'No fue posible subir la imagen. Intente nuevamente.' }
+            });
+        }
     }
 
     const validacion = validarProducto({

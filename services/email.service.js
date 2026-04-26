@@ -24,7 +24,10 @@ function correoDisponible() {
 }
 
 async function renderizarPlantillaReserva(reserva) {
-    const appBaseUrl = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
+    const rawBase = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
+    const appBaseUrl = rawBase && !rawBase.includes('localhost') && !rawBase.includes('127.0.0.1')
+        ? rawBase
+        : '';
     const productosCorreo = reserva.productos.map((producto) => {
         const img = producto.imagen;
         let imagenSrc = null;
