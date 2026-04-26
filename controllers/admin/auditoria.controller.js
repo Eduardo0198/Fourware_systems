@@ -1,4 +1,107 @@
+const ExcelJS = require('exceljs');
 const { bitacoraModel, registrarEvento } = require('./shared');
+
+const AZUL_OSCURO  = 'FF1A3A5C';
+const AZUL_MEDIO   = 'FF2E6DA4';
+const GRIS_FILA    = 'FFF0F4F8';
+const BLANCO       = 'FFFFFFFF';
+
+function formatoFecha() {
+    return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+exports.exportarBitacora = async (req, res) => {
+    const usuario  = req.session.usuario;
+    const correo   = String(req.query.usuario      || '').trim();
+    const fechaInicio = String(req.query.fecha_inicio || '').trim();
+    const fechaFin    = String(req.query.fecha_fin    || '').trim();
+    const filtros  = { correo, fechaInicio, fechaFin };
+
+    let registros;
+    try {
+        registros = await new Promise((resolve, reject) =>
+            bitacoraModel.obtenerRegistrosFiltrados(filtros, (err, rows) =>
+                err ? reject(err) : resolve(rows)
+            )
+        );
+    } catch {
+        return res.status(500).send('Error al obtener registros para exportar.');
+    }
+
+    registrarEvento(req, 'Exportación de bitácora de auditoría', usuario?.correo);
+
+    const wb   = new ExcelJS.Workbook();
+    wb.creator = 'PPG Preventa';
+
+    const ws = wb.addWorksheet('Bitácora');
+
+    ws.mergeCells('A1:E1');
+    const titulo = ws.getCell('A1');
+    titulo.value     = 'Bitácora de Auditoría — PPG Preventa';
+    titulo.font      = { bold: true, size: 14, color: { argb: BLANCO } };
+    titulo.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+    titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 30;
+
+    ws.mergeCells('A2:E2');
+    const subtitulo = ws.getCell('A2');
+    const partes = [];
+    if (fechaInicio) partes.push(`Desde: ${fechaInicio}`);
+    if (fechaFin)    partes.push(`Hasta: ${fechaFin}`);
+    if (correo)      partes.push(`Usuario: ${correo}`);
+    if (!partes.length) partes.push('Sin filtros aplicados');
+    subtitulo.value     = partes.join('   |   ');
+    subtitulo.font      = { italic: true, size: 10, color: { argb: BLANCO } };
+    subtitulo.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_MEDIO } };
+    subtitulo.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(2).height = 20;
+
+    ws.columns = [
+        { width: 10 },
+        { width: 22 },
+        { width: 32 },
+        { width: 55 },
+        { width: 22 }
+    ];
+
+    const rowEnc = ws.addRow(['ID', 'Fecha', 'Usuario', 'Acción', 'IP de origen']);
+    rowEnc.eachCell(cell => {
+        cell.font      = { bold: true, color: { argb: BLANCO } };
+        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border    = { bottom: { style: 'medium', color: { argb: AZUL_MEDIO } } };
+    });
+    rowEnc.height = 22;
+
+    ws.views = [{ state: 'frozen', ySplit: 3 }];
+
+    registros.forEach((r, idx) => {
+        const ip = !r.ip_origen ? 'N/D'
+            : String(r.ip_origen) === '::1' ? '127.0.0.1 (localhost)'
+            : r.ip_origen;
+
+        const fila = ws.addRow([r.id_log, r.fecha, r.correo || 'N/D', r.accion, ip]);
+        const fondo = idx % 2 === 0 ? BLANCO : GRIS_FILA;
+        fila.eachCell(cell => {
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: fondo } };
+            cell.alignment = { vertical: 'middle', wrapText: false };
+            cell.border    = { bottom: { style: 'hair', color: { argb: 'FFD0DCE8' } } };
+        });
+        fila.height = 18;
+    });
+
+    const totalRow = ws.addRow(['', '', '', `Total: ${registros.length} registros`, '']);
+    totalRow.getCell(4).font      = { bold: true, color: { argb: BLANCO } };
+    totalRow.getCell(4).fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_MEDIO } };
+    totalRow.getCell(4).alignment = { horizontal: 'center' };
+    totalRow.height = 20;
+
+    const nombre = `bitacora_${formatoFecha()}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    await wb.xlsx.write(res);
+    res.end();
+};
 
 exports.auditoria = (req, res) => {
     const usuario = req.session.usuario;

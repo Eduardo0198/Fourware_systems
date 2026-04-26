@@ -94,7 +94,15 @@
                 <h5>Resultados de la consulta</h5>
                 <p>Eventos ordenados del más reciente al más antiguo.</p>
             </div>
-            <span class="audit-total-pill">Total: <%= totalVista %></span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="audit-total-pill">Total: <%= totalVista %></span>
+                <% if (registrosVista.length > 0) { %>
+                <a href="/admin/auditoria/exportar?usuario=<%= encodeURIComponent(filtrosVista.correo || '') %>&fecha_inicio=<%= filtrosVista.fechaInicio || '' %>&fecha_fin=<%= filtrosVista.fechaFin || '' %>"
+                   class="btn btn-sm audit-primary-btn">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+                </a>
+                <% } %>
+            </div>
         </div>
 
         <% if (registrosVista.length > 0) { %>

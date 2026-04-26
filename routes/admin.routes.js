@@ -191,8 +191,15 @@ router.post('/reportes',
 router.get('/auditoria',
     protegerRuta,
     tieneRol(['Administrador']),
-    tienePrivilegio(['consultar_bitacora']), 
+    tienePrivilegio(['consultar_bitacora']),
     adminController.auditoria
+);
+
+router.get('/auditoria/exportar',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['consultar_bitacora']),
+    adminController.exportarBitacora
 );
 
 module.exports = router;
