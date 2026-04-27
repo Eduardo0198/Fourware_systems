@@ -2,6 +2,12 @@
     const safeFiltros = (typeof filtros !== 'undefined' && filtros) ? filtros : {};
     const safeMetricas = (typeof metricas !== 'undefined' && Array.isArray(metricas)) ? metricas : [];
     const safeSerieTiempo = (typeof serieTiempo !== 'undefined' && Array.isArray(serieTiempo)) ? serieTiempo : [];
+    // aqui valido que rendimientoProductos exista y que de verdad sea un arreglo
+    // si todavia no llega informacion desde el controller, uso un arreglo vacio para que la vista no falle
+    const safeRendimientoProductos = (typeof rendimientoProductos !== 'undefined' && Array.isArray(rendimientoProductos))
+        ? rendimientoProductos
+        : [];
+
     const safeCampanias = (typeof campanias !== 'undefined' && Array.isArray(campanias)) ? campanias : [];
     const safeCuentas = (typeof cuentas !== 'undefined' && Array.isArray(cuentas)) ? cuentas : [];
     const safeResumen = (typeof resumen !== 'undefined' && resumen) ? resumen : {};
@@ -24,6 +30,41 @@
     const top5Volumen = [...safeMetricas]
         .sort((a, b) => Number(b.volumen_total || 0) - Number(a.volumen_total || 0))
         .slice(0, 5);
+
+    // aqui saco el producto con mayor numero de preventas confirmadas
+    // hago una copia con [...] para no alterar el arreglo original al ordenar
+    const topProductoConfirmaciones = safeRendimientoProductos.length > 0
+        ? [...safeRendimientoProductos].sort((a, b) => Number(b.preventas_confirmadas || 0) - Number(a.preventas_confirmadas || 0))[0]
+        : null;
+
+    // aqui saco el producto con mayor peso total acumulado
+    const topProductoPeso = safeRendimientoProductos.length > 0
+        ? [...safeRendimientoProductos].sort((a, b) => Number(b.peso_total || 0) - Number(a.peso_total || 0))[0]
+        : null;
+
+    // aqui saco el producto con mayor volumen total acumulado
+    const topProductoVolumen = safeRendimientoProductos.length > 0
+        ? [...safeRendimientoProductos].sort((a, b) => Number(b.volumen_total || 0) - Number(a.volumen_total || 0))[0]
+        : null;
+
+    // aqui tomo solo los primeros 5 productos del ranking general
+    // esto sirve para mostrar una tabla rapida sin saturar la pantalla
+    const top5Productos = [...safeRendimientoProductos].slice(0, 5);
+
+    // GRAFICA DE BARRAS HORIZONTAL PARA PREVENTAS CONFRIMADAS
+    // aqui preparo solo los primeros 10 productos para que la grafica no se vea saturada
+    // uso top5Productos para la tabla, pero para la grafica conviene un poco mas de espacio
+    const top10ProductosGrafica = [...safeRendimientoProductos]
+        .sort((a, b) => Number(b.preventas_confirmadas || 0) - Number(a.preventas_confirmadas || 0))
+        .slice(0, 10);
+
+    // aqui saco solo los nombres de producto para usarlos como etiquetas del eje Y
+    const labelsGraficaConfirmaciones = top10ProductosGrafica.map(item => item.producto);
+
+    // aqui saco el numero de preventas confirmadas de cada producto
+    const dataGraficaConfirmaciones = top10ProductosGrafica.map(item => Number(item.preventas_confirmadas || 0));
+
+
 %>
 
 <section class="admin-shell">
@@ -137,6 +178,127 @@
             <strong>$<%= Number(safeResumen.totalImporte || 0).toFixed(2) %></strong>
             <p>Suma del subtotal de productos reservados.</p>
         </article>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Producto mas confirmado</h4>
+                        <p>Producto con mayor numero de preventas confirmadas en el periodo.</p>
+                    </div>
+                    <span class="admin-table-pill">Confirmaciones</span>
+                </div>
+
+                <% if (topProductoConfirmaciones) { %>
+                    <div class="d-flex flex-column gap-2">
+                        <strong><%= topProductoConfirmaciones.producto %></strong>
+                        <span class="text-muted">SKU: <%= topProductoConfirmaciones.sku %></span>
+                        <span><strong><%= Number(topProductoConfirmaciones.preventas_confirmadas || 0) %></strong> preventas confirmadas</span>
+                        <span><%= Number(topProductoConfirmaciones.unidades_confirmadas || 0) %> unidades</span>
+                        <span><%= Number(topProductoConfirmaciones.cuentas_con_movimiento || 0) %> cuentas con movimiento</span>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos de productos para este periodo.</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Producto con mayor peso</h4>
+                        <p>Producto que genera la mayor carga total en kilogramos.</p>
+                    </div>
+                    <span class="admin-table-pill">Peso</span>
+                </div>
+
+                <% if (topProductoPeso) { %>
+                    <div class="d-flex flex-column gap-2">
+                        <strong><%= topProductoPeso.producto %></strong>
+                        <span class="text-muted">SKU: <%= topProductoPeso.sku %></span>
+                        <span><strong><%= Number(topProductoPeso.peso_total || 0).toFixed(2) %> kg</strong></span>
+                        <span><%= Number(topProductoPeso.preventas_confirmadas || 0) %> preventas confirmadas</span>
+                        <span><%= Number(topProductoPeso.unidades_confirmadas || 0) %> unidades</span>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos de peso por producto.</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Producto con mayor volumen</h4>
+                        <p>Producto que ocupa el mayor volumen total dentro del periodo.</p>
+                    </div>
+                    <span class="admin-table-pill">Volumen</span>
+                </div>
+
+                <% if (topProductoVolumen) { %>
+                    <div class="d-flex flex-column gap-2">
+                        <strong><%= topProductoVolumen.producto %></strong>
+                        <span class="text-muted">SKU: <%= topProductoVolumen.sku %></span>
+                        <span><strong><%= Number(topProductoVolumen.volumen_total || 0).toFixed(2) %> m3</strong></span>
+                        <span><%= Number(topProductoVolumen.preventas_confirmadas || 0) %> preventas confirmadas</span>
+                        <span><%= Number(topProductoVolumen.unidades_confirmadas || 0) %> unidades</span>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos de volumen por producto.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-table-card mb-4">
+        <div class="admin-table-head">
+            <div>
+                <h4>Rendimiento por producto</h4>
+                <p>Resumen rapido de productos de la campania activa o seleccionada.</p>
+            </div>
+            <span class="admin-table-pill"><%= safeRendimientoProductos.length %> productos</span>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="table admin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Preventas confirmadas</th>
+                        <th>Unidades</th>
+                        <th>Peso total</th>
+                        <th>Volumen total</th>
+                        <th>Cuentas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (top5Productos.length > 0) { %>
+                        <% top5Productos.forEach((item) => { %>
+                            <tr>
+                                <td><strong><%= item.producto %></strong></td>
+                                <td><%= item.sku %></td>
+                                <td><%= Number(item.preventas_confirmadas || 0) %></td>
+                                <td><%= Number(item.unidades_confirmadas || 0) %></td>
+                                <td><%= Number(item.peso_total || 0).toFixed(2) %> kg</td>
+                                <td><%= Number(item.volumen_total || 0).toFixed(2) %> m3</td>
+                                <td><%= Number(item.cuentas_con_movimiento || 0) %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                No existen productos confirmados para los filtros seleccionados.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="row g-4 mb-4">
