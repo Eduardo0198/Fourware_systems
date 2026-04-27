@@ -224,50 +224,67 @@ function cargarCatalogosMetricas(callback) {
 exports.reservasConfirmadas = (req, res) => {
   const { fechaInicio, fechaFin } = obtenerRangoFechas(req.query);
 
+  // ********************
+  // Esta funcion pequeña evita repetir el render en varias partes del controlador
+  // Recibe las reservas y los estados para mandar todo junto a la vista
+  const renderReservasConfirmadas = (pageMessage, reservas, estadosLogisticos) => {
+    // res.render carga la vista ejs que se va a mostrar en el navegador
+    res.render('logistica/reservasConfirmadas', {
+      // pageMessage es el mensaje que se muestra en la pantalla si hay error o aviso
+      pageMessage,
+      // filtros guarda las fechas que el usuario puso en el formulario
+      filtros: {
+        // fecha_inicio rellena el input de fecha inicio para que no se borre
+        fecha_inicio: fechaInicio,
+        // fecha_fin rellena el input de fecha fin para que no se borre
+        fecha_fin: fechaFin
+      },
+      // reservas es la lista que se muestra en la tabla
+      // Si no hay reservas, mando un arreglo vacio para que la vista no truene
+      reservas: reservas || [],
+      // resumen calcula los totales de importe, peso, volumen y cantidad de reservas
+      resumen: construirResumenReservas(reservas || []),
+      // estadosLogisticos son las opciones del select para cambiar el estado
+      // Si no vienen estados, mando un arreglo vacio para evitar errores
+      estadosLogisticos: estadosLogisticos || []
+    });
+  };
+  // ****************************
+
   if (!esFechaInputValida(fechaInicio) || !esFechaInputValida(fechaFin) || fechaInicio > fechaFin) {
-    return res.render('logistica/reservasConfirmadas', {
-      pageMessage: {
+    return renderReservasConfirmadas({
         tipo: 'danger',
         texto: 'Debes seleccionar un periodo válido para consultar reservas confirmadas.'
-      },
-      filtros: {
-        fecha_inicio: fechaInicio,
-        fecha_fin: fechaFin
-      },
-      reservas: [],
-      resumen: construirResumenReservas([])
-    });
+      }, [], []);
   }
 
-  reservaModel.obtenerReservasConfirmadasPorPeriodo(fechaInicio, fechaFin, (err, reservas) => {
-    if (err) {
-      logger.error(err);
-      return res.render('logistica/reservasConfirmadas', {
-        pageMessage: {
-          tipo: 'danger',
-          texto: 'No fue posible consultar las reservas confirmadas para el periodo seleccionado.'
-        },
-        filtros: {
-          fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin
-        },
-        reservas: [],
-        resumen: construirResumenReservas([])
-      });
+  // Primero consulto los estados para que el select de la vista tenga opciones
+  reservaModel.obtenerEstadosLogisticos((estadosErr, estadosLogisticos) => {
+    if (estadosErr) {
+      logger.error(estadosErr);
+      return renderReservasConfirmadas({
+        tipo: 'danger',
+        texto: 'No fue posible cargar los estados logisticos.'
+      }, [], []);
     }
 
-    registrarEvento(req, 'Consulta de reservas confirmadas por periodo');
-    res.render('logistica/reservasConfirmadas', {
-      pageMessage: reservas.length === 0 ? {
-        tipo: 'warning',
-        texto: 'No existen reservas confirmadas para el periodo seleccionado.'
-      } : null,
-      filtros: {
-        fecha_inicio: fechaInicio,
-        fecha_fin: fechaFin
-      },
-      reservas: reservas || [],
-      resumen: construirResumenReservas(reservas)
+    reservaModel.obtenerReservasConfirmadasPorPeriodo(fechaInicio, fechaFin, (err, reservas) => {
+      if (err) {
+        logger.error(err);
+        return renderReservasConfirmadas({
+          tipo: 'danger',
+          texto: 'No fue posible consultar las reservas confirmadas para el periodo seleccionado.'
+        }, [], estadosLogisticos);
+      }
+
+      registrarEvento(req, 'Consulta de reservas confirmadas por periodo');
+      renderReservasConfirmadas(reservas.length === 0 ? {
+          tipo: 'warning',
+          texto: 'No existen reservas confirmadas para el periodo seleccionado.'
+        } : null,
+        reservas || [],
+        estadosLogisticos
+      );
     });
   });
 };
@@ -413,6 +430,7 @@ exports.actualizarEstadoLogistico = (req, res) => {
       // updateErr significa que algo fallo al actualizar la reserva o guardar el historial
       if (updateErr) {
         // Guardo el error en logs para poder revisarlo si algo sale mal
+        // Los logs son importantes para entender que paso en el sistema sin afectar la experiencia del usuario
         logger.error(updateErr);
         // Guardo un mensaje temporal para mostrarlo cuando regrese al listado
         req.session.mensaje = {
