@@ -74,6 +74,7 @@ function construirResumenMetricas(metricas) {
   });
 }
 
+
 function construirFiltrosVista(filtros) {
   return {
     fecha_inicio: filtros.fechaInicio,
@@ -208,6 +209,64 @@ function convertirReporteAExcel(detalle) {
   return XLSX.write(libro, { type: 'buffer', bookType: 'xlsx' });
 }
 // lau y eduardo final helpers reporte operativo -- 21
+
+
+function construirContextoMetricas(query, campaniaActiva) {
+  // aqui reutilizo la funcion que ya tenias para sacar fecha inicial y final
+  const { fechaInicio, fechaFin } = obtenerRangoFechas(query);
+
+  // aqui leo si el usuario mando una campania en la URL o en el formulario
+  // si no viene o viene invalida, normalizarIdFiltro regresa null
+  const idCampaniaSolicitada = normalizarIdFiltro(query.id_campania);
+
+  // aqui hago lo mismo pero con la cuenta
+  // esto me sirve para que luego podamos filtrar por cuenta si se necesita
+  const idCuenta = normalizarIdFiltro(query.id_cuenta);
+
+  // aqui decido si debo usar la campania activa como valor por default
+  // si el usuario ya eligio una campania, entonces no uso la activa
+  // si no eligio nada, entonces tomo la campania activa que venga del modelo
+  const campaniaBase = idCampaniaSolicitada
+    ? null
+    : (campaniaActiva || null);
+
+  // aqui saco el id de campania final que voy a usar en las consultas
+  // primero intento usar la campania que selecciono el usuario
+  // si no existe, intento usar la campania activa
+  // si tampoco hay campania activa, se queda en null
+  const idCampania = idCampaniaSolicitada || (campaniaBase ? Number(campaniaBase.id_campania) : null);
+
+  // aqui regreso un solo objeto con todo el contexto de la consulta
+  // esto ayuda a no andar pasando variables sueltas por todos lados
+  return {
+    // fecha desde donde se van a consultar las metricas
+    fechaInicio,
+
+    // fecha hasta donde se van a consultar las metricas
+    fechaFin,
+
+    // id de campania real que se usara en los queries
+    idCampania,
+
+    // id de cuenta si el usuario quiere filtrar por una cuenta especifica
+    idCuenta,
+
+    // aqui mantengo la logica actual de agrupacion
+    // si el usuario pide cuenta, agrupa por cuenta
+    // en cualquier otro caso se agrupa por campania
+    agruparPor: query.agrupar_por === 'cuenta' ? 'cuenta' : 'campania',
+
+    // aqui guardo una bandera para saber si la pantalla esta usando
+    // la campania activa automaticamente y no una elegida manualmente
+    usaCampaniaActivaPorDefault: !idCampaniaSolicitada && !!campaniaBase,
+
+    // aqui regreso el objeto completo de la campania activa
+    // esto despues sirve para mostrar su nombre, fechas o estado en la vista
+    campaniaActiva: campaniaBase
+  };
+}
+
+
 
 
 function cargarCatalogosMetricas(callback) {
