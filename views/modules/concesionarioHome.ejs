@@ -1,3 +1,4 @@
+
 <% function renderStars(puntaje) {
     const valor = Number(puntaje || 0);
     let html = '';
@@ -6,6 +7,7 @@
     }
     return html;
 } %>
+
 
 <% if (mensaje) { %>
     <div class="alert alert-<%= mensaje.tipo %> mb-4" role="alert">

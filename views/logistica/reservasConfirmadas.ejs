@@ -1,3 +1,17 @@
+
+<% function formatDecimal(value) {
+    // aqui convierto el valor a numero
+    // si viene vacio o undefined, uso 0
+    const safeValue = Number(value || 0);
+
+    // aqui regreso el numero con comas de miles y dos decimales
+    return safeValue.toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
+
+
 <section class="admin-shell">
     <div class="admin-hero admin-hero-campaigns">
         <div>
@@ -58,17 +72,17 @@
     <div class="admin-stats-grid">
         <article class="admin-stat-card">
             <span class="admin-stat-label">Importe total</span>
-            <strong>$<%= Number(resumen.totalImporte || 0).toFixed(2) %></strong>
+            <strong>$<%= formatDecimal(resumen.totalImporte) %></strong>
             <p>Suma consolidada de reservas confirmadas en el periodo.</p>
         </article>
         <article class="admin-stat-card admin-stat-accent">
             <span class="admin-stat-label">Peso total</span>
-            <strong><%= Number(resumen.totalPeso || 0).toFixed(2) %> kg</strong>
+            <strong><%= formatDecimal(resumen.totalPeso) %> kg</strong>
             <p>Acumulado logístico del peso registrado por reserva.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Volumen total</span>
-            <strong><%= Number(resumen.totalVolumen || 0).toFixed(2) %> m³</strong>
+            <strong><%= formatDecimal(resumen.totalVolumen) %> m³</strong>
             <p>Volumen consolidado calculado para el periodo consultado.</p>
         </article>
         <article class="admin-stat-card admin-stat-accent">
@@ -116,11 +130,13 @@
                                 </td>
                                 <td><%= reserva.fecha %></td>
                                 <td><span class="badge text-bg-success">Confirmada</span></td>
-                                <td>$<%= Number(reserva.subtotal || 0).toFixed(2) %></td>
-                                <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
-                                <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
-                                <td><%= Number(reserva.peso_total || 0).toFixed(2) %> kg</td>
-                                <td><%= Number(reserva.volumen_total || 0).toFixed(2) %> m³</td>
+                                // usamos FORMATDECIMAL para mostrar los formatos de dinero y vol
+                                // peso con comas de miles y decimales
+                                <td>$<%= formatDecimal(reserva.subtotal) %></td>
+                                <td>$<%= formatDecimal(reserva.iva) %></td>
+                                <td>$<%= formatDecimal(reserva.total) %></td>
+                                <td><%= formatDecimal(reserva.peso_total) %> kg</td>
+                                <td><%= formatDecimal(reserva.volumen_total) %> m³</td>
                                 <td><%= reserva.campanias || 'Sin campaña asociada' %></td>
                             </tr>
                         <% }); %>
@@ -136,3 +152,4 @@
         </div>
     </div>
 </section>
+
