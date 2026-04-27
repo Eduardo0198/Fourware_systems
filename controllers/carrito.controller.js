@@ -15,6 +15,9 @@ const {
     construirRedirectCatalogo,
     generarFolioReserva,
     obtenerCarritoActivo,
+    obtenerCarritoActivoDesdeSesion,
+    obtenerSkusDelCarrito,
+    vaciarCarritoActivoDesdeSesion,
     sincronizarCarritoConProducto
 } = require('../services/carrito.service');
 const Carrito = require('../services/Carrito');
@@ -46,6 +49,10 @@ function notificarReservaConfirmada(req, { folio, correo, idCuenta }) {
                 });
         });
     });
+}
+
+function validarHayProductos(carrito) {
+    return Array.isArray(carrito) && carrito.length > 0;
 }
 
 exports.agregarProducto = (req, res) => {
@@ -222,6 +229,64 @@ exports.eliminarProducto = (req, res) => {
             texto: 'No fue posible eliminar el producto del carrito. Intente nuevamente.'
         };
         return res.redirect('/concesionario/carrito');
+    }
+};
+
+exports.vaciarCarritoCompleto = (req, res, done = null) => {
+    const responder = (payload) => {
+        if (typeof done === 'function') {
+            return done(payload);
+        }
+
+        req.session.mensaje = {
+            tipo: payload.tipo,
+            texto: payload.texto
+        };
+        return res.redirect(payload.redirectTo);
+    };
+
+    try {
+        const carrito = obtenerCarritoActivoDesdeSesion(req);
+
+        if (!validarHayProductos(carrito)) {
+            return responder({
+                tipo: 'warning',
+                texto: 'El carrito ya se encuentra vacío.',
+                redirectTo: '/concesionario/carrito'
+            });
+        }
+
+        const listaSkus = obtenerSkusDelCarrito(carrito);
+        vaciarCarritoActivoDesdeSesion(req);
+
+        return registrarEvento(
+            req,
+            `Se ha vaciado el carrito de preventa. SKU eliminados: ${listaSkus.join(', ')}`,
+            (auditErr) => {
+                if (auditErr) {
+                    logger.error(auditErr);
+                    return responder({
+                        tipo: 'danger',
+                        texto: 'No fue posible registrar la auditoría del vaciado del carrito.',
+                        redirectTo: '/concesionario/carrito'
+                    });
+                }
+
+                return responder({
+                    tipo: 'success',
+                    texto: 'El carrito fue vaciado correctamente.',
+                    redirectTo: '/concesionario/carrito'
+                });
+            }
+        );
+    } catch (error) {
+        logger.error(error);
+        registrarEvento(req, 'Error al vaciar el carrito de preventa');
+        return responder({
+            tipo: 'danger',
+            texto: 'No fue posible vaciar el carrito. Intente nuevamente.',
+            redirectTo: '/concesionario/carrito'
+        });
     }
 };
 

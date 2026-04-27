@@ -25,6 +25,18 @@ router.post('/eliminar',
     carritoController.eliminarProducto
 );
 
+router.post('/vaciar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    (req, res) => {
+        carritoController.vaciarCarritoCompleto(req, res, ({ tipo, texto, redirectTo }) => {
+            req.session.mensaje = { tipo, texto };
+            return res.redirect(redirectTo);
+        });
+    }
+);
+
 router.post('/actualizar-cantidad',
     protegerRuta,
     tieneRol(['Concesionario']),

@@ -13,11 +13,15 @@ function normalizarIp(ip) {
     return valor === '::1' ? '127.0.0.1 (localhost)' : valor;
 }
 
-function registrarEvento(req, accion, correo = null) {
+function registrarEvento(req, accion, correoOrCallback = null, callback = () => {}) {
+    const correo = typeof correoOrCallback === 'function' ? null : correoOrCallback;
+    const callbackFinal = typeof correoOrCallback === 'function' ? correoOrCallback : callback;
+
     bitacoraModel.registrar(
         correo || obtenerCorreo(req),
         accion,
-        normalizarIp(req.ip)
+        normalizarIp(req.ip),
+        callbackFinal
     );
 }
 
