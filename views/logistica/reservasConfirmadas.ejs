@@ -14,11 +14,16 @@
         </div>
     </div>
 
-    <% if (pageMessage) { %>
-        <div class="alert alert-<%= pageMessage.tipo %>" role="alert">
-            <%= pageMessage.texto %>
+    <% /* ********** INICIO U-27: mostrar mensajes despues de actualizar estado ********** */ %>
+    <% /* pageMessage viene del controlador cuando carga la pagina normal */ %>
+    <% /* mensaje viene de la sesion despues de hacer un redirect al guardar */ %>
+    <% const alertMessage = pageMessage || mensaje || null; %>
+    <% if (alertMessage) { %>
+        <div class="alert alert-<%= alertMessage.tipo %>" role="alert">
+            <%= alertMessage.texto %>
         </div>
     <% } %>
+    <% /* ********** FIN U-27: mostrar mensajes despues de actualizar estado ********** */ %>
 
     <div class="admin-table-card">
         <div class="admin-table-head">
