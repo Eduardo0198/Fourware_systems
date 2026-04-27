@@ -453,6 +453,24 @@
         </div>
     </div>
 
+    <div class="admin-table-card mb-4">
+        <div class="admin-table-head">
+            <div>
+                <h4>Preventas confirmadas por producto</h4>
+                <p>Top 10 productos con mayor numero de confirmaciones dentro del periodo consultado.</p>
+            </div>
+            <span class="admin-table-pill">Grafica principal</span>
+        </div>
+
+        <% if (top10ProductosGrafica.length > 0) { %>
+            <div style="position: relative; min-height: 360px;">
+                <canvas id="chartConfirmacionesProducto"></canvas>
+            </div>
+        <% } else { %>
+            <p class="text-center text-muted mt-3 mb-0">No hay productos suficientes para generar la grafica.</p>
+        <% } %>
+    </div>
+
     <div class="admin-table-card">
         <div class="admin-table-head">
             <div>
@@ -499,3 +517,76 @@
         </div>
     </div>
 </section>
+
+<% if (top10ProductosGrafica.length > 0) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // aqui busco el canvas donde se va a dibujar la grafica
+        const canvas = document.getElementById('chartConfirmacionesProducto');
+
+        // si el canvas no existe por alguna razon, termino sin romper la vista
+        if (!canvas) return;
+
+        // aqui creo la grafica horizontal con Chart.js
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                // aqui van los nombres de producto como etiquetas
+                labels: <%- JSON.stringify(labelsGraficaConfirmaciones) %>,
+                datasets: [
+                    {
+                        // aqui defino el nombre de la serie de datos
+                        label: 'Preventas confirmadas',
+
+                        // aqui van los valores numericos de confirmaciones
+                        data: <%- JSON.stringify(dataGraficaConfirmaciones) %>,
+
+                        // aqui defino el color visual de las barras
+                        backgroundColor: 'rgba(13, 110, 253, 0.72)',
+
+                        // aqui redondeo ligeramente las puntas para que se vea mas limpio
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                // aqui hago que la grafica se adapte al espacio disponible
+                responsive: true,
+
+                // aqui la pongo horizontal para que se lean mejor los nombres largos
+                indexAxis: 'y',
+
+                plugins: {
+                    // aqui oculto la leyenda porque solo hay una serie
+                    legend: { display: false },
+
+                    // aqui pongo un titulo arriba de la grafica
+                    title: {
+                        display: true,
+                        text: 'Top productos por preventas confirmadas',
+                        font: { size: 14 }
+                    },
+
+                    // aqui personalizo el tooltip para que el texto se vea mas natural
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} confirmaciones`
+                        }
+                    }
+                },
+
+                scales: {
+                    // aqui obligo a que el eje X empiece en cero
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+<% } %>
