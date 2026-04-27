@@ -1,0 +1,56 @@
+@startuml
+title U-27: Actualizar estado logistico de una reserva
+
+actor "Usuario\nLogistica" as Usuario
+boundary "Vista:\nreservasConfirmadas.ejs" as Vista
+control "Routes:\nlogistic.routes.js" as Routes
+control "Controlador:\nlogistic.controller.js" as Controlador
+entity "Modelo:\nreserva.model.js" as ReservaModel
+database "PostgreSQL\nppg_preventa" as DB
+
+activate Usuario
+Usuario -> Vista : Selecciona reserva y nuevo estado
+deactivate Usuario
+
+activate Vista
+Vista -> Routes : POST /logistica/reservas/:folio/estado
+deactivate Vista
+
+activate Routes
+Routes -> Controlador : actualizarEstadoLogistico(req, res)
+deactivate Routes
+
+activate Controlador
+Controlador -> Controlador : Valida usuario, folio y estado
+
+Controlador ->> ReservaModel : actualizarEstadoLogistico(folio, estadoNuevo, usuario)
+activate ReservaModel
+
+ReservaModel ->> DB : UPDATE Reserva
+activate DB
+DB -->> ReservaModel : resultado
+deactivate DB
+
+ReservaModel ->> DB : INSERT HistorialEstadoLogistico
+activate DB
+DB -->> ReservaModel : historial registrado
+deactivate DB
+
+ReservaModel ->> DB : INSERT BitacoraAuditoria
+activate DB
+DB -->> ReservaModel : auditoria registrada
+deactivate DB
+
+ReservaModel -->> Controlador : respuesta
+deactivate ReservaModel
+
+alt actualizacion exitosa
+  Controlador --> Vista : redirect con mensaje de confirmacion
+  Vista --> Usuario : Muestra nuevo estado
+else error de validacion o BD
+  Controlador --> Vista : response con mensaje de error
+  Vista --> Usuario : Muestra error
+end
+
+deactivate Controlador
+@enduml
