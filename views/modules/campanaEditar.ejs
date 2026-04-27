@@ -114,21 +114,74 @@
                          style="max-height:120px; max-width:100%; object-fit:cover; display:block;">
                 <% } %>
 
-                <div class="mb-2">
+                <!-- aqui dejo una decision clara para el usuario: mantener, subir archivo o usar URL -->
+                <div class="mb-3">
+                    <div class="form-label small text-muted mb-2">Selecciona como quieres manejar el banner</div>
+
+                    <div class="d-flex flex-wrap gap-3">
+                        <% if (bannerActual) { %>
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="radio"
+                                    name="modoBanner"
+                                    id="modoBannerMantener"
+                                    value="mantener"
+                                    checked>
+                                <label class="form-check-label" for="modoBannerMantener">
+                                    Mantener banner actual
+                                </label>
+                            </div>
+                        <% } %>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="modoBanner"
+                                id="modoBannerArchivo"
+                                value="archivo"
+                                <%= !bannerActual ? 'checked' : '' %>>
+                            <label class="form-check-label" for="modoBannerArchivo">
+                                Subir imagen desde mi equipo
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="modoBanner"
+                                id="modoBannerUrl"
+                                value="url">
+                            <label class="form-check-label" for="modoBannerUrl">
+                                Usar URL
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- aqui agrupo el input de archivo para mostrarlo u ocultarlo segun la opcion seleccionada -->
+                <div class="mb-2" id="bloqueBannerArchivo" style="<%= bannerActual ? 'display:none;' : '' %>">
                     <label class="form-label small text-muted mb-1">Subir imagen desde tu equipo</label>
                     <input type="file" name="bannerArchivo" id="bannerArchivo"
                            class="form-control"
                            accept="image/jpeg,image/png,image/webp"
-                           data-hint="Sube un JPG, PNG o WEBP. Si subes imagen, no es necesario llenar la URL.">
+                           data-hint="Sube un JPG, PNG o WEBP. Si eliges archivo, no necesitas llenar la URL.">
                 </div>
 
-                <div>
-                    <label class="form-label small text-muted mb-1">O ingresa una URL</label>
+                <!-- aqui agrupo el input de URL para mostrarlo solo cuando el usuario quiera usar URL -->
+                <div id="bloqueBannerUrl" style="display:none;">
+                    <label class="form-label small text-muted mb-1">Ingresar URL del banner</label>
                     <input type="text" name="banner" id="bannerUrl" class="form-control"
                         value="<%= bannerActual %>"
                         placeholder="Ej. https://dominio.com/img/banner.jpg"
-                        data-hint="URL de la imagen del banner. Se ignora si subes una imagen.">
-                    <div class="invalid-feedback">Debes subir una imagen o ingresar una URL de banner.</div>
+                        data-hint="Usa esta opcion solo si no vas a subir una imagen desde tu equipo.">
+                    <div class="invalid-feedback">Debes ingresar una URL valida o elegir otra forma de banner.</div>
+                </div>
+
+                <div class="form-text mt-2">
+                    Puedes conservar el banner actual, subir uno nuevo desde tu equipo o usar una URL.
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -158,6 +211,36 @@ document.getElementById('formEditarCampana')?.scrollIntoView({ behavior: 'smooth
 
 const bannerArchivo = document.getElementById('bannerArchivo');
 const bannerPreview = document.getElementById('bannerPreview');
+const bannerUrl = document.getElementById('bannerUrl');
+const bloqueBannerArchivo = document.getElementById('bloqueBannerArchivo');
+const bloqueBannerUrl = document.getElementById('bloqueBannerUrl');
+const radiosModoBanner = document.querySelectorAll('input[name="modoBanner"]');
+
+// aqui cambio la interfaz segun la opcion elegida por el usuario
+function actualizarModoBanner() {
+    const modoSeleccionado = document.querySelector('input[name="modoBanner"]:checked')?.value || 'archivo';
+
+    if (bloqueBannerArchivo) {
+        bloqueBannerArchivo.style.display = modoSeleccionado === 'archivo' ? '' : 'none';
+    }
+
+    if (bloqueBannerUrl) {
+        bloqueBannerUrl.style.display = modoSeleccionado === 'url' ? '' : 'none';
+    }
+
+    // aqui si el usuario decide mantener el banner actual, limpio errores visuales
+    if (modoSeleccionado === 'mantener') {
+        bannerArchivo?.classList.remove('is-invalid');
+        bannerUrl?.classList.remove('is-invalid');
+    }
+}
+
+radiosModoBanner.forEach((radio) => {
+    radio.addEventListener('change', actualizarModoBanner);
+});
+
+actualizarModoBanner();
+
 if (bannerArchivo && bannerPreview) {
     bannerArchivo.addEventListener('change', () => {
         const file = bannerArchivo.files[0];
@@ -183,14 +266,24 @@ formEditar.addEventListener('submit', function (e) {
 
     Object.entries(mensajesEditar).forEach(([nombre]) => {
         if (nombre === 'banner') {
+            const modoSeleccionado = document.querySelector('input[name="modoBanner"]:checked')?.value || 'archivo';
             const archivoInput = formEditar.querySelector('[name="bannerArchivo"]');
-                const urlInput = formEditar.querySelector('[name="banner"]');
+            const urlInput = formEditar.querySelector('[name="banner"]');
             const tieneArchivo = archivoInput && archivoInput.files && archivoInput.files.length > 0;
             const tieneUrl = urlInput && urlInput.value.trim();
-            if (!tieneArchivo && !tieneUrl) {
+
+            // aqui valido solo el campo que corresponde segun la opcion elegida
+            if (modoSeleccionado === 'archivo' && !tieneArchivo) {
+                archivoInput?.classList.add('is-invalid');
+                valido = false;
+            }
+
+            if (modoSeleccionado === 'url' && !tieneUrl) {
                 urlInput?.classList.add('is-invalid');
                 valido = false;
             }
+
+            // si el usuario elige mantener el actual, no obligo archivo ni URL
             return;
         }
         const campo = formEditar.querySelector(`[name="${nombre}"]`);
