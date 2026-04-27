@@ -335,6 +335,81 @@ exports.reporteOperativo = (req, res) => {
   
 };
 
+// **************************************
+exports.actualizarEstadoLogistico = (req, res) => {
+  // Aqui tomo el folio que viene en la URL de la ruta
+  const folio = String(req.params.folio || '').trim();
+
+  // Aqui convierto el estado nuevo a numero porque llega desde el formulario como texto
+  const idEstadoNuevo = Number(req.body.id_estado_logistico);
+
+  // Aqui guardo una observacion opcional por si logistica quiere explicar el cambio
+  const observacion = String(req.body.observacion || '').trim();
+
+  // Aqui tomo el correo del usuario que esta en sesion para guardar quien hizo el cambio
+  const correoLogistica = req.session.usuario?.correo;
+
+  // Aqui valido tres cosas antes de tocar la base de datos
+  // 1 que el folio no venga vacio
+  // 2 que el estado nuevo si sea un numero entero
+  // 3 que el estado sea mayor a cero porque los estados empiezan en 1
+  if (!folio || !Number.isInteger(idEstadoNuevo) || idEstadoNuevo < 1) {
+    // req.session.mensaje guarda un mensaje temporal para mostrarlo despues del redirect
+    // Lo uso porque al redirigir se carga otra vez la pagina de reservas
+    req.session.mensaje = {
+      // danger se usa para que el mensaje se vea como error
+      tipo: 'danger',
+      // texto es lo que vera el usuario en pantalla
+      texto: 'No fue posible actualizar el estado logistico de la reserva.'
+    };
+    // res.redirect manda al usuario de regreso al listado de reservas confirmadas
+    return res.redirect('/logistica/reservas-confirmadas');
+  }
+
+  // Primero busco la reserva para saber si existe y cual era su estado anterior
+  reservaModel.obtenerReservaLogisticaPorFolio(folio, (reservaErr, rows) => {
+    // reservaErr significa que hubo un problema al consultar la base de datos
+    if (reservaErr) {
+      // logger.error guarda el error en consola o logs para poder revisarlo como desarrollador
+      logger.error(reservaErr);
+      // Guardo un mensaje en sesion para avisar que fallo la consulta
+      req.session.mensaje = {
+        tipo: 'danger',
+        texto: 'No fue posible consultar la reserva seleccionada.'
+      };
+      // Regreso al listado porque no puedo continuar sin la reserva
+      return res.redirect('/logistica/reservas-confirmadas');
+    }
+
+    // Aqui preparo una variable vacia para guardar la reserva encontrada
+    let reserva = null;
+
+    // rows es el arreglo de resultados que regresa la base de datos
+    // Si trae al menos una fila, tomo la primera porque el folio es unico
+    if (rows && rows.length > 0) {
+      reserva = rows[0];
+    }
+
+    // Si no hay reserva, no se actualiza nada porque puede estar cancelada o no existir
+    if (!reserva) {
+      req.session.mensaje = {
+        tipo: 'warning',
+        texto: 'La reserva seleccionada no existe o no esta confirmada.'
+      };
+      return res.redirect('/logistica/reservas-confirmadas');
+    }
+
+    // Aqui junto los datos que necesita el modelo para hacer el update y guardar historial
+    const datosCambio = {
+      folio,
+      idEstadoAnterior: reserva.id_estado_logistico,
+      idEstadoNuevo,
+      observacion,
+      correoLogistica
+    };
+
+// *************************
+
 // lau y eduardo inicio exportar reporte operativo cu-18
 exports.exportarReporteOperativo = (req, res) => {
   // aqui leo las fechas que llegan del formulario
