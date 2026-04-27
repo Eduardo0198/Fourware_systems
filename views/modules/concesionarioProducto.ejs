@@ -97,7 +97,9 @@
                     <label class="form-label fw-semibold mb-1 d-block">Cantidad</label>
                     <div class="d-flex align-items-center gap-0 border rounded-3 overflow-hidden" style="width:fit-content;">
                         <button type="button" id="btnMenos" class="btn btn-outline-secondary border-0 px-3 py-2 fs-5 lh-1" style="border-radius:0;">−</button>
-                        <span id="cantidad" class="px-3 py-2 fw-bold text-center" style="min-width:48px; font-size:1.1rem; user-select:none;">1</span>
+                        <input type="number" id="cantidad" value="1" min="1"
+                               class="px-2 py-2 fw-bold text-center border-0 bg-transparent"
+                               style="width:56px; font-size:1.1rem;">
                         <button type="button" id="btnMas" class="btn btn-outline-secondary border-0 px-3 py-2 fs-5 lh-1" style="border-radius:0;">+</button>
                     </div>
                 </div>
@@ -111,20 +113,25 @@
 
         <script>
         (function () {
-            const spanCantidad = document.getElementById('cantidad');
-            let qty = 1;
+            const inputCantidad = document.getElementById('cantidad');
+
+            function getQty() { return Math.max(1, parseInt(inputCantidad.value, 10) || 1); }
+
             document.getElementById('btnMenos').addEventListener('click', () => {
-                if (qty > 1) { qty--; spanCantidad.textContent = qty; }
+                const q = getQty();
+                if (q > 1) inputCantidad.value = q - 1;
             });
             document.getElementById('btnMas').addEventListener('click', () => {
-                qty++;
-                spanCantidad.textContent = qty;
+                inputCantidad.value = getQty() + 1;
+            });
+            inputCantidad.addEventListener('blur', () => {
+                inputCantidad.value = getQty();
             });
         })();
 
         document.getElementById('btnAgregarCarrito').addEventListener('click', async () => {
             const btn = document.getElementById('btnAgregarCarrito');
-            const cantidad = document.getElementById('cantidad').textContent.trim();
+            const cantidad = document.getElementById('cantidad').value.trim();
             const sku = '<%= producto.SKU %>';
             const returnTo = '<%= returnTo || "/concesionario/catalogo" %>';
 

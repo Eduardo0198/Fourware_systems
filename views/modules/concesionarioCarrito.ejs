@@ -81,7 +81,7 @@
                                                    class="cart-qty-input"
                                                    data-sku="<%= p.sku %>"
                                                    data-original="<%= p.cantidad %>">
-                                            <input type="hidden" name="accion" value="establecer" class="cart-accion-hidden">
+                                            <input type="hidden" value="establecer" class="cart-accion-hidden">
 
                                             <button type="submit"
                                                     name="accion"
@@ -201,7 +201,9 @@
             const val = parseInt(input.value, 10);
             if (isNaN(val) || val < 1) { input.value = original; return; }
             if (val === original) return;
-            input.closest('form').querySelector('.cart-accion-hidden').value = 'establecer';
+            const hidden = input.closest('form').querySelector('.cart-accion-hidden');
+            hidden.name  = 'accion';
+            hidden.value = 'establecer';
             input.closest('form').submit();
         }
 
