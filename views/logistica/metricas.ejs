@@ -541,6 +541,48 @@
         <% } %>
     </div>
 
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Peso total por producto</h4>
+                        <p>Top 10 productos con mayor carga acumulada en kilogramos.</p>
+                    </div>
+                    <span class="admin-table-pill">Peso</span>
+                </div>
+
+                <% if (top10ProductosPeso.length > 0) { %>
+                    <div style="position: relative; min-height: 360px;">
+                        <canvas id="chartPesoProducto"></canvas>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la grafica de peso.</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="admin-table-card h-100">
+                <div class="admin-table-head">
+                    <div>
+                        <h4>Volumen total por producto</h4>
+                        <p>Top 10 productos con mayor volumen acumulado en el periodo.</p>
+                    </div>
+                    <span class="admin-table-pill">Volumen</span>
+                </div>
+
+                <% if (top10ProductosVolumen.length > 0) { %>
+                    <div style="position: relative; min-height: 360px;">
+                        <canvas id="chartVolumenProducto"></canvas>
+                    </div>
+                <% } else { %>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la grafica de volumen.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
     <div class="admin-table-card">
         <div class="admin-table-head">
             <div>
