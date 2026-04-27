@@ -30,13 +30,13 @@
 <div class="row g-4 align-items-start">
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-body p-4">
+            <div class="card-body p-4 d-flex align-items-center justify-content-center">
         <% if (producto.imagenes && producto.imagenes.length > 1) { %>
-            <div id="productoCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div id="productoCarousel" class="carousel slide w-100" data-bs-ride="carousel">
                 <div class="carousel-inner">
                     <% producto.imagenes.forEach((img, index) => { %>
                         <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
-                            <img src="<%= getImgUrl(img) %>" class="d-block w-100" alt="<%= producto.nombre %>">
+                            <img src="<%= getImgUrl(img) %>" class="d-block mx-auto img-fluid" alt="<%= producto.nombre %>">
                         </div>
                     <% }); %>
                 </div>
@@ -52,7 +52,7 @@
         <% } else { 
             let singleImg = (producto.imagenes && producto.imagenes[0]) || producto.imagen;
         %>
-            <img src="<%= getImgUrl(singleImg) %>" alt="<%= producto.nombre %>" class="img-fluid">
+            <img src="<%= getImgUrl(singleImg) %>" alt="<%= producto.nombre %>" class="img-fluid d-block mx-auto">
         <% } %>
             </div>
         </div>
