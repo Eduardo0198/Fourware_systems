@@ -82,7 +82,7 @@
         <div class="admin-table-head">
             <div>
                 <h4>Detalle consolidado</h4>
-                <p>Se muestran folio, cuenta, distribuidor, fecha, estatus, subtotal, IVA, total, peso, volumen y campaña.</p>
+                <p>Se muestran folio, cuenta, distribuidor, fecha, estatus, estado logístico, subtotal, IVA, total, peso, volumen y campaña.</p>
             </div>
             <span class="admin-table-pill">Consulta simple</span>
         </div>
@@ -95,12 +95,14 @@
                         <th>Distribuidor</th>
                         <th>Fecha</th>
                         <th>Estatus</th>
+                        <th>Estado logístico</th>
                         <th>Subtotal</th>
                         <th>IVA</th>
                         <th>Total</th>
                         <th>Peso total</th>
                         <th>Volumen total</th>
                         <th>Campaña</th>
+                        <th>Actualizar</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,17 +118,58 @@
                                 </td>
                                 <td><%= reserva.fecha %></td>
                                 <td><span class="badge text-bg-success">Confirmada</span></td>
+                                <td>
+                                    <span class="badge text-bg-secondary">
+                                        <%= reserva.estado_logistico || 'Pendiente' %>
+                                    </span>
+                                </td>
                                 <td>$<%= Number(reserva.subtotal || 0).toFixed(2) %></td>
                                 <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
                                 <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
                                 <td><%= Number(reserva.peso_total || 0).toFixed(2) %> kg</td>
                                 <td><%= Number(reserva.volumen_total || 0).toFixed(2) %> m³</td>
                                 <td><%= reserva.campanias || 'Sin campaña asociada' %></td>
+                                <td>
+                                    <% /* ********** INICIO U-27 ********** */ %>
+                                    <% /* Este formulario se ejecuta cuando logistica presiona Guardar */ %>
+                                    <% /* method POST significa que se mandan datos para actualizar informacion */ %>
+                                    <% /* En el action mando el folio en la URL para saber que reserva se cambia */ %>
+                                    <form method="POST" action="/logistica/reservas/<%= reserva.folio %>/estado-logistico" class="d-flex flex-column gap-2">
+                                        <% /* Este select muestra los estados activos que mando el controlador */ %>
+                                        <% /* name id_estado_logistico es el nombre con el que el controlador recibe el estado elegido */ %>
+                                        <select name="id_estado_logistico" class="form-select form-select-sm" required>
+                                            <% /* Aqui recorro cada estado para crear una opcion dentro del select */ %>
+                                            <% (estadosLogisticos || []).forEach((estado) => { %>
+                                                <option
+                                                    <% /* value guarda el id real que se manda al backend */ %>
+                                                    value="<%= estado.id_estado_logistico %>"
+                                                    <% /* selected deja marcada la opcion que ya tiene la reserva actualmente */ %>
+                                                    <%= Number(reserva.id_estado_logistico || 1) === Number(estado.id_estado_logistico) ? 'selected' : '' %>>
+                                                    <% /* Este texto es lo que ve el usuario en pantalla */ %>
+                                                    <%= estado.nombre %>
+                                                </option>
+                                            <% }); %>
+                                        </select>
+                                        <% /* La observacion es opcional y sirve para explicar incidencias o notas */ %>
+                                        <input
+                                            <% /* type text permite escribir una nota corta */ %>
+                                            type="text"
+                                            <% /* name observacion es el campo que despues lee el controlador */ %>
+                                            name="observacion"
+                                            class="form-control form-control-sm"
+                                            <% /* maxlength limita la observacion a 300 caracteres como en la base de datos */ %>
+                                            maxlength="300"
+                                            placeholder="Observación opcional">
+                                        <% /* Este boton envia el formulario al controlador */ %>
+                                        <button class="btn btn-sm admin-action-btn" type="submit">Guardar</button>
+                                    </form>
+                                    <% /* ********** FIN U-27 ********** */ %>
+                                </td>
                             </tr>
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="11" class="text-center">
+                            <td colspan="13" class="text-center">
                                 No existen reservas confirmadas con ese criterio de periodo.
                             </td>
                         </tr>
