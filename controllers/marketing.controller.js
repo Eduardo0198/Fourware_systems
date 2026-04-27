@@ -72,7 +72,7 @@ function renderRankingProductos(res, payload) {
       logger.error(err);
     }
 
-    calificacionModel.obtenerRankingProductosPorCalificacion('DESC', 20, (errMejores, mejores) => {
+    calificacionModel.obtenerRankingProductosPorCalificacion('DESC', 20, 5, (errMejores, mejores) => {
       if (errMejores) {
         logger.error(errMejores);
       }
