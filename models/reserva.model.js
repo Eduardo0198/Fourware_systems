@@ -152,6 +152,8 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
             r.folio,
             r.fecha,
             r.estatus,
+            r.id_estado_logistico,
+            el.nombre AS estado_logistico,
             r.subtotal,
             r.iva,
             r.total,
@@ -164,6 +166,7 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
         FROM "Reserva" r
         JOIN "Cuenta" c ON c.id_cuenta = r.id_cuenta
         JOIN "Usuario" u ON u.correo = r.correo
+        LEFT JOIN "EstadoLogistico" el ON el."id_estado_logistico" = r.id_estado_logistico
         LEFT JOIN "Reserva_Producto" rp ON rp.folio = r.folio
         LEFT JOIN "Producto" p ON p."SKU" = rp."SKU"
         LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
@@ -173,6 +176,8 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
             r.folio,
             r.fecha,
             r.estatus,
+            r.id_estado_logistico,
+            el.nombre,
             r.subtotal,
             r.iva,
             r.total,
@@ -642,7 +647,7 @@ exports.actualizarEstadoLogistico = (data, callback) => {
                         if (commitErr) return rollback(commitErr);
                         // Libero la conexion porque ya termine de usarla
                         done();
-                        // Aviso al controlador que si se actualizo una reserva
+                        // Aviso al controlador que si se actualizo u na reserva
                         callback(null, { affectedRows: updateResult.rowCount });
                     });
                 });
