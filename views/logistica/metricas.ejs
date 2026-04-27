@@ -634,71 +634,169 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // aqui busco el canvas donde se va a dibujar la grafica
+        // aqui busco el canvas de confirmaciones
         const canvas = document.getElementById('chartConfirmacionesProducto');
 
+        // aqui busco el canvas de peso por producto
+        const canvasPeso = document.getElementById('chartPesoProducto');
+
+        // aqui busco el canvas de volumen por producto
+        const canvasVolumen = document.getElementById('chartVolumenProducto');
+
         // si el canvas no existe por alguna razon, termino sin romper la vista
-        if (!canvas) return;
+        if (canvas) {
+            // aqui creo la grafica horizontal con Chart.js
+            new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    // aqui van los nombres de producto como etiquetas
+                    labels: <%- JSON.stringify(labelsGraficaConfirmaciones) %>,
+                    datasets: [
+                        {
+                            // aqui defino el nombre de la serie de datos
+                            label: 'Preventas confirmadas',
 
-        // aqui creo la grafica horizontal con Chart.js
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                // aqui van los nombres de producto como etiquetas
-                labels: <%- JSON.stringify(labelsGraficaConfirmaciones) %>,
-                datasets: [
-                    {
-                        // aqui defino el nombre de la serie de datos
-                        label: 'Preventas confirmadas',
+                            // aqui van los valores numericos de confirmaciones
+                            data: <%- JSON.stringify(dataGraficaConfirmaciones) %>,
 
-                        // aqui van los valores numericos de confirmaciones
-                        data: <%- JSON.stringify(dataGraficaConfirmaciones) %>,
+                            // aqui defino el color visual de las barras
+                            backgroundColor: 'rgba(13, 110, 253, 0.72)',
 
-                        // aqui defino el color visual de las barras
-                        backgroundColor: 'rgba(13, 110, 253, 0.72)',
+                            // aqui redondeo ligeramente las puntas para que se vea mas limpio
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    // aqui hago que la grafica se adapte al espacio disponible
+                    responsive: true,
 
-                        // aqui redondeo ligeramente las puntas para que se vea mas limpio
-                        borderRadius: 6
-                    }
-                ]
-            },
-            options: {
-                // aqui hago que la grafica se adapte al espacio disponible
-                responsive: true,
+                    // aqui la pongo horizontal para que se lean mejor los nombres largos
+                    indexAxis: 'y',
 
-                // aqui la pongo horizontal para que se lean mejor los nombres largos
-                indexAxis: 'y',
+                    plugins: {
+                        // aqui oculto la leyenda porque solo hay una serie
+                        legend: { display: false },
 
-                plugins: {
-                    // aqui oculto la leyenda porque solo hay una serie
-                    legend: { display: false },
+                        // aqui pongo un titulo arriba de la grafica
+                        title: {
+                            display: true,
+                            text: 'Top productos por preventas confirmadas',
+                            font: { size: 14 }
+                        },
 
-                    // aqui pongo un titulo arriba de la grafica
-                    title: {
-                        display: true,
-                        text: 'Top productos por preventas confirmadas',
-                        font: { size: 14 }
+                        // aqui personalizo el tooltip para que el texto se vea mas natural
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} confirmaciones`
+                            }
+                        }
                     },
 
-                    // aqui personalizo el tooltip para que el texto se vea mas natural
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} confirmaciones`
-                        }
-                    }
-                },
-
-                scales: {
-                    // aqui obligo a que el eje X empiece en cero
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+                    scales: {
+                        // aqui obligo a que el eje X empiece en cero
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // aqui creo la grafica horizontal de peso por producto
+        if (canvasPeso) {
+            new Chart(canvasPeso, {
+                type: 'bar',
+                data: {
+                    // aqui van los nombres de producto para la grafica de peso
+                    labels: <%- JSON.stringify(labelsGraficaPeso) %>,
+                    datasets: [
+                        {
+                            // aqui defino la serie para el peso total acumulado
+                            label: 'Peso total (kg)',
+
+                            // aqui van los valores numericos del peso por producto
+                            data: <%- JSON.stringify(dataGraficaPeso) %>,
+
+                            // aqui uso un color verde para distinguirlo de confirmaciones
+                            backgroundColor: 'rgba(25, 135, 84, 0.72)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Top productos por peso total',
+                            font: { size: 14 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} kg`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // aqui creo la grafica horizontal de volumen por producto
+        if (canvasVolumen) {
+            new Chart(canvasVolumen, {
+                type: 'bar',
+                data: {
+                    // aqui van los nombres de producto para la grafica de volumen
+                    labels: <%- JSON.stringify(labelsGraficaVolumen) %>,
+                    datasets: [
+                        {
+                            // aqui defino la serie para el volumen total acumulado
+                            label: 'Volumen total (m3)',
+
+                            // aqui van los valores numericos del volumen por producto
+                            data: <%- JSON.stringify(dataGraficaVolumen) %>,
+
+                            // aqui uso color amarillo para separar visualmente esta grafica
+                            backgroundColor: 'rgba(255, 193, 7, 0.72)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Top productos por volumen total',
+                            font: { size: 14 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} m3`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
     });
 </script>
 <% } %>
