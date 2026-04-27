@@ -1,0 +1,64 @@
+@startuml
+
+|Usuario de Logistica|
+:Inicia sesion en el sistema;
+:Ingresa al modulo de reservas confirmadas;
+
+|Sistema|
+:Valida permisos del usuario;
+
+if (Usuario tiene perfil de logistica?) then (Si)
+  :Consulta reservas confirmadas;
+
+  |Base de Datos|
+  :Obtiene reservas disponibles;
+
+  |Sistema|
+  :Muestra listado de reservas;
+
+  |Usuario de Logistica|
+  :Selecciona una reserva;
+
+  |Sistema|
+  :Consulta detalle de la reserva;
+
+  |Base de Datos|
+  :Obtiene informacion de reserva;
+
+  |Sistema|
+  :Muestra detalle y estado actual;
+
+  |Usuario de Logistica|
+  :Selecciona nuevo estado logistico;
+  :Confirma actualizacion;
+
+  |Sistema|
+  :Valida cambio de estado;
+
+  if (Cambio de estado valido?) then (Si)
+    :Prepara actualizacion;
+
+    |Base de Datos|
+    :Actualiza estado logistico de la reserva;
+    :Registra movimiento en auditoria;
+
+    |Sistema|
+    :Confirma actualizacion exitosa;
+    :Muestra nuevo estado de la reserva;
+
+    |Usuario de Logistica|
+    :Visualiza confirmacion;
+  else (No)
+    :Muestra mensaje de estado no valido;
+
+    |Usuario de Logistica|
+    :Corrige el estado seleccionado;
+  endif
+
+else (No)
+  :Bloquea acceso al modulo;
+  :Muestra mensaje de permisos insuficientes;
+endif
+
+stop
+@enduml
