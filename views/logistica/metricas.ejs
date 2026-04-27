@@ -122,9 +122,34 @@
             </p>
         </div>
         <div class="admin-hero-note">
-            <span>Agrupacion actual</span>
+            <span><%= etiquetaContextoCampania %></span>
             <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
             <small>Periodo del <%= filtroFechaInicio %> al <%= filtroFechaFin %>.</small>
+        </div>
+    </div>
+
+    <div class="admin-table-card mb-4">
+        <div class="admin-table-head">
+            <div>
+                <h4>Contexto de consulta</h4>
+                <p>Esta vista toma el periodo actual y el criterio de agrupacion para interpretar el rendimiento logistico.</p>
+            </div>
+            <span class="admin-table-pill">Resumen</span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="small text-muted mb-1">Campania visible</div>
+                <strong><%= etiquetaContextoCampania %></strong>
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted mb-1">Periodo consultado</div>
+                <strong><%= filtroFechaInicio %> al <%= filtroFechaFin %></strong>
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted mb-1">Agrupacion activa</div>
+                <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
+            </div>
         </div>
     </div>
 
