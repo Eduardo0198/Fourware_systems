@@ -408,6 +408,40 @@ exports.actualizarEstadoLogistico = (req, res) => {
       correoLogistica
     };
 
+    // Aqui mando los datos al modelo para que haga el cambio en la base de datos
+    reservaModel.actualizarEstadoLogistico(datosCambio, (updateErr) => {
+      // updateErr significa que algo fallo al actualizar la reserva o guardar el historial
+      if (updateErr) {
+        // Guardo el error en logs para poder revisarlo si algo sale mal
+        logger.error(updateErr);
+        // Guardo un mensaje temporal para mostrarlo cuando regrese al listado
+        req.session.mensaje = {
+          // danger indica que el mensaje es de error
+          tipo: 'danger',
+          // Este texto es el que vera el usuario de logistica
+          texto: 'No fue posible guardar el nuevo estado logistico.'
+        };
+        // return hace que el controlador se detenga aqui y no siga ejecutando lo de abajo
+        // res.redirect manda al usuario de regreso a la pantalla de reservas confirmadas
+        return res.redirect('/logistica/reservas-confirmadas');
+      }
+
+      // Si no hubo error, registro el evento en la bitacora de auditoria
+      // Uso el folio para saber que reserva fue modificada
+      registrarEvento(req, `Actualizacion de estado logistico para reserva ${folio}`);
+      // Guardo un mensaje temporal de exito para mostrarlo despues del redirect
+      req.session.mensaje = {
+        // success indica que el mensaje es positivo
+        tipo: 'success',
+        // Este texto confirma al usuario que el cambio se guardo
+        texto: 'Estado logistico actualizado correctamente.'
+      };
+      // Regreso al listado para que el usuario vea nuevamente las reservas
+      return res.redirect('/logistica/reservas-confirmadas');
+    });
+  });
+};
+
 // *************************
 
 // lau y eduardo inicio exportar reporte operativo cu-18
