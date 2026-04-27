@@ -575,9 +575,79 @@ exports.obtenerReservaLogisticaPorFolio = (folio, callback) => {
     // Usar parametro evita escribir el folio directo dentro del SQL
     db.query(query, [folio], callback);
 };
-// *********************
 
 exports.actualizarEstadoLogistico = (data, callback) => {
-    // update Reserva
-    // insert HistorialEstadoLogistico
+    // Uso db.connect porque necesito una conexion dedicada para hacer varios pasos juntos
+    // Esto me ayuda a manejar una transaccion y no dejar datos incompletos
+    db.connect((err, client, done) => {
+        // Si no se pudo abrir la conexion con la base, regreso el error
+        if (err) return callback(err);
+
+        // rollback es una funcion pequeña para cancelar la transaccion si algo sale mal
+        // Sirve para que la reserva no se actualice si el historial no se pudo guardar
+        const rollback = (rollbackErr) => {
+            // ROLLBACK le dice a la base que deshaga los cambios hechos en esta transaccion
+            client.query('ROLLBACK', () => {
+                // done libera la conexion para que pueda volver al pool
+                done();
+                // callback avisa al controlador cual fue el error
+                callback(rollbackErr);
+            });
+        };
+
+        // BEGIN inicia la transaccion en la base de datos
+        // Todo lo que pase despues debe terminar con COMMIT o ROLLBACK
+        client.query('BEGIN', (beginErr) => {
+            // beginErr significa que ni siquiera se pudo iniciar la transaccion
+            if (beginErr) return rollback(beginErr);
+
+            // Primero actualizo el estado actual de la reserva confirmada
+            const updateQuery = `
+                UPDATE "Reserva"
+                SET id_estado_logistico = $1
+                WHERE folio = $2
+                  AND estatus = 1
+            `;
+
+            client.query(updateQuery, [data.idEstadoNuevo, data.folio], (updateErr, updateResult) => {
+                // updateErr significa que fallo el UPDATE de la reserva
+                if (updateErr) return rollback(updateErr);
+
+                // rowCount dice cuantas filas se actualizaron
+                // Si es 0 quiere decir que no existe el folio o la reserva no esta confirmada
+                if (updateResult.rowCount === 0) {
+                    return rollback(new Error('No se encontro una reserva confirmada para actualizar.'));
+                }
+
+                // Despues guardo el movimiento para saber quien hizo el cambio y cuando
+                const historialQuery = `
+                    INSERT INTO "HistorialEstadoLogistico"
+                    (folio, id_estado_anterior, id_estado_nuevo, observacion, correo_logistica)
+                    VALUES ($1, $2, $3, $4, $5)
+                `;
+
+                client.query(historialQuery, [
+                    data.folio,
+                    data.idEstadoAnterior,
+                    data.idEstadoNuevo,
+                    data.observacion,
+                    data.correoLogistica
+                ], (historialErr) => {
+                    // historialErr significa que no se pudo guardar el registro del historial
+                    if (historialErr) return rollback(historialErr);
+
+                    // COMMIT confirma todos los cambios porque ya salio bien el UPDATE y el INSERT
+                    client.query('COMMIT', (commitErr) => {
+                        // commitErr significa que fallo el guardado final de la transaccion
+                        if (commitErr) return rollback(commitErr);
+                        // Libero la conexion porque ya termine de usarla
+                        done();
+                        // Aviso al controlador que si se actualizo una reserva
+                        callback(null, { affectedRows: updateResult.rowCount });
+                    });
+                });
+            });
+        });
+    });
+    // ********************
 };
