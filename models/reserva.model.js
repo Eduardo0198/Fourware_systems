@@ -515,21 +515,69 @@ exports.obtenerReservasRecientesAdmin = (limite, callback) => {
     db.query(query, [limite], callback);
 };
 
-// funcion para listar estados logísticos (consulta EstadoLogistico)
+// **********************
+// Esta funcion trae los estados logisticos activos para mostrarlos en la vista.
 exports.obtenerEstadosLogisticos = (callback) => {
-     // Permite usar una funcion desde otro archivo "export"
-     // Funcion que se ejecuta cuando termina una consulta o proceso "callback"
+    // Aqui preparo la consulta que va a leer el catalogo EstadoLogistico
+    // No recibe parametros porque siempre necesitamos traer todos los estados activos
+    const query = `
+        SELECT
+            -- Este id es el valor que se guardara en Reserva.
+            "id_estado_logistico",
+            -- Este nombre es el texto que vera el usuario de logistica
+            "nombre",
+            -- Esta descripcion ayuda a entender para que sirve cada estado
+            "descripcion"
+        FROM "EstadoLogistico"
+        -- Solo se muestran estados activos para no usar opciones deshabilitadas
+        WHERE "activo" = 1
+        -- Se ordenan por id para que siempre salgan en el mismo orden
+        ORDER BY "id_estado_logistico" ASC
+    `;
+
+    // Aqui mando la consulta a la base de datos
+    // El callback regresa error o filas al controlador que llame esta funcion
+    db.query(query, callback);
 };
 
-//  funcion para obtener una reserva por folio
+// Esta funcion busca una reserva confirmada y tambien trae su estado logistico actual
 exports.obtenerReservaLogisticaPorFolio = (folio, callback) => {
-    // consulta Reserva con su estado logistico
+    // Aqui preparo la consulta para buscar una sola reserva por su folio
+    // El folio llega desde la ruta cuando logistica quiere actualizar una reserva
+    const query = `
+        SELECT
+            -- Folio de la reserva que se va a actualizar
+            r.folio,
+            -- Estatus general de la reserva: 1 confirmada, 0 cancelada
+            r.estatus,
+            -- Id del estado logistico actual guardado en Reserva
+            r.id_estado_logistico,
+            -- Nombre del estado logistico actual para mostrarlo en pantalla
+            e.nombre AS estado_logistico,
+            -- Correo del concesionario que creo la reserva
+            r.correo,
+            -- Cuenta relacionada con la reserva.
+            r.id_cuenta,
+            -- Sucursal donde se recibira o atiende la reserva
+            r.id_sucursal
+        FROM "Reserva" r
+        -- Este LEFT JOIN permite traer el nombre del estado logistico
+        -- Es LEFT JOIN para no romper la consulta si alguna reserva vieja no tuviera estado
+        LEFT JOIN "EstadoLogistico" e
+            ON e."id_estado_logistico" = r.id_estado_logistico
+        -- Se busca solo el folio solicitado por el usuario
+        WHERE r.folio = ?
+          -- Solo se permite trabajar con reservas confirmadas
+          AND r.estatus = 1
+    `;
+
+    // Aqui ejecuto la consulta mandando el folio como parametro
+    // Usar parametro evita escribir el folio directo dentro del SQL
+    db.query(query, [folio], callback);
 };
+// *********************
 
 exports.actualizarEstadoLogistico = (data, callback) => {
     // update Reserva
     // insert HistorialEstadoLogistico
 };
-
-// uso exports para que el controlador pueda llamar esta funcion desde otro archivo,
-// y uso callback porque la consulta a la base de datos se responde despues
