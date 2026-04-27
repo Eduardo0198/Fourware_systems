@@ -395,113 +395,130 @@ exports.reporteOperativo = (req, res) => {
 
 
 exports.metricas = (req, res) => {
-  // aqui primero consulto la campania activa para poder usarla como default
+  // aqui primero consulto la campania activa
+  // esto sirve para que, si el usuario no manda una campania,
+  // la pantalla use por default la campania activa del sistema
   campaniaModel.obtenerCampaniaActiva((campaniaErr, campaniaRows) => {
-    // aqui convierto el resultado en un solo objeto de campania
-    // si no hay campania activa, guardo null
+    // aqui convierto el resultado en un solo objeto
+    // si no hay campania activa, se queda como null
     const campaniaActiva = Array.isArray(campaniaRows) && campaniaRows.length > 0
       ? campaniaRows[0]
       : null;
 
-    // aqui construyo el contexto final de metricas
-    // este contexto ya decide fechas, cuenta, agrupacion y campania default
+    // aqui construyo el contexto final de filtros
+    // esta funcion decide fechas, cuenta y campania real a usar
     const filtros = construirContextoMetricas(req.query, campaniaActiva);
 
-    // aqui dejo una funcion local para renderizar la vista sin repetir codigo
-    const renderMetricas = (pageMessage, metricas, serieTiempo, catalogos) => res.render('logistica/metricas', {
-      // mensaje que se mostrara arriba si hay error, warning o info
+    // aqui centralizo el render de la vista para no repetir codigo
+    // ahora agrego rendimientoProductos porque ya lo vamos a mandar a la vista
+    const renderMetricas = (pageMessage, metricas, serieTiempo, rendimientoProductos, catalogos) => res.render('logistica/metricas', {
+      // mensaje superior por si hay errores o warnings
       pageMessage,
 
-      // aqui convierto el objeto de filtros al formato que espera la vista
+      // filtros ya listos para que la vista los vuelva a pintar en el formulario
       filtros: construirFiltrosVista(filtros),
 
-      // aqui mando la lista principal de metricas consolidadas
+      // metricas generales agrupadas por campania o cuenta
       metricas: metricas || [],
 
-      // aqui mando la serie temporal para la grafica de comportamiento
+      // serie temporal para comportamiento en el tiempo
       serieTiempo: serieTiempo || [],
 
-      // aqui calculo el resumen total de peso, volumen, reservas e importe
+      // nuevo arreglo con rendimiento por producto dentro de la campania
+      rendimientoProductos: rendimientoProductos || [],
+
+      // resumen global que ya tenias de peso, volumen, reservas e importe
       resumen: construirResumenMetricas(metricas),
 
-      // aqui envio las campanias para el select de filtros
+      // catalogos para selects
       campanias: catalogos.campanias,
-
-      // aqui envio las cuentas para el select de filtros
       cuentas: catalogos.cuentas,
 
-      // aqui mando la campania activa completa para que luego podamos
-      // mostrar su nombre, fechas o estado en la interfaz
+      // contexto extra para que luego podamos decir en la vista
+      // si se esta usando la campania activa automaticamente
       campaniaActiva: filtros.campaniaActiva,
-
-      // aqui envio una bandera para saber si la vista esta usando
-      // la campania activa automaticamente como valor por default
       usaCampaniaActivaPorDefault: filtros.usaCampaniaActivaPorDefault
     });
 
-    // si hubo error al consultar la campania activa, lo registro en log
-    // pero no rompo la pantalla; solo sigo sin campania activa
+    // si falla la consulta de campania activa, la registro,
+    // pero no detengo la pantalla completa
     if (campaniaErr) {
       logger.error(campaniaErr);
     }
 
-    // aqui cargo los catalogos de campanias y cuentas para los filtros
+    // aqui cargo catalogos de campanias y cuentas
     cargarCatalogosMetricas((catalogosErr, catalogos) => {
-      // aqui dejo valores vacios por seguridad si algo falla
+      // si algo falla, dejo objetos vacios para evitar que truene la vista
       const catalogosVista = catalogos || { campanias: [], cuentas: [] };
 
-      // si hubo error cargando catalogos, renderizo con mensaje y sin datos
+      // si no pude cargar catalogos, regreso la vista con error
       if (catalogosErr) {
         logger.error(catalogosErr);
         return renderMetricas({
           tipo: 'danger',
           texto: 'No fue posible cargar los filtros de campania y cuenta.'
-        }, [], [], catalogosVista);
+        }, [], [], [], catalogosVista);
       }
 
-      // aqui valido que el rango de fechas siga siendo correcto
+      // aqui valido que las fechas sean correctas antes de consultar
       if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
         return renderMetricas({
           tipo: 'danger',
           texto: 'Debes seleccionar un periodo valido para consultar metricas logisticas.'
-        }, [], [], catalogosVista);
+        }, [], [], [], catalogosVista);
       }
 
-      // aqui consulto las metricas consolidadas principales
+      // aqui consulto las metricas generales que ya tenias
       reservaModel.obtenerMetricasLogisticasConsolidadas(filtros, (err, metricas) => {
-        // si falla la consulta principal, renderizo error
+        // si falla esta consulta, ya no puedo seguir con la pantalla
         if (err) {
           logger.error(err);
           return renderMetricas({
             tipo: 'danger',
             texto: 'No fue posible consultar las metricas logisticas consolidadas.'
-          }, [], [], catalogosVista);
+          }, [], [], [], catalogosVista);
         }
 
-        // aqui consulto la serie temporal de las metricas para ver comportamiento en el tiempo
+        // aqui consulto la serie temporal
         reservaModel.obtenerSerieTiempoMetricasLogisticas(filtros, (serieErr, serieTiempo) => {
-          // si falla solo la serie temporal, muestro lo demas pero aviso el problema
+          // si falla la serie temporal, muestro error y dejo vacia esa parte
           if (serieErr) {
             logger.error(serieErr);
             return renderMetricas({
               tipo: 'danger',
               texto: 'No fue posible consultar la serie temporal de metricas logisticas.'
-            }, metricas || [], [], catalogosVista);
+            }, metricas || [], [], [], catalogosVista);
           }
 
-          // aqui registro en bitacora que el usuario consulto las metricas
-          registrarEvento(req, 'Consulta de metricas logisticas consolidadas');
+          // aqui consulto el rendimiento por producto dentro de la campania
+          // este es el bloque nuevo de este paso
+          reservaModel.obtenerRendimientoProductosCampania(filtros, (productosErr, rendimientoProductos) => {
+            // si falla esta consulta, no trueno toda la pantalla
+            // pero si aviso que el bloque de productos no pudo generarse
+            if (productosErr) {
+              logger.error(productosErr);
+              return renderMetricas({
+                tipo: 'danger',
+                texto: 'No fue posible consultar el rendimiento por producto.'
+              }, metricas || [], serieTiempo || [], [], catalogosVista);
+            }
 
-          // si no hubo resultados, mando warning; si si hubo, no mando mensaje
-          renderMetricas(metricas.length === 0 ? {
-            tipo: 'warning',
-            texto: 'No existen reservas confirmadas con los filtros seleccionados.'
-          } : null, metricas, serieTiempo, catalogosVista);
+            // aqui registro la consulta en bitacora
+            registrarEvento(req, 'Consulta de metricas logisticas consolidadas');
+
+            // si no hay metricas generales, mando warning
+            // si si hay, mando la vista normal con todos los datos
+            return renderMetricas(metricas.length === 0 ? {
+              tipo: 'warning',
+              texto: 'No existen reservas confirmadas con los filtros seleccionados.'
+            } : null, metricas, serieTiempo, rendimientoProductos, catalogosVista);
+          });
         });
       });
     });
   });
 };
+
 
 
 // lau y eduardo inicio exportar reporte operativo cu-18

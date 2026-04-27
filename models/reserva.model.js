@@ -536,6 +536,8 @@ exports.obtenerRendimientoProductosCampania = (filtros, callback) => {
     }
 
     // aqui filtro por cuenta si el usuario quiere ver una cuenta especifica
+    // ? es un placeholder que se reemplaza por el valor del arreglo params en orden, 
+    // esto ayuda a prevenir inyecciones SQL
     if (filtros.idCuenta) {
         condiciones.push('r.id_cuenta = ?');
         params.push(filtros.idCuenta);
