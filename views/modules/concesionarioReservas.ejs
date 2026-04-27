@@ -1,3 +1,10 @@
+<% function formatCurrency(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
+
 <h2>Mis Reservas</h2>
 <hr>
 
@@ -32,9 +39,9 @@
                             <%= reserva.estatusTexto %>
                         </span>
                     </td>
-                    <td>$<%= Number(reserva.subtotal || 0).toFixed(2) %></td>
-                    <td>$<%= Number(reserva.iva || 0).toFixed(2) %></td>
-                    <td>$<%= Number(reserva.total || 0).toFixed(2) %></td>
+                    <td>$<%= formatCurrency(reserva.subtotal) %></td>
+                    <td>$<%= formatCurrency(reserva.iva) %></td>
+                    <td>$<%= formatCurrency(reserva.total) %></td>
                     <td>
                         <% if (reserva.puedeCancelar) { %>
                             Disponible hasta <%= reserva.fechaCancelacionTexto %>
