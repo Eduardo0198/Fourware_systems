@@ -88,6 +88,30 @@ function validarCampania(input) {
     };
 }
 
+function resolverBannerEdicion(req, campaniaActual) {
+    // aqui leo la opcion que eligio el usuario en el formulario
+    const modoBanner = String(req.body.modoBanner || '').trim();
+
+    // si el usuario eligio mantener el banner actual, regreso el banner guardado de la campania
+    if (modoBanner === 'mantener') {
+        return campaniaActual.banner || '';
+    }
+
+    // si el usuario eligio subir archivo, regreso el valor que ya se guardo en req.body.banner
+    // ese valor se asigna antes cuando se procesa req.file
+    if (modoBanner === 'archivo') {
+        return String(req.body.banner || '').trim();
+    }
+
+    // si el usuario eligio URL, regreso el texto que escribio en el input de banner
+    if (modoBanner === 'url') {
+        return String(req.body.banner || '').trim();
+    }
+
+    // si por alguna razon no viene el modo, regreso el banner como venga en el body
+    return String(req.body.banner || '').trim();
+}
+
 function actualizarCampaniaValidada(req, res, idCampania, campaniaActual, validacion) {
     campaniaModel.existeConflictoPeriodo(
         validacion.formData.fecha_inicio,
@@ -274,7 +298,6 @@ exports.editarCampanaPost = (req, res) => {
     }
 
     const idCampania = parseInt(req.params.id, 10);
-    const validacion = validarCampania(req.body);
 
     if (Number.isNaN(idCampania)) {
         req.session.mensaje = {
@@ -282,20 +305,6 @@ exports.editarCampanaPost = (req, res) => {
             texto: 'La campana seleccionada no es valida.'
         };
         return res.redirect('/admin/campanas/editar');
-    }
-
-    if (!validacion.valido) {
-        return renderCampaniaEditar(req, res, {
-            idSeleccionado: idCampania,
-            pageMessage: {
-                tipo: 'danger',
-                texto: validacion.mensaje
-            },
-            formData: {
-                id_campania: idCampania,
-                ...validacion.formData
-            }
-        });
     }
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campaniaActual) => {
@@ -306,6 +315,27 @@ exports.editarCampanaPost = (req, res) => {
                 texto: 'La campana seleccionada no existe.'
             };
             return res.redirect('/admin/campanas/editar');
+        }
+
+        // aqui resuelvo cual banner final debe usar la edicion:
+        // mantener el actual, usar el archivo nuevo o usar la URL escrita
+        req.body.banner = resolverBannerEdicion(req, campaniaActual);
+
+        // aqui ya valido el formulario con el banner final resuelto
+        const validacion = validarCampania(req.body);
+
+        if (!validacion.valido) {
+            return renderCampaniaEditar(req, res, {
+                idSeleccionado: idCampania,
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: validacion.mensaje
+                },
+                formData: {
+                    id_campania: idCampania,
+                    ...validacion.formData
+                }
+            });
         }
 
         actualizarCampaniaValidada(req, res, idCampania, campaniaActual, validacion);
