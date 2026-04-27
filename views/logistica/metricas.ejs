@@ -51,19 +51,64 @@
     // esto sirve para mostrar una tabla rapida sin saturar la pantalla
     const top5Productos = [...safeRendimientoProductos].slice(0, 5);
 
-    // GRAFICA DE BARRAS HORIZONTAL PARA PREVENTAS CONFRIMADAS
-    // aqui preparo solo los primeros 10 productos para que la grafica no se vea saturada
-    // uso top5Productos para la tabla, pero para la grafica conviene un poco mas de espacio
+    // aqui intento encontrar la campania seleccionada dentro del catalogo
+    // esto sirve para mostrar su nombre arriba en la vista si el usuario eligio una
+    const campaniaSeleccionada = safeCampanias.find((campania) =>
+        String(campania.id_campania) === String(filtroIdCampania)
+    ) || null;
+
+    // aqui construyo un texto sencillo para mostrar el contexto actual
+    // si hay campania seleccionada, muestro su nombre
+    // si no, dejo una leyenda general
+    const etiquetaContextoCampania = campaniaSeleccionada
+        ? `Campania: ${campaniaSeleccionada.nombre}`
+        : 'Vista general de campanias';
+
+    // aqui preparo los primeros 10 productos para la grafica de confirmaciones
+    // los ordeno de mayor a menor segun cuantas preventas confirmadas tienen
     const top10ProductosGrafica = [...safeRendimientoProductos]
         .sort((a, b) => Number(b.preventas_confirmadas || 0) - Number(a.preventas_confirmadas || 0))
         .slice(0, 10);
 
-    // aqui saco solo los nombres de producto para usarlos como etiquetas del eje Y
-    const labelsGraficaConfirmaciones = top10ProductosGrafica.map(item => item.producto);
+    // aqui saco solo los nombres de producto para usarlos como etiquetas en la grafica
+    const labelsGraficaConfirmaciones = top10ProductosGrafica.map((item) => item.producto);
 
-    // aqui saco el numero de preventas confirmadas de cada producto
-    const dataGraficaConfirmaciones = top10ProductosGrafica.map(item => Number(item.preventas_confirmadas || 0));
+    // aqui saco solo los valores numericos de confirmaciones
+    const dataGraficaConfirmaciones = top10ProductosGrafica.map((item) => Number(item.preventas_confirmadas || 0));
 
+    // aqui preparo los primeros 10 productos ordenados por peso total
+    const top10ProductosPeso = [...safeRendimientoProductos]
+        .sort((a, b) => Number(b.peso_total || 0) - Number(a.peso_total || 0))
+        .slice(0, 10);
+
+    // aqui saco los nombres de producto para la grafica de peso
+    const labelsGraficaPeso = top10ProductosPeso.map((item) => item.producto);
+
+    // aqui saco los valores numericos del peso total por producto
+    const dataGraficaPeso = top10ProductosPeso.map((item) => Number(item.peso_total || 0));
+
+    // aqui preparo los primeros 10 productos ordenados por volumen total
+    const top10ProductosVolumen = [...safeRendimientoProductos]
+        .sort((a, b) => Number(b.volumen_total || 0) - Number(a.volumen_total || 0))
+        .slice(0, 10);
+
+    // aqui saco los nombres de producto para la grafica de volumen
+    const labelsGraficaVolumen = top10ProductosVolumen.map((item) => item.producto);
+
+    // aqui saco los valores numericos del volumen total por producto
+    const dataGraficaVolumen = top10ProductosVolumen.map((item) => Number(item.volumen_total || 0));
+
+    // aqui preparo las fechas de la serie temporal para la grafica de tendencia
+    const labelsGraficaTendencia = serieParaVista.map((item) => item.fecha);
+
+    // aqui saco la cantidad de reservas confirmadas por fecha
+    const dataTendenciaConfirmaciones = serieParaVista.map((item) => Number(item.total_reservas || 0));
+
+    // aqui saco el peso total acumulado por fecha
+    const dataTendenciaPeso = serieParaVista.map((item) => Number(item.peso_total || 0));
+
+    // aqui saco el volumen total acumulado por fecha
+    const dataTendenciaVolumen = serieParaVista.map((item) => Number(item.volumen_total || 0));
 
 %>
 
