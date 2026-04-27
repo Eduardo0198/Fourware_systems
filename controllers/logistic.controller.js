@@ -227,8 +227,7 @@ function construirContextoMetricas(query, campaniaActiva) {
   // si el usuario ya eligio una campania, entonces no uso la activa
   // si no eligio nada, entonces tomo la campania activa que venga del modelo
   const campaniaBase = idCampaniaSolicitada
-    ? null
-    : (campaniaActiva || null);
+    ? null : (campaniaActiva || null);
 
   // aqui saco el id de campania final que voy a usar en las consultas
   // primero intento usar la campania que selecciono el usuario
