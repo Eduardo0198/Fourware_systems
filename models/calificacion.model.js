@@ -116,7 +116,12 @@ exports.obtenerPromedioCalificacionesPorCampaniaActiva = (callback) => {
     db.query(query, callback);
 };
 
-exports.obtenerRankingProductosPorCalificacion = (direccion, limite, callback) => {
+exports.obtenerRankingProductosPorCalificacion = (direccion, limite, minimoCalificaciones = 1, callback) => {
+    if (typeof minimoCalificaciones === 'function') {
+        callback = minimoCalificaciones;
+        minimoCalificaciones = 1;
+    }
+
     const orden = String(direccion).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     const query = `
         SELECT
@@ -130,10 +135,10 @@ exports.obtenerRankingProductosPorCalificacion = (direccion, limite, callback) =
         INNER JOIN "Calificacion" c ON c."SKU" = p."SKU"
         WHERE cp.estatus = 1
         GROUP BY p."SKU", p.nombre_comercial, cp.nombre
-        HAVING COUNT(c.id_calificacion) > 0
+        HAVING COUNT(c.id_calificacion) >= ?
         ORDER BY promedio_estrellas ${orden}, total_calificaciones DESC, p.nombre_comercial ASC
         LIMIT ?
     `;
 
-    db.query(query, [limite], callback);
+    db.query(query, [minimoCalificaciones, limite], callback);
 };

@@ -131,7 +131,7 @@
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <h4 class="h5 mb-1">Top 20 productos mejor rankeados</h4>
-        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más alto al más bajo.</p>
+        <p class="text-muted mb-3">De izquierda a derecha se muestran del promedio más alto al más bajo. Solo se consideran productos con al menos 5 calificaciones.</p>
         <% if (mejoresProductos.length) { %>
             <div class="d-flex align-items-end gap-2 overflow-auto pb-2" style="min-height: 18rem;">
                 <% mejoresProductos.forEach((producto) => { %>
@@ -156,7 +156,7 @@
                 <% }) %>
             </div>
         <% } else { %>
-            <div class="alert alert-secondary mb-0">No hay suficientes productos calificados para mostrar el ranking superior.</div>
+            <div class="alert alert-secondary mb-0">No hay suficientes productos con al menos 5 calificaciones para mostrar el ranking superior.</div>
         <% } %>
     </div>
 </section>
