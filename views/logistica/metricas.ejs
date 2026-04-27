@@ -417,34 +417,14 @@
                 <div class="admin-table-head">
                     <div>
                         <h4>Tendencia por fecha</h4>
-                        <p>Ultimos 15 puntos diarios de peso y volumen confirmados.</p>
+                        <p>Comportamiento del periodo en confirmaciones, peso y volumen.</p>
                     </div>
                     <span class="admin-table-pill">Serie temporal</span>
                 </div>
 
                 <% if (serieParaVista.length > 0) { %>
-                    <div class="vstack gap-3">
-                        <% serieParaVista.forEach((item) => {
-                            const peso = Number(item.peso_total || 0);
-                            const volumen = Number(item.volumen_total || 0);
-                            const pesoPct = Math.max(0, Math.min(100, (peso / maxPesoSerie) * 100));
-                            const volumenPct = Math.max(0, Math.min(100, (volumen / maxVolumenSerie) * 100));
-                        %>
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong><%= item.fecha %></strong>
-                                    <small class="text-muted">Reservas: <%= Number(item.total_reservas || 0) %></small>
-                                </div>
-                                <div class="small text-muted mb-1">Peso: <%= peso.toFixed(2) %> kg</div>
-                                <div class="progress mb-2" role="progressbar" aria-label="Peso diario">
-                                    <div class="progress-bar bg-primary" style="width: <%= pesoPct.toFixed(2) %>%"></div>
-                                </div>
-                                <div class="small text-muted mb-1">Volumen: <%= volumen.toFixed(2) %> m3</div>
-                                <div class="progress" role="progressbar" aria-label="Volumen diario">
-                                    <div class="progress-bar bg-warning text-dark" style="width: <%= volumenPct.toFixed(2) %>%"></div>
-                                </div>
-                            </div>
-                        <% }); %>
+                    <div style="position: relative; min-height: 360px;">
+                        <canvas id="chartTendenciaLogistica"></canvas>
                     </div>
                 <% } else { %>
                     <p class="text-center text-muted mt-3 mb-0">Sin datos historicos para graficar.</p>
@@ -630,7 +610,7 @@
     </div>
 </section>
 
-<% if (top10ProductosGrafica.length > 0) { %>
+<% if (top10ProductosGrafica.length > 0 || top10ProductosPeso.length > 0 || top10ProductosVolumen.length > 0 || serieParaVista.length > 0) { %>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -642,6 +622,9 @@
 
         // aqui busco el canvas de volumen por producto
         const canvasVolumen = document.getElementById('chartVolumenProducto');
+
+        // aqui busco el canvas de tendencia por fecha
+        const canvasTendencia = document.getElementById('chartTendenciaLogistica');
 
         // si el canvas no existe por alguna razon, termino sin romper la vista
         if (canvas) {
@@ -792,6 +775,83 @@
                     scales: {
                         x: {
                             beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // aqui creo la grafica de lineas para ver el comportamiento del periodo
+        if (canvasTendencia) {
+            new Chart(canvasTendencia, {
+                type: 'line',
+                data: {
+                    // aqui van las fechas del periodo como etiquetas del eje X
+                    labels: <%- JSON.stringify(labelsGraficaTendencia) %>,
+                    datasets: [
+                        {
+                            // aqui dibujo la linea de confirmaciones por fecha
+                            label: 'Confirmaciones',
+                            data: <%- JSON.stringify(dataTendenciaConfirmaciones) %>,
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                            tension: 0.25,
+                            fill: false,
+                            yAxisID: 'yConfirmaciones'
+                        },
+                        {
+                            // aqui dibujo la linea de peso total por fecha
+                            label: 'Peso total (kg)',
+                            data: <%- JSON.stringify(dataTendenciaPeso) %>,
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                            tension: 0.25,
+                            fill: false,
+                            yAxisID: 'yCarga'
+                        },
+                        {
+                            // aqui dibujo la linea de volumen total por fecha
+                            label: 'Volumen total (m3)',
+                            data: <%- JSON.stringify(dataTendenciaVolumen) %>,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.15)',
+                            tension: 0.25,
+                            fill: false,
+                            yAxisID: 'yCarga'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Tendencia de confirmaciones, peso y volumen',
+                            font: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        yConfirmaciones: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            title: {
+                                display: true,
+                                text: 'Confirmaciones'
+                            }
+                        },
+                        yCarga: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Peso / Volumen'
+                            }
                         }
                     }
                 }
