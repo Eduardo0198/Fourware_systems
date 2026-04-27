@@ -1,3 +1,10 @@
+<% function formatCurrency(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
+
 <section class="d-flex flex-column gap-4">
     <% if (mensaje) { %>
         <div class="alert alert-<%= mensaje.tipo %> mb-0" role="alert">
@@ -49,13 +56,13 @@
                                 <div class="d-flex flex-column gap-4">
                                     <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
                                         <div>
-                                            <h3 class="fs-2 fw-bold text-dark mb-2"><%= p.nombre %></h3>
+                                            <h3 class="fs-4 fw-bold text-dark mb-2"><%= p.nombre %></h3>
                                             <p class="text-muted mb-0">SKU: <%= p.sku %></p>
                                         </div>
                                         <div class="text-lg-end">
-                                            <div class="fs-2 fw-bold text-dark">$<%= p.precio.toFixed(2) %></div>
+                                            <div class="fs-2 fw-bold text-dark">$<%= formatCurrency(p.precio) %></div>
                                             <div class="text-secondary fw-semibold">
-                                                Total: $<%= (p.precio * p.cantidad).toFixed(2) %>
+                                                Total: $<%= formatCurrency(p.precio * p.cantidad) %>
                                             </div>
                                         </div>
                                     </div>
@@ -119,7 +126,7 @@
             <div class="d-flex flex-column gap-3 border-top border-bottom py-3 my-4">
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Subtotal</span>
-                    <strong>$<%= subtotal.toFixed(2) %></strong>
+                    <strong>$<%= formatCurrency(subtotal) %></strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Peso total</span>
@@ -131,11 +138,11 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>IVA (16%)</span>
-                    <strong>$<%= iva.toFixed(2) %></strong>
+                    <strong>$<%= formatCurrency(iva) %></strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 fs-5 fw-bold text-dark">
                     <span>Total</span>
-                    <strong>$<%= total.toFixed(2) %></strong>
+                    <strong>$<%= formatCurrency(total) %></strong>
                 </div>
             </div>
 

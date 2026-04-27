@@ -6,6 +6,12 @@
     }
     return html;
 } %>
+<% function formatCurrency(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
 
 <h2 class="mb-3">Catálogo de Productos</h2>
 <% const alertMessage = pageMessage || mensaje || null; %>
@@ -99,7 +105,7 @@
                         <h6 class="card-title"><%= p.nombre %></h6>
                         <p class="text-muted small mb-1">SKU: <%= p.SKU %></p>
                         <p class="fw-bold text-primary">
-                            $<%= p.precio_unitario %>
+                            $<%= formatCurrency(p.precio_unitario) %>
                         </p>
                         <div class="catalogo-product-rating mb-3" aria-label="Calificación promedio de <%= Number(p.promedio_estrellas || 0).toFixed(1) %> de 5">
                             <span class="catalogo-product-stars"><%- renderStars(p.promedio_estrellas) %></span>
@@ -209,6 +215,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return stars;
     }
 
+    function formatCurrency(value) {
+        return Number(value || 0).toLocaleString("es-MX", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
     function buildQuery(page) {
         const params = new URLSearchParams();
         const q = searchInput.value.trim();
@@ -245,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <h6 class="card-title">${escapeHtml(p.nombre)}</h6>
                         <p class="text-muted small mb-1">SKU: ${escapeHtml(p.SKU)}</p>
                         <p class="fw-bold text-primary">
-                            $${escapeHtml(p.precio_unitario)}
+                            $${escapeHtml(formatCurrency(p.precio_unitario))}
                         </p>
                         <div class="catalogo-product-rating mb-3" aria-label="Calificación promedio de ${escapeHtml(Number(p.promedio_estrellas || 0).toFixed(1))} de 5">
                             <span class="catalogo-product-stars">${renderStars(p.promedio_estrellas)}</span>

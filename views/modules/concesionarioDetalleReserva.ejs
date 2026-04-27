@@ -1,3 +1,10 @@
+<% function formatCurrency(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <span class="badge text-bg-light text-uppercase fw-semibold mb-2">Reserva</span>
@@ -105,8 +112,8 @@
                             <td><span class="badge text-bg-light"><%= producto.SKU %></span></td>
                             <td><span class="text-muted"><%= producto.medida_primaria || 'N/D' %></span></td>
                             <td class="fw-semibold"><%= producto.cantidad %></td>
-                            <td>$<%= Number(producto.precio_aplicado || 0).toFixed(2) %></td>
-                            <td class="fw-bold text-primary">$<%= Number(producto.subtotal_linea || 0).toFixed(2) %></td>
+                            <td>$<%= formatCurrency(producto.precio_aplicado) %></td>
+                            <td class="fw-bold text-primary">$<%= formatCurrency(producto.subtotal_linea) %></td>
                         </tr>
                     <% }); %>
                 </tbody>
@@ -119,15 +126,15 @@
     items: [
         {
             label: 'Subtotal',
-            value: `$${Number(reserva.subtotal || 0).toFixed(2)}`
+            value: `$${formatCurrency(reserva.subtotal)}`
         },
         {
             label: 'IVA',
-            value: `$${Number(reserva.iva || 0).toFixed(2)}`
+            value: `$${formatCurrency(reserva.iva)}`
         },
         {
             label: 'Total',
-            value: `$${Number(reserva.total || 0).toFixed(2)}`,
+            value: `$${formatCurrency(reserva.total)}`,
             valueClass: 'fw-bold'
         }
     ]

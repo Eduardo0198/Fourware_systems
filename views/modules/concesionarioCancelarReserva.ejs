@@ -1,3 +1,10 @@
+<% function formatCurrency(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+} %>
+
 <h2>Cancelar Reserva</h2>
 <hr>
 
@@ -26,7 +33,7 @@
     items: [
         {
             label: 'Total',
-            value: `$${Number(reserva.total || 0).toFixed(2)}`,
+            value: `$${formatCurrency(reserva.total)}`,
             valueClass: 'fw-bold'
         },
         {
