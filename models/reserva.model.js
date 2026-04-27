@@ -514,3 +514,62 @@ exports.obtenerReservasRecientesAdmin = (limite, callback) => {
     `;
     db.query(query, [limite], callback);
 };
+
+
+
+exports.obtenerRendimientoProductosCampania = (filtros, callback) => {
+    // aqui defino las condiciones base de la consulta
+    // solo quiero reservas confirmadas dentro del rango de fechas
+    const condiciones = [
+        'r.estatus = 1',
+        'r.fecha BETWEEN ? AND ?'
+    ];
+
+    // aqui guardo los parametros que se van a inyectar en el query
+    // primero siempre van las fechas
+    const params = [filtros.fechaInicio, filtros.fechaFin];
+
+    // aqui filtro por campania si ya tengo una campania seleccionada o activa
+    if (filtros.idCampania) {
+        condiciones.push('p.id_campania = ?');
+        params.push(filtros.idCampania);
+    }
+
+    // aqui filtro por cuenta si el usuario quiere ver una cuenta especifica
+    if (filtros.idCuenta) {
+        condiciones.push('r.id_cuenta = ?');
+        params.push(filtros.idCuenta);
+    }
+
+    // aqui armo la consulta principal
+    // voy a agrupar por producto para saber como rindio cada uno
+    const query = `
+        SELECT
+            p."SKU" AS sku,
+            p.nombre_comercial AS producto,
+            COALESCE(ca.nombre, 'Sin campania') AS campania,
+            COUNT(DISTINCT r.folio) AS preventas_confirmadas,
+            COALESCE(SUM(rp.cantidad), 0) AS unidades_confirmadas,
+            ROUND(COALESCE(SUM(rp.cantidad * p.peso_unitario), 0), 2) AS peso_total,
+            ROUND(COALESCE(SUM(rp.cantidad * p.volumen_unitario), 0), 2) AS volumen_total,
+            ROUND(COALESCE(SUM(rp.subtotal_linea), 0), 2) AS importe_total,
+            COUNT(DISTINCT r.id_cuenta) AS cuentas_con_movimiento
+        FROM "Reserva" r
+        JOIN "Reserva_Producto" rp ON rp.folio = r.folio
+        JOIN "Producto" p ON p."SKU" = rp."SKU"
+        LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
+        WHERE ${condiciones.join('\n          AND ')}
+        GROUP BY
+            p."SKU",
+            p.nombre_comercial,
+            ca.nombre
+        ORDER BY
+            preventas_confirmadas DESC,
+            peso_total DESC,
+            volumen_total DESC,
+            producto ASC
+    `;
+
+    // aqui ejecuto la consulta y regreso los resultados al controller
+    db.query(query, params, callback);
+};
