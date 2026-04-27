@@ -44,6 +44,21 @@ function obtenerCarritoActivo(req) {
     return req.session.carrito || [];
 }
 
+function obtenerCarritoActivoDesdeSesion(req) {
+    return obtenerCarritoActivo(req);
+}
+
+function obtenerSkusDelCarrito(carrito = []) {
+    return carrito
+        .map((item) => String(item?.sku || '').trim())
+        .filter(Boolean);
+}
+
+function vaciarCarritoActivoDesdeSesion(req) {
+    req.session.carrito = [];
+    return req.session.carrito;
+}
+
 function calcularResumenCarrito(carrito = []) {
     const subtotal = carrito.reduce((acc, producto) => acc + (producto.precio * producto.cantidad), 0);
     const totalPeso = carrito.reduce((acc, producto) => acc + ((producto.peso_unitario || 0) * producto.cantidad), 0);
@@ -74,5 +89,8 @@ module.exports = {
     construirRedirectCatalogo,
     generarFolioReserva,
     obtenerCarritoActivo,
-    sincronizarCarritoConProducto
+    obtenerCarritoActivoDesdeSesion,
+    obtenerSkusDelCarrito,
+    sincronizarCarritoConProducto,
+    vaciarCarritoActivoDesdeSesion
 };

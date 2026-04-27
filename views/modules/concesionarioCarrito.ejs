@@ -130,6 +130,19 @@
                 </div>
             </div>
 
+            <div class="d-flex flex-column gap-3 mb-4">
+                <form method="POST"
+                      action="/concesionario/carrito/vaciar"
+                      class="m-0"
+                      onsubmit="return confirm('¿Deseas vaciar por completo el carrito de preventa?');">
+                    <button type="submit"
+                            class="btn btn-outline-danger w-100"
+                            <%= carrito.length === 0 ? 'disabled' : '' %>>
+                        Vaciar carrito
+                    </button>
+                </form>
+            </div>
+
             <form method="POST" action="/concesionario/carrito/confirmar" class="d-flex flex-column gap-3" id="formConfirmar" novalidate>
                 <div>
                     <label for="sucursal" class="form-label fw-semibold">Sucursal de entrega</label>
