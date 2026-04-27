@@ -514,3 +514,22 @@ exports.obtenerReservasRecientesAdmin = (limite, callback) => {
     `;
     db.query(query, [limite], callback);
 };
+
+// funcion para listar estados logísticos (consulta EstadoLogistico)
+exports.obtenerEstadosLogisticos = (callback) => {
+     // Permite usar una funcion desde otro archivo "export"
+     // Funcion que se ejecuta cuando termina una consulta o proceso "callback"
+};
+
+//  funcion para obtener una reserva por folio
+exports.obtenerReservaLogisticaPorFolio = (folio, callback) => {
+    // consulta Reserva con su estado logistico
+};
+
+exports.actualizarEstadoLogistico = (data, callback) => {
+    // update Reserva
+    // insert HistorialEstadoLogistico
+};
+
+// uso exports para que el controlador pueda llamar esta funcion desde otro archivo,
+// y uso callback porque la consulta a la base de datos se responde despues
