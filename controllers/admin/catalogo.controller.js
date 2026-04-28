@@ -122,7 +122,8 @@ function leerArchivoCargaMasiva(buffer) {
     };
 }
 
-function validarProducto(input) {
+function validarProducto(input, options = {}) {
+    const imagenRequerida = options.imagenRequerida !== false;
     const formData = {
         sku: String(input.sku || '').trim().toUpperCase(),
         nombre_comercial: String(input.nombre_comercial || '').trim(),
@@ -136,7 +137,10 @@ function validarProducto(input) {
         id_campania: String(input.id_campania || '').trim()
     };
 
-    if (Object.values(formData).some((valor) => !valor)) {
+    const camposObligatorios = Object.entries(formData)
+        .filter(([campo]) => imagenRequerida || campo !== 'imagen');
+
+    if (camposObligatorios.some(([, valor]) => !valor)) {
         return {
             valido: false,
             mensaje: 'Debes capturar todos los campos del producto.',
@@ -542,7 +546,7 @@ exports.modificarSKUPost = async (req, res) => {
     const validacion = validarProducto({
         ...req.body,
         sku
-    });
+    }, { imagenRequerida: false });
 
     if (!validacion.valido) {
         registrarBitacora(req, `Intento de actualizacion con datos invalidos para producto ${sku}`);
@@ -575,6 +579,21 @@ exports.modificarSKUPost = async (req, res) => {
                 pageMessage: {
                     tipo: 'warning',
                     texto: 'El producto seleccionado no existe o ya no se encuentra disponible para edicion.'
+                }
+            });
+        }
+
+        validacion.producto.imagen = validacion.producto.imagen || productoExistente.imagen;
+        validacion.formData.imagen = validacion.producto.imagen;
+
+        if (!validacion.producto.imagen) {
+            registrarBitacora(req, `Intento de actualizacion sin imagen disponible para producto ${sku}`);
+            return renderCatalogoModificar(req, res, {
+                skuSeleccionado: sku,
+                formData: validacion.formData,
+                pageMessage: {
+                    tipo: 'danger',
+                    texto: 'Debes conservar o capturar una imagen para el producto.'
                 }
             });
         }
