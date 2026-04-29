@@ -5,6 +5,8 @@ const cuentaModel = require('../models/cuenta.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 
+const FORMATOS_REPORTE_OPERATIVO = new Set(['csv', 'xlsx']);
+
 function formatearFechaInput(fecha) {
   return fecha.toISOString().slice(0, 10);
 }
@@ -596,6 +598,11 @@ exports.exportarReporteOperativo = (req, res) => {
   filtros.idCampania = normalizarIdFiltro(id_campania);
   filtros.idCuenta = normalizarIdFiltro(id_cuenta);
   filtros.formato = formato;
+
+  if (!FORMATOS_REPORTE_OPERATIVO.has(filtros.formato)) {
+    registrarEvento(req, 'Intento de exportacion de reporte operativo con formato no valido');
+    return res.status(400).send('El formato de exportacion seleccionado no es valido.');
+  }
 
   // aqui valido que las fechas si tengan un valor correcto
   if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {

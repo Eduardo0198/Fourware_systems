@@ -74,13 +74,13 @@
                 <h4>Detalle operativo</h4>
                 <p>ID de reserva, cuenta, usuario, campaña, producto, cantidad, dirección y fecha.</p>
             </div>
-            <form method="POST" action="/logistica/reporte-operativo/exportar">
+            <form method="POST" action="/logistica/reporte-operativo/exportar" class="d-flex gap-2">
                 <input type="hidden" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
                 <input type="hidden" name="fecha_fin" value="<%= filtros.fecha_fin %>">
                 <input type="hidden" name="id_campania" value="<%= filtros.id_campania %>">
                 <input type="hidden" name="id_cuenta" value="<%= filtros.id_cuenta %>">
-                <input type="hidden" name="formato" value="csv">
-                <button class="btn admin-action-btn" type="submit">Exportar CSV</button>
+                <button class="btn admin-action-btn" type="submit" name="formato" value="csv">Exportar CSV</button>
+                <button class="btn btn-outline-secondary" type="submit" name="formato" value="xlsx">Exportar Excel</button>
             </form>
         </div>
         <div class="admin-table-wrap">
