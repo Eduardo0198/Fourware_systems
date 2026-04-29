@@ -390,7 +390,58 @@ exports.metricas = (req, res) => {
 };
 
 exports.reporteOperativo = (req, res) => {
-  
+  const filtros = obtenerFiltrosReporte(req.query);
+  const filtrosVista = {
+    fecha_inicio: filtros.fechaInicio,
+    fecha_fin: filtros.fechaFin,
+    id_campania: filtros.idCampania || '',
+    id_cuenta: filtros.idCuenta || ''
+  };
+
+  const renderReporte = (pageMessage, detalle, catalogos) => res.render('logistica/reporteOperativo', {
+    pageMessage,
+    filtros: filtrosVista,
+    detalle: detalle || [],
+    resumen: construirResumenReporte(detalle),
+    campanias: catalogos.campanias,
+    cuentas: catalogos.cuentas
+  });
+
+  cargarCatalogosMetricas((catalogosErr, catalogos) => {
+    const catalogosVista = catalogos || { campanias: [], cuentas: [] };
+
+    if (catalogosErr) {
+      logger.error(catalogosErr);
+      return renderReporte({
+        tipo: 'danger',
+        texto: 'No fue posible cargar los filtros de campaña y cuenta.'
+      }, [], catalogosVista);
+    }
+
+    if (!esFechaInputValida(filtros.fechaInicio) || !esFechaInputValida(filtros.fechaFin) || filtros.fechaInicio > filtros.fechaFin) {
+      return renderReporte({
+        tipo: 'danger',
+        texto: 'Debes seleccionar un periodo válido para generar el reporte operativo.'
+      }, [], catalogosVista);
+    }
+
+    reservaModel.obtenerReporteOperativoLogistico(filtros, (err, detalle) => {
+      if (err) {
+        logger.error(err);
+        registrarEvento(req, 'Error al consultar reporte operativo logístico');
+        return renderReporte({
+          tipo: 'danger',
+          texto: 'No fue posible generar el reporte operativo. Intente nuevamente.'
+        }, [], catalogosVista);
+      }
+
+      registrarEvento(req, 'Consulta de reporte operativo logístico');
+      return renderReporte(detalle.length === 0 ? {
+        tipo: 'warning',
+        texto: 'No existen reservas confirmadas con los criterios seleccionados.'
+      } : null, detalle, catalogosVista);
+    });
+  });
 };
 
 
