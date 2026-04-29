@@ -1,5 +1,6 @@
 const ExcelJS = require('exceljs');
 const { bitacoraModel, registrarEvento } = require('./shared');
+const renderError = require('../../utils/renderError');
 
 const AZUL_OSCURO  = 'FF1A3A5C';
 const AZUL_MEDIO   = 'FF2E6DA4';
@@ -25,7 +26,7 @@ exports.exportarBitacora = async (req, res) => {
             )
         );
     } catch {
-        return res.status(500).send('Error al obtener registros para exportar.');
+        return renderError(res, 500, 'Error al obtener registros para exportar.', '/admin/auditoria');
     }
 
     registrarEvento(req, 'Exportación de bitácora de auditoría', usuario?.correo);

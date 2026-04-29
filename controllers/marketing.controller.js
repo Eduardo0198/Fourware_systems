@@ -8,6 +8,7 @@ const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 const calificacionModel = require('../models/calificacion.model');
 const { obtenerDatosCatalogo } = require('./concesionario/shared');
+const renderError = require('../utils/renderError');
 
 const obtenerCampaniaActivaAsync = util.promisify(campaniaModel.obtenerCampaniaActiva);
 
@@ -485,7 +486,7 @@ exports.catalogo = (req, res) => {
         if (err) {
             logger.error(err);
             registrarEvento(req, 'Error al consultar catálogo desde marketing');
-            return res.status(500).send('Error al obtener catálogo');
+            return renderError(res, 500, 'Error al obtener el catálogo.', '/marketing/inicio');
         }
 
         registrarEvento(req, 'Consulta de catálogo de productos desde marketing');

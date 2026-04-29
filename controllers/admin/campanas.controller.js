@@ -9,6 +9,7 @@ const {
     registrarEvento
 } = require('./shared');
 const logger = require('../../utils/logger');
+const renderError = require('../../utils/renderError');
 
 const BANNERS_DIR = path.join('public', 'img', 'banners');
 if (!fs.existsSync(BANNERS_DIR)) fs.mkdirSync(BANNERS_DIR, { recursive: true });
@@ -17,7 +18,7 @@ function renderCampaniaCrear(res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
             logger.error(err);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/inicio');
         }
 
         res.render('modules/campanaCrear', {
@@ -32,7 +33,7 @@ function renderCampaniaEditar(req, res, options = {}) {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
             logger.error(err);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/inicio');
         }
 
         const idSeleccionado = parseInt(options.idSeleccionado || req.query.id, 10);
@@ -188,7 +189,7 @@ exports.campanas = (req, res) => {
     campaniaModel.obtenerTodas((err, campanias) => {
         if (err) {
             logger.error(err);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/inicio');
         }
 
         const campaniasNormalizadas = campanias.map(normalizarCampania);
@@ -346,7 +347,7 @@ exports.cancelacionCampana = (req, res) => {
     cancelacionModel.obtener((err, configuracion) => {
         if (err) {
             logger.error(err);
-            return res.status(500).send('No fue posible cargar la configuracion de cancelacion.');
+            return renderError(res, 500, 'No fue posible cargar la configuración de cancelación.', '/admin/inicio');
         }
 
         registrarEvento(req, 'Consulta de configuracion de cancelacion de reservas');

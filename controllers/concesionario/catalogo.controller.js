@@ -4,13 +4,14 @@ const calificacionModel = require('../../models/calificacion.model');
 const logger = require('../../utils/logger');
 const { registrarEvento } = require('../../utils/auditoria.helper');
 const { obtenerDatosCatalogo } = require('./shared');
+const renderError = require('../../utils/renderError');
 
 exports.catalogo = (req, res) => {
     obtenerDatosCatalogo(req, concesionarioModel, (err, data) => {
         if (err) {
             logger.error(err);
             registrarEvento(req, 'Error al consultar catálogo de productos');
-            return res.send('Error al obtener catálogo');
+            return renderError(res, 500, 'Error al obtener el catálogo.', '/concesionario/home');
         }
 
         if (!data.campaniaActiva) {

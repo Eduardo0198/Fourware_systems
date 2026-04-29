@@ -1,6 +1,7 @@
 const path = require('path');
 const XLSX = require('xlsx');
 const logger = require('../../utils/logger');
+const renderError = require('../../utils/renderError');
 const { subirImagenProducto } = require('../../services/storage.service');
 const {
     aNumeroDecimal,
@@ -279,13 +280,13 @@ function renderCatalogoRegistro(res, options = {}) {
     campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
         if (errCampanias) {
             logger.error(errCampanias);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/catalogo');
         }
 
         productoModel.listarProductosCatalogoRecientes((errProductos, productos) => {
             if (errProductos) {
                 logger.error(errProductos);
-                return res.status(500).send('No fue posible cargar los productos.');
+                return renderError(res, 500, 'No fue posible cargar los productos.', '/admin/catalogo');
             }
 
             res.render('modules/catalogoRegistrar', {
@@ -302,13 +303,13 @@ function renderCatalogoModificar(req, res, options = {}) {
     campaniaModel.obtenerTodas((errCampanias, campanias) => {
         if (errCampanias) {
             logger.error(errCampanias);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/catalogo');
         }
 
         productoModel.listarProductosCatalogo((errProductos, productos) => {
             if (errProductos) {
                 logger.error(errProductos);
-                return res.status(500).send('No fue posible cargar los productos.');
+                return renderError(res, 500, 'No fue posible cargar los productos.', '/admin/catalogo');
             }
 
             const productosNormalizados = productos.map(normalizarProducto);
@@ -353,7 +354,7 @@ function renderCatalogoCargaMasiva(res, options = {}) {
     campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
         if (errCampanias) {
             logger.error(errCampanias);
-            return res.status(500).send('No fue posible cargar las campanas.');
+            return renderError(res, 500, 'No fue posible cargar las campañas.', '/admin/catalogo');
         }
 
         res.render('modules/catalogoCargaMasiva', {
@@ -370,13 +371,13 @@ exports.catalogo = (req, res) => {
     productoModel.listarProductosCatalogo((errProductos, productos) => {
         if (errProductos) {
             logger.error(errProductos);
-            return res.status(500).send('No fue posible cargar el catalogo.');
+            return renderError(res, 500, 'No fue posible cargar el catálogo.', '/admin/inicio');
         }
 
         campaniaModel.obtenerSeleccionablesParaCatalogo((errCampanias, campanias) => {
             if (errCampanias) {
                 logger.error(errCampanias);
-                return res.status(500).send('No fue posible cargar el catalogo.');
+                return renderError(res, 500, 'No fue posible cargar el catálogo.', '/admin/inicio');
             }
 
             registrarEvento(req, 'Consulta de catalogo administrativo');
@@ -506,7 +507,7 @@ exports.modificarSKU = (req, res) => {
     productoModel.obtenerPorSku(sku, (err, producto) => {
         if (err) {
             logger.error(err);
-            return res.status(500).send('No fue posible cargar el producto seleccionado.');
+            return renderError(res, 500, 'No fue posible cargar el producto seleccionado.', '/admin/catalogo');
         }
 
         if (!producto || Number(producto.activo) !== 1) {
@@ -946,7 +947,7 @@ function renderCatalogoEstado(req, res, options = {}) {
     productoModel.listarProductosCatalogo((errProductos, productos) => {
         if (errProductos) {
             logger.error(errProductos);
-            return res.status(500).send('No fue posible cargar el catalogo.');
+            return renderError(res, 500, 'No fue posible cargar el catálogo.', '/admin/catalogo');
         }
 
         res.render('modules/adminCatalogoEstado', {

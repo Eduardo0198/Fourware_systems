@@ -5,6 +5,7 @@ const cuentaModel = require('../../models/cuenta.model');
 const reservaModel = require('../../models/reserva.model');
 const usuarioModel = require('../../models/usuario.model');
 const logger = require('../../utils/logger');
+const renderError = require('../../utils/renderError');
 const {
     esFechaValida,
     normalizarCampania,
@@ -49,19 +50,19 @@ function renderReportes(res, options = {}) {
     cuentaModel.obtenerTodas((errCuentas, cuentas) => {
         if (errCuentas) {
             logger.error(errCuentas);
-            return res.status(500).send('No fue posible cargar las cuentas para el reporte.');
+            return renderError(res, 500, 'No fue posible cargar las cuentas para el reporte.', '/admin/inicio');
         }
 
         campaniaModel.obtenerTodas((errCampanias, campanias) => {
             if (errCampanias) {
                 logger.error(errCampanias);
-                return res.status(500).send('No fue posible cargar las campanas para el reporte.');
+                return renderError(res, 500, 'No fue posible cargar las campañas para el reporte.', '/admin/inicio');
             }
 
             usuarioModel.obtenerConcesionariosConReservasConfirmadas((errUsuarios, concesionarios) => {
                 if (errUsuarios) {
                     logger.error(errUsuarios);
-                    return res.status(500).send('No fue posible cargar los concesionarios para el reporte.');
+                    return renderError(res, 500, 'No fue posible cargar los concesionarios para el reporte.', '/admin/inicio');
                 }
 
                 res.render('modules/adminReportes', {

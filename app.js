@@ -62,7 +62,28 @@ app.use('/concesionario', require('./routes/concesionario.routes'));
 app.use('/concesionario/carrito', require('./routes/carrito.routes'));
 
 app.use((req, res) => {
-    res.status(404).send("Página no encontrada");
+    const destino = req.session.usuario ? '/concesionario/home' : '/login';
+    res.status(404).render('errors/error', {
+        layout: false,
+        codigo: '404',
+        icono: 'bi-map',
+        titulo: 'Página no encontrada',
+        descripcion: 'La página que buscas no existe o fue movida a otra dirección. Verifica la URL o regresa al inicio.',
+        destino
+    });
+});
+
+app.use((err, req, res, next) => {
+    logger.error(`Error no controlado: ${err.message}`, { stack: err.stack, url: req.originalUrl });
+    const destino = req.session.usuario ? '/concesionario/home' : '/login';
+    res.status(err.status || 500).render('errors/error', {
+        layout: false,
+        codigo: String(err.status || 500),
+        icono: 'bi-exclamation-triangle',
+        titulo: 'Algo salió mal',
+        descripcion: 'Ocurrió un error inesperado en el servidor. Nuestro equipo ya fue notificado. Intenta de nuevo o regresa al inicio.',
+        destino
+    });
 });
 
 app.listen(PORT, () => {

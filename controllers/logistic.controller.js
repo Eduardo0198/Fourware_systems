@@ -4,6 +4,7 @@ const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
+const renderError = require('../utils/renderError');
 
 const FORMATOS_REPORTE_OPERATIVO = new Set(['csv', 'xlsx']);
 
@@ -613,7 +614,7 @@ exports.exportarReporteOperativo = (req, res) => {
   reservaModel.obtenerReporteOperativoLogistico(filtros, (err, detalle) => {
     if (err) {
       logger.error(err);
-      return res.status(500).send('No se pudo consultar la informacion para exportar.');
+      return renderError(res, 500, 'No se pudo consultar la información para exportar.', '/logistica/reservas-confirmadas');
     }
 
     // aqui reviso si el usuario pidio excel
