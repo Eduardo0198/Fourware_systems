@@ -1,5 +1,6 @@
 const cuentaModel = require('../models/cuenta.model');
 const logger = require('../utils/logger');
+const renderError = require('../utils/renderError');
 const {
     registrarEvento,
     incrementarIntento
@@ -52,7 +53,7 @@ exports.tieneRol = (rolesPermitidos) => {
                 req,
                 `Intento de acceso no autorizado por rol a ${req.path}. Intento numero ${numeroIntento}`
             );
-            return res.send("Acceso denegado");
+            return renderError(res, 403, 'No tienes permiso para acceder a esta sección.', '/');
         }
         next();
     };
@@ -73,7 +74,7 @@ exports.tienePrivilegio = (privilegiosPermitidos) => {
                 req,
                 `Intento de acceso sin privilegio a ${req.path}. Intento numero ${numeroIntento}`
             );
-            return res.send("No tienes permiso");
+            return renderError(res, 403, 'No tienes permiso para acceder a esta sección.', '/');
         }
         next();
     };
