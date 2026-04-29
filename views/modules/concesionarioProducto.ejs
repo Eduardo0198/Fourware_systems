@@ -1,4 +1,5 @@
 <% const _soloLectura = typeof soloLectura !== 'undefined' ? soloLectura : false; %>
+<% const _correoActual = typeof usuarioCorreo !== 'undefined' ? usuarioCorreo : null; %>
 <% function getImgUrl(url) {
     if (!url || url === 'producto.png') {
         return '/img/ppg-logo.png';
@@ -265,6 +266,7 @@ function formatCurrency(value) {
 
         <form id="formResena" class="reviews-form">
             <input type="hidden" name="sku" value="<%= producto.SKU %>">
+            <input type="hidden" name="id_calificacion" id="resenaIdCalificacion" value="">
             <div class="reviews-star-picker-block">
                 <span class="form-label">Tu calificación</span>
                 <div class="reviews-star-picker" role="radiogroup" aria-label="Selecciona una calificación de 1 a 5 estrellas">
@@ -291,51 +293,6 @@ function formatCurrency(value) {
         </form>
     </div>
 
-    <script>
-    document.getElementById('formResena').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const btn  = document.getElementById('btnEnviarResena');
-        const alerta = document.getElementById('resena-alerta');
-        const calificacion = form.querySelector('input[name="calificacion"]:checked');
-
-        if (!calificacion) {
-            alerta.className = 'alert alert-warning';
-            alerta.textContent = 'Selecciona una calificación antes de enviar.';
-            alerta.classList.remove('d-none');
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Enviando...';
-
-        try {
-            const body = new URLSearchParams(new FormData(form));
-            const res  = await fetch('/concesionario/producto/calificar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                body: body.toString()
-            });
-            const data = await res.json();
-
-            alerta.className = `alert alert-${data.ok ? 'success' : 'danger'}`;
-            alerta.textContent = data.mensaje;
-            alerta.classList.remove('d-none');
-
-            if (data.ok) {
-                form.reset();
-                setTimeout(() => alerta.classList.add('d-none'), 4000);
-            }
-        } catch {
-            alerta.className = 'alert alert-danger';
-            alerta.textContent = 'Error al conectar con el servidor.';
-            alerta.classList.remove('d-none');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Enviar calificación';
-        }
-    });
-    </script>
     <% } %>
 
     <section class="reviews-list-section">
@@ -350,18 +307,34 @@ function formatCurrency(value) {
         <% if (resenas && resenas.length > 0) { %>
             <div class="reviews-list-grid">
                 <% resenas.forEach((resena) => { %>
-                    <article class="review-card">
+                    <article class="review-card" data-id="<%= resena.id_calificacion %>">
                         <div class="review-card-head">
                             <div>
                                 <strong><%= resena.nombre || resena.correo %></strong>
                                 <span><%= resena.correo %></span>
                             </div>
-                            <span class="review-card-date"><%= resena.fecha %></span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="review-card-date"><%= resena.fecha %></span>
+                                <% if (!_soloLectura && resena.correo === _correoActual) { %>
+                                <button type="button"
+                                        class="btn btn-link p-0 text-primary fw-semibold text-decoration-none btn-editar-resena"
+                                        data-id="<%= resena.id_calificacion %>"
+                                        data-estrellas="<%= resena.estrellas %>"
+                                        data-comentario="<%= (resena.comentario || '').replace(/"/g, '&quot;') %>">
+                                    Editar
+                                </button>
+                                <button type="button"
+                                        class="btn btn-link p-0 text-danger fw-semibold text-decoration-none btn-eliminar-resena"
+                                        data-id="<%= resena.id_calificacion %>">
+                                    Eliminar
+                                </button>
+                                <% } %>
+                            </div>
                         </div>
 
                         <div class="review-card-stars" aria-label="Calificación de <%= resena.estrellas %> estrellas">
-                            <span><%- renderStars(resena.estrellas) %></span>
-                            <strong><%= resena.estrellas %>.0</strong>
+                            <span class="review-stars-display"><%- renderStars(resena.estrellas) %></span>
+                            <strong class="review-stars-num"><%= resena.estrellas %>.0</strong>
                         </div>
 
                         <p class="review-card-comment">
@@ -378,3 +351,175 @@ function formatCurrency(value) {
         <% } %>
     </section>
 </section>
+
+<!-- Modal confirmar eliminar reseña -->
+<div class="modal fade" id="modalEliminarResena" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 px-4 pt-4 pb-2" style="background:linear-gradient(135deg,#7f1d1d,#b91c1c);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:44px;height:44px;background:rgba(255,255,255,0.15);">
+                        <i class="bi bi-trash3-fill text-white fs-5"></i>
+                    </div>
+                    <h5 class="modal-title text-white fw-bold mb-0">Eliminar reseña</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <p class="mb-0 fw-semibold text-dark">¿Estás seguro de que deseas eliminar tu reseña? Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarEliminarResena" class="btn btn-danger rounded-pill px-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-trash3-fill"></i> Sí, eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const form          = document.getElementById('formResena');
+    const idField       = document.getElementById('resenaIdCalificacion');
+    const alerta        = document.getElementById('resena-alerta');
+    const btnEnviar     = document.getElementById('btnEnviarResena');
+    let resenaIdPendiente = null;
+
+    function mostrarAlerta(tipo, texto) {
+        if (!alerta) return;
+        alerta.className = `alert alert-${tipo}`;
+        alerta.textContent = texto;
+        alerta.classList.remove('d-none');
+    }
+
+    function renderStarsText(n) {
+        let s = '';
+        for (let i = 1; i <= 5; i++) s += i <= n ? '★' : '☆';
+        return s;
+    }
+
+    // ── EDITAR ────────────────────────────────────────────────────────────────
+    document.querySelectorAll('.btn-editar-resena').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id        = btn.dataset.id;
+            const estrellas = Number(btn.dataset.estrellas);
+            const comentario = btn.dataset.comentario || '';
+
+            if (idField) idField.value = id;
+
+            const radio = form?.querySelector(`input[name="calificacion"][value="${estrellas}"]`);
+            if (radio) radio.checked = true;
+
+            const textarea = form?.querySelector('textarea[name="comentario"]');
+            if (textarea) textarea.value = comentario;
+
+            if (btnEnviar) btnEnviar.textContent = 'Actualizar reseña';
+
+            const formulario = document.getElementById('formulario-resena');
+            if (formulario) formulario.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+
+    // Limpia modo edición al resetear el form
+    if (form) {
+        form.addEventListener('reset', () => {
+            if (idField) idField.value = '';
+            if (btnEnviar) btnEnviar.textContent = 'Enviar calificación';
+        });
+    }
+
+    // Intercepta submit: crea o edita según idField
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const calificacion = form.querySelector('input[name="calificacion"]:checked');
+            if (!calificacion) {
+                mostrarAlerta('warning', 'Selecciona una calificación antes de enviar.');
+                return;
+            }
+            if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Guardando...'; }
+
+            const esEdicion = !!idField?.value;
+            const endpoint  = esEdicion ? '/concesionario/producto/resena/editar' : '/concesionario/producto/calificar';
+            try {
+                const body = new URLSearchParams(new FormData(form));
+                const res  = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: body.toString()
+                });
+                const data = await res.json();
+                mostrarAlerta(data.ok ? 'success' : 'danger', data.mensaje);
+                if (data.ok) {
+                    if (esEdicion) {
+                        const card = document.querySelector(`.review-card[data-id="${idField.value}"]`);
+                        if (card) {
+                            const starsEl = card.querySelector('.review-stars-display');
+                            const numEl   = card.querySelector('.review-stars-num');
+                            const comentEl = card.querySelector('.review-card-comment');
+                            const n = Number(calificacion.value);
+                            if (starsEl) starsEl.textContent = renderStarsText(n);
+                            if (numEl)   numEl.textContent   = n + '.0';
+                            if (comentEl) {
+                                const c = form.querySelector('textarea[name="comentario"]').value.trim();
+                                comentEl.textContent = c || 'El usuario calificó este producto sin dejar comentario adicional.';
+                            }
+                            const editBtn = card.querySelector('.btn-editar-resena');
+                            if (editBtn) { editBtn.dataset.estrellas = n; editBtn.dataset.comentario = form.querySelector('textarea[name="comentario"]').value; }
+                        }
+                    }
+                    form.reset();
+                    setTimeout(() => alerta?.classList.add('d-none'), 4000);
+                }
+            } catch {
+                mostrarAlerta('danger', 'Error al conectar con el servidor.');
+            } finally {
+                if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = idField?.value ? 'Actualizar reseña' : 'Enviar calificación'; }
+            }
+        });
+    }
+
+    // ── ELIMINAR ──────────────────────────────────────────────────────────────
+    document.querySelectorAll('.btn-eliminar-resena').forEach(btn => {
+        btn.addEventListener('click', () => {
+            resenaIdPendiente = btn.dataset.id;
+            const modal = document.getElementById('modalEliminarResena');
+            if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
+        });
+    });
+
+    document.getElementById('btnConfirmarEliminarResena')?.addEventListener('click', async () => {
+        if (!resenaIdPendiente) return;
+        const btnConfirmar = document.getElementById('btnConfirmarEliminarResena');
+        if (btnConfirmar) btnConfirmar.disabled = true;
+
+        try {
+            const res  = await fetch('/concesionario/producto/resena/eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: `id_calificacion=${encodeURIComponent(resenaIdPendiente)}`
+            });
+            const data = await res.json();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminarResena'));
+            if (modal) modal.hide();
+
+            if (data.ok) {
+                const card = document.querySelector(`.review-card[data-id="${resenaIdPendiente}"]`);
+                if (card) card.remove();
+                const pill = document.querySelector('.reviews-total-pill');
+                if (pill) {
+                    const n = parseInt(pill.textContent) - 1;
+                    pill.textContent = `${n >= 0 ? n : 0} reseñas`;
+                }
+            }
+        } catch {
+            /* silencioso — el modal se cierra y la card permanece */
+        } finally {
+            if (btnConfirmar) btnConfirmar.disabled = false;
+            resenaIdPendiente = null;
+        }
+    });
+})();
+</script>
