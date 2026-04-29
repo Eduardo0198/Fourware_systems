@@ -232,12 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="mb-3"><span class="badge ${badgeClass}">${p.estatus}</span></div>
                     <div class="mt-auto d-flex gap-2">
                         ${btnAccion}
-                        <form method="post" action="/admin/catalogo/eliminar/${encodeURIComponent(p.sku)}" class="m-0">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('¿Eliminar este producto? Si tiene historial, solo se retirará para conservar sus registros.')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-producto"
+                                data-sku="${p.sku}" data-nombre="${p.nombre}"
+                                data-bs-toggle="modal" data-bs-target="#modalEliminarProducto">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -307,4 +306,47 @@ document.querySelectorAll('input[name="tipoImagen"]').forEach((radio) => {
         document.getElementById('inputUrlMod').required = !esArchivo;
     });
 });
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-eliminar-producto');
+    if (!btn) return;
+    const sku    = btn.dataset.sku;
+    const nombre = btn.dataset.nombre;
+    document.getElementById('modalEliminarNombre').textContent = nombre;
+    document.getElementById('formEliminarProducto').action = `/admin/catalogo/eliminar/${encodeURIComponent(sku)}`;
+});
 </script>
+
+<!-- Modal confirmación eliminar producto -->
+<div class="modal fade" id="modalEliminarProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 px-4 pt-4 pb-2" style="background: linear-gradient(135deg, #7f1d1d, #b91c1c);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:44px;height:44px;background:rgba(255,255,255,0.15);">
+                        <i class="bi bi-trash3-fill text-white fs-5"></i>
+                    </div>
+                    <h5 class="modal-title text-white fw-bold mb-0">Eliminar producto</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <p class="mb-1 fw-semibold text-dark">¿Eliminar "<span id="modalEliminarNombre"></span>"?</p>
+                <p class="text-muted mb-0" style="font-size:.93rem;">
+                    Si el producto tiene historial de reservas, solo se retirará del catálogo para conservar sus registros.
+                </p>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <form id="formEliminarProducto" method="post" class="m-0">
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 d-flex align-items-center gap-2">
+                        <i class="bi bi-trash3-fill"></i> Sí, eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
