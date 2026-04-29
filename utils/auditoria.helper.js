@@ -12,7 +12,6 @@ function normalizarIp(ip) {
     const valor = String(ip).replace('::ffff:', '').trim();
     return valor === '::1' ? '127.0.0.1 (localhost)' : valor;
 }
-
 function registrarEvento(req, accion, correoOrCallback = null, callback = () => {}) {
     const correo = typeof correoOrCallback === 'function' ? null : correoOrCallback;
     const callbackFinal = typeof correoOrCallback === 'function' ? correoOrCallback : callback;

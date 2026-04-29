@@ -3,18 +3,107 @@ const dns = require('dns');
 const { Pool, types } = require('pg');
 const logger = require('../utils/logger');
 
-// Forzar resolución IPv4 (Supabase resuelve a IPv6 por defecto en algunos sistemas)
 dns.setDefaultResultOrder('ipv4first');
 
-// Devolver DATE como string "YYYY-MM-DD" en vez de Date object (evita desfases de zona horaria)
 types.setTypeParser(1082, (val) => val);
-// Devolver TIMESTAMP como string en vez de Date object
 types.setTypeParser(1114, (val) => val);
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
+
+function convertirPlaceholders(sql) {
+    let idx = 0;
+    let resultado = '';
+    let enStringSimple = false;
+    let enStringDoble = false;
+    let enComentarioLinea = false;
+    let enComentarioBloque = false;
+
+    for (let i = 0; i < sql.length; i += 1) {
+        const actual = sql[i];
+        const siguiente = sql[i + 1];
+
+        if (enComentarioLinea) {
+            resultado += actual;
+            if (actual === '\n') {
+                enComentarioLinea = false;
+            }
+            continue;
+        }
+
+        if (enComentarioBloque) {
+            resultado += actual;
+            if (actual === '*' && siguiente === '/') {
+                resultado += siguiente;
+                i += 1;
+                enComentarioBloque = false;
+            }
+            continue;
+        }
+
+        if (enStringSimple) {
+            resultado += actual;
+            if (actual === '\'' && siguiente === '\'') {
+                resultado += siguiente;
+                i += 1;
+                continue;
+            }
+            if (actual === '\'') {
+                enStringSimple = false;
+            }
+            continue;
+        }
+
+        if (enStringDoble) {
+            resultado += actual;
+            if (actual === '"') {
+                enStringDoble = false;
+            }
+            continue;
+        }
+
+        if (actual === '-' && siguiente === '-') {
+            resultado += actual + siguiente;
+            i += 1;
+            enComentarioLinea = true;
+            continue;
+        }
+
+        if (actual === '/' && siguiente === '*') {
+            resultado += actual + siguiente;
+            i += 1;
+            enComentarioBloque = true;
+            continue;
+        }
+
+        if (actual === '\'') {
+            resultado += actual;
+            enStringSimple = true;
+            continue;
+        }
+
+        if (actual === '"') {
+            resultado += actual;
+            enStringDoble = true;
+            continue;
+        }
+
+        if (actual === '?') {
+            idx += 1;
+            resultado += `$${idx}`;
+            continue;
+        }
+
+        resultado += actual;
+    }
+
+    return {
+        sql: resultado,
+        totalPlaceholders: idx
+    };
+}
 
 pool.on('connect', () => {
     logger.info('Conectado a PostgreSQL (Supabase)');
@@ -25,24 +114,36 @@ pool.on('error', (err) => {
 });
 
 const db = {
-    /**
-     * Ejecuta una consulta SQL.
-     * Convierte placeholders ? de MySQL al estilo $1, $2, ... de PostgreSQL.
-     * El callback recibe (err, rows) donde rows es un array.
-     * Para INSERT/UPDATE/DELETE, rows.affectedRows contiene el número de filas afectadas.
-     */
     query(sql, params, callback) {
         if (typeof params === 'function') {
             callback = params;
             params = [];
         }
 
-        // Convertir ? al estilo $n de PostgreSQL
-        let idx = 0;
-        const pgSql = sql.replace(/\?/g, () => `$${++idx}`);
+        const conversion = convertirPlaceholders(sql);
+        const pgSql = conversion.sql;
+        const normalizedParams = params || [];
 
-        pool.query(pgSql, params || [], (err, result) => {
-            if (err) return callback(err);
+        if (conversion.totalPlaceholders !== normalizedParams.length) {
+            logger.error({
+                message: 'Cantidad de placeholders distinta al numero de parametros',
+                query: pgSql,
+                placeholderCount: conversion.totalPlaceholders,
+                params: normalizedParams
+            });
+        }
+
+        pool.query(pgSql, normalizedParams, (err, result) => {
+            if (err) {
+                logger.error({
+                    message: 'Error al ejecutar consulta PostgreSQL',
+                    query: pgSql,
+                    params: normalizedParams,
+                    pgCode: err.code,
+                    pgMessage: err.message
+                });
+                return callback(err);
+            }
 
             const rows = result.rows || [];
             rows.affectedRows = result.rowCount || 0;
@@ -50,10 +151,6 @@ const db = {
         });
     },
 
-    /**
-     * Obtiene un cliente dedicado del pool para manejar transacciones.
-     * callback(err, client, done) — llama a done() al terminar.
-     */
     connect(callback) {
         pool.connect(callback);
     }

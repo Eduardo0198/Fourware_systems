@@ -1,5 +1,13 @@
 const db = require('../config/db');
 
+function limpiarComentarioSemilla(comentario) {
+    if (typeof comentario !== 'string') {
+        return comentario;
+    }
+
+    return comentario.replace(/^\[seed-cu[^\]]*\]\s*/i, '').trim();
+}
+
 exports.registrarCalificacion = (correo, sku, calificacion, comentario, callback) => {
     const query = `
         INSERT INTO "Calificacion" (correo, "SKU", estrellas, comentario, fecha)
@@ -58,7 +66,18 @@ exports.obtenerResenasPorSku = (sku, callback) => {
         LIMIT 8
     `;
 
-    db.query(query, [sku], callback);
+    db.query(query, [sku], (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+
+        const resenas = (rows || []).map((row) => ({
+            ...row,
+            comentario: limpiarComentarioSemilla(row.comentario)
+        }));
+
+        callback(null, resenas);
+    });
 };
 
 exports.consultarResultadosMarketingPorNombre = (nombre, callback) => {
@@ -95,7 +114,23 @@ exports.consultarResultadosMarketingPorNombre = (nombre, callback) => {
         ORDER BY p.nombre_comercial ASC, p."SKU" ASC
     `;
 
-    db.query(query, [`%${nombre}%`], callback);
+    db.query(query, [`%${nombre}%`], (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+
+        const resultados = (rows || []).map((row) => ({
+            ...row,
+            comentarios: Array.isArray(row.comentarios)
+                ? row.comentarios.map((comentario) => ({
+                    ...comentario,
+                    comentario: limpiarComentarioSemilla(comentario.comentario)
+                }))
+                : []
+        }));
+
+        callback(null, resultados);
+    });
 };
 
 exports.obtenerPromedioCalificacionesPorCampaniaActiva = (callback) => {
@@ -115,7 +150,6 @@ exports.obtenerPromedioCalificacionesPorCampaniaActiva = (callback) => {
 
     db.query(query, callback);
 };
-
 exports.obtenerRankingProductosPorCalificacion = (direccion, limite, minimoCalificaciones = 1, callback) => {
     if (typeof minimoCalificaciones === 'function') {
         callback = minimoCalificaciones;

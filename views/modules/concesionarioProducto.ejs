@@ -12,12 +12,14 @@
     }
     return html;
 } %>
-<% function formatCurrency(value) {
+<%
+function formatCurrency(value) {
     return Number(value || 0).toLocaleString('es-MX', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
-} %>
+}
+%>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
     <h2 class="mb-0">Detalle del Producto</h2>

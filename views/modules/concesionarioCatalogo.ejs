@@ -6,12 +6,14 @@
     }
     return html;
 } %>
-<% function formatCurrency(value) {
+<%
+function formatCurrency(value) {
     return Number(value || 0).toLocaleString('es-MX', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
-} %>
+}
+%>
 
 <h2 class="mb-3">Catálogo de Productos</h2>
 <% const alertMessage = pageMessage || mensaje || null; %>
@@ -247,7 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        resultados.innerHTML = productos.map((p) => `
+        resultados.innerHTML = productos.map((p) => {
+            const precioFormateado = escapeHtml(formatCurrency(p.precio_unitario));
+
+            return `
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <div class="card shadow-sm h-100 catalogo-product-card" id="producto-${escapeHtml(p.SKU)}" data-sku="${escapeHtml(p.SKU)}">
                     <img src="${escapeHtml(p.imagen || "/img/ppg-logo.png")}"
@@ -258,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <h6 class="card-title">${escapeHtml(p.nombre)}</h6>
                         <p class="text-muted small mb-1">SKU: ${escapeHtml(p.SKU)}</p>
                         <p class="fw-bold text-primary">
-                            $${escapeHtml(formatCurrency(p.precio_unitario))}
+                            $${precioFormateado}
                         </p>
                         <div class="catalogo-product-rating mb-3" aria-label="Calificación promedio de ${escapeHtml(Number(p.promedio_estrellas || 0).toFixed(1))} de 5">
                             <span class="catalogo-product-stars">${renderStars(p.promedio_estrellas)}</span>
@@ -282,7 +287,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
             </div>
-        `).join("");
+        `;
+        }).join("");
     }
 
     function aplicarResaltadoProductoAgregado() {
@@ -408,8 +414,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     aplicarResaltadoProductoAgregado();
 });
-
-/* ── Animación fly-to-cart + AJAX sin recarga ── */
 (function () {
     function actualizarBadgeCarrito(count) {
         const cartIcon = document.getElementById("cartHeaderIcon");

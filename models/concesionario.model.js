@@ -59,38 +59,38 @@ exports.obtenerProductosPaginados = (
             GROUP BY "SKU"
         ) cal ON cal."SKU" = p."SKU"
         WHERE p.activo = 1
-          AND p.id_campania = ?
+          AND p.id_campania = CAST(? AS integer)
     `;
     const params = [idCampania];
 
     if (searchTerm) {
         query += ` AND (
-            p."SKU" ILIKE ?
-            OR p.nombre_comercial ILIKE ?
-            OR p.descripcion ILIKE ?
+            p."SKU" ILIKE CAST(? AS text)
+            OR p.nombre_comercial ILIKE CAST(? AS text)
+            OR p.descripcion ILIKE CAST(? AS text)
         )`;
         params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
 
     if (precioMin !== undefined && precioMin !== null && !isNaN(precioMin)) {
-        query += ` AND p.precio_unitario >= ?`;
+        query += ` AND p.precio_unitario >= CAST(? AS numeric)`;
         params.push(parseFloat(precioMin));
     }
 
     if (precioMax !== undefined && precioMax !== null && !isNaN(precioMax)) {
-        query += ` AND p.precio_unitario <= ?`;
+        query += ` AND p.precio_unitario <= CAST(? AS numeric)`;
         params.push(parseFloat(precioMax));
     }
 
     if (unidadVenta && unidadVenta !== '') {
-        query += ` AND p.unidad_venta = ?`;
+        query += ` AND p.unidad_venta = CAST(? AS text)`;
         params.push(unidadVenta);
     }
 
     query += ` ORDER BY
         CASE WHEN p.imagen ILIKE 'https://%' OR p.imagen ILIKE '/img/ImagenesPintura/%' THEN 0 ELSE 1 END ASC,
         p."SKU" ASC
-        LIMIT ? OFFSET ?`;
+        LIMIT CAST(? AS integer) OFFSET CAST(? AS integer)`;
     params.push(limit, offset);
 
     db.query(query, params, (err, productos) => {
@@ -100,31 +100,31 @@ exports.obtenerProductosPaginados = (
             SELECT COUNT(*) AS total
             FROM "Producto"
             WHERE activo = 1
-              AND id_campania = ?
+              AND id_campania = CAST(? AS integer)
         `;
         const countParams = [idCampania];
 
         if (searchTerm) {
             countQuery += ` AND (
-                "SKU" ILIKE ?
-                OR nombre_comercial ILIKE ?
-                OR descripcion ILIKE ?
+                "SKU" ILIKE CAST(? AS text)
+                OR nombre_comercial ILIKE CAST(? AS text)
+                OR descripcion ILIKE CAST(? AS text)
             )`;
             countParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
         }
 
         if (precioMin !== undefined && precioMin !== null && !isNaN(precioMin)) {
-            countQuery += ` AND precio_unitario >= ?`;
+            countQuery += ` AND precio_unitario >= CAST(? AS numeric)`;
             countParams.push(parseFloat(precioMin));
         }
 
         if (precioMax !== undefined && precioMax !== null && !isNaN(precioMax)) {
-            countQuery += ` AND precio_unitario <= ?`;
+            countQuery += ` AND precio_unitario <= CAST(? AS numeric)`;
             countParams.push(parseFloat(precioMax));
         }
 
         if (unidadVenta && unidadVenta !== '') {
-            countQuery += ` AND unidad_venta = ?`;
+            countQuery += ` AND unidad_venta = CAST(? AS text)`;
             countParams.push(unidadVenta);
         }
 
@@ -141,7 +141,7 @@ exports.obtenerUnidadesVenta = (idCampania, callback) => {
         SELECT DISTINCT unidad_venta
         FROM "Producto"
         WHERE activo = 1
-          AND id_campania = ?
+          AND id_campania = CAST(? AS integer)
           AND unidad_venta IS NOT NULL
           AND unidad_venta != ''
         ORDER BY unidad_venta
@@ -158,7 +158,7 @@ exports.obtenerProductoPorSku = (sku, callback) => {
         SELECT "SKU", nombre_comercial AS nombre, precio_unitario, peso_unitario,
                medida_primaria, imagen, descripcion, unidad_venta, volumen_unitario, activo, id_campania
         FROM "Producto"
-        WHERE "SKU" = ?
+        WHERE "SKU" = CAST(? AS text)
     `;
     db.query(query, [sku], (err, results) => {
         if (err) return callback(err);
@@ -181,9 +181,9 @@ exports.obtenerProductoActivoPorSkuYCampania = (sku, idCampania, callback) => {
             activo,
             id_campania
         FROM "Producto"
-        WHERE "SKU" = ?
+        WHERE "SKU" = CAST(? AS text)
           AND activo = 1
-          AND id_campania = ?
+          AND id_campania = CAST(? AS integer)
         LIMIT 1
     `;
 

@@ -397,7 +397,6 @@ exports.exportarMetricas = async (req, res) => {
 
         const fechaGen = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
-        // ── HOJA 1: RANKING ──────────────────────────────────────────────
         const wsR = wb.addWorksheet('Ranking');
         wsR.columns = [
             { width: 9 }, { width: 14 }, { width: 36 },
@@ -418,7 +417,6 @@ exports.exportarMetricas = async (req, res) => {
             [null, null, null, '#,##0', null, '#,##0', '"$"#,##0.00']
         ));
 
-        // ── HOJA 2: MÉTRICAS ─────────────────────────────────────────────
         const wsM = wb.addWorksheet('Métricas');
         wsM.columns = [{ width: 32 }, { width: 18 }, { width: 22 }];
         excelTitulo(wsM, 'A1', 'C1', 'MÉTRICAS COMPARATIVAS POR CAMPAÑA');
@@ -448,7 +446,6 @@ exports.exportarMetricas = async (req, res) => {
         });
         wsM.getRow(nTotal).height = 22;
 
-        // ── HOJA 3: GRÁFICAS ─────────────────────────────────────────────
         if (chartRankingImg || chartMetricasImg) {
             const wsG = wb.addWorksheet('Gráficas');
             wsG.columns = Array(10).fill({ width: 12 });
