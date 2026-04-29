@@ -92,4 +92,18 @@ router.post('/producto/calificar',
     concesionarioController.calificarProducto
 );
 
+router.post('/producto/resena/editar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    concesionarioController.editarResena
+);
+
+router.post('/producto/resena/eliminar',
+    protegerRuta,
+    tieneRol(['Concesionario']),
+    requiereCuentaActiva,
+    concesionarioController.eliminarResena
+);
+
 module.exports = router;

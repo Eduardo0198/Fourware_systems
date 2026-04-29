@@ -80,6 +80,20 @@ exports.obtenerResenasPorSku = (sku, callback) => {
     });
 };
 
+exports.actualizarResena = (id, correo, estrellas, comentario, callback) => {
+    const query = `
+        UPDATE "Calificacion"
+        SET estrellas = ?, comentario = ?
+        WHERE id_calificacion = ? AND correo = ?
+    `;
+    db.query(query, [estrellas, comentario, id, correo], callback);
+};
+
+exports.eliminarResena = (id, correo, callback) => {
+    const query = `DELETE FROM "Calificacion" WHERE id_calificacion = ? AND correo = ?`;
+    db.query(query, [id, correo], callback);
+};
+
 exports.consultarResultadosMarketingPorNombre = (nombre, callback) => {
     const query = `
         SELECT

@@ -182,7 +182,8 @@ exports.producto = (req, res) => {
                             returnTo,
                             resumenCalificaciones,
                             distribucionConPorcentaje,
-                            resenas: Array.isArray(resenas) ? resenas : []
+                            resenas: Array.isArray(resenas) ? resenas : [],
+                            usuarioCorreo: req.session.usuario?.correo || null
                         });
                     });
                 });
@@ -194,6 +195,50 @@ exports.producto = (req, res) => {
 exports.confirmarReserva = (req, res) => {
     registrarEvento(req, 'Consulta de confirmación de reserva');
     return res.render('modules/concesionarioConfirmarReserva');
+};
+
+exports.editarResena = (req, res) => {
+    const { id_calificacion, calificacion, comentario } = req.body;
+    const correo = req.session.usuario?.correo;
+
+    if (!id_calificacion || !calificacion || calificacion < 1 || calificacion > 5) {
+        return res.status(400).json({ ok: false, mensaje: 'Datos inválidos.' });
+    }
+
+    calificacionModel.actualizarResena(id_calificacion, correo, calificacion, comentario || '', (err, result) => {
+        if (err) {
+            logger.error(err);
+            registrarEvento(req, 'Error al editar reseña de producto');
+            return res.status(500).json({ ok: false, mensaje: 'Error al actualizar la reseña.' });
+        }
+        if (!result || result.rowCount === 0) {
+            return res.status(403).json({ ok: false, mensaje: 'No puedes editar esta reseña.' });
+        }
+        registrarEvento(req, 'Edición de reseña de producto');
+        return res.json({ ok: true, mensaje: 'Reseña actualizada correctamente.' });
+    });
+};
+
+exports.eliminarResena = (req, res) => {
+    const { id_calificacion } = req.body;
+    const correo = req.session.usuario?.correo;
+
+    if (!id_calificacion) {
+        return res.status(400).json({ ok: false, mensaje: 'ID de reseña inválido.' });
+    }
+
+    calificacionModel.eliminarResena(id_calificacion, correo, (err, result) => {
+        if (err) {
+            logger.error(err);
+            registrarEvento(req, 'Error al eliminar reseña de producto');
+            return res.status(500).json({ ok: false, mensaje: 'Error al eliminar la reseña.' });
+        }
+        if (!result || result.rowCount === 0) {
+            return res.status(403).json({ ok: false, mensaje: 'No puedes eliminar esta reseña.' });
+        }
+        registrarEvento(req, 'Eliminación de reseña de producto');
+        return res.json({ ok: true, mensaje: 'Reseña eliminada correctamente.' });
+    });
 };
 
 exports.calificarProducto = (req, res) => {
