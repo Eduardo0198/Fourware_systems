@@ -85,13 +85,6 @@ router.post('/cancelar-reserva',
     concesionarioController.cancelarReservaPost
 );
 
-router.post('/producto/:sku/calificar',
-    protegerRuta,
-    tieneRol(['Concesionario']),
-    requiereCuentaActiva,
-    concesionarioController.calificarProducto
-);
-
 router.post('/producto/calificar',
     protegerRuta,
     tieneRol(['Concesionario']),

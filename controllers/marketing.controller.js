@@ -1,4 +1,3 @@
-const util = require('util');
 const metricasModel = require('../models/metricas.model');
 const campaniaModel = require('../models/campania.model');
 const reservaModel = require('../models/reserva.model');
@@ -9,8 +8,6 @@ const logger = require('../utils/logger');
 const calificacionModel = require('../models/calificacion.model');
 const { obtenerDatosCatalogo } = require('./concesionario/shared');
 const renderError = require('../utils/renderError');
-
-const obtenerCampaniaActivaAsync = util.promisify(campaniaModel.obtenerCampaniaActiva);
 
 const CRITERIO_NOMBRE_VALIDO = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s.,-]*$/;
 
