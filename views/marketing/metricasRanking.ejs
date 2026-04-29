@@ -55,9 +55,9 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i>Consultar
                     </button>
-                    <a href="/marketing/metricas-ranking" class="btn btn-outline-secondary">
+                    <button type="button" id="btnLimpiarMetricas" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle me-1"></i>Limpiar filtros
-                    </a>
+                    </button>
                 </div>
             </form>
         </div>
@@ -454,5 +454,9 @@ async function capturarGraficaExport(tab) {
         setTimeout(() => { resolve(canvas.toDataURL('image/png')); chart.destroy(); }, 150);
     });
 }
+
 </script>
 <% } %>
+<script>
+document.getElementById('btnLimpiarMetricas')?.addEventListener('click', () => { location.href = '/marketing/metricas-ranking'; });
+</script>

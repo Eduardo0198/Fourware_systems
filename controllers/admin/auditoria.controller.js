@@ -105,6 +105,7 @@ exports.exportarBitacora = async (req, res) => {
 };
 
 exports.auditoria = (req, res) => {
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
     const usuario = req.session.usuario;
     const consultaSolicitada = req.query.consultar === '1';
     const correo = String(req.query.usuario || '').trim();
@@ -117,6 +118,14 @@ exports.auditoria = (req, res) => {
     };
 
     const renderAuditoria = (datosExtra = {}) => {
+        if (esAjax) {
+            return res.json({
+                ok: !datosExtra.estadoConsulta?.startsWith('error'),
+                registros:       datosExtra.registros       || [],
+                totalRegistros:  datosExtra.totalRegistros  || 0,
+                mensaje:         datosExtra.mensaje         || null
+            });
+        }
         res.render('modules/adminAuditoria', {
             filtros,
             registros: [],

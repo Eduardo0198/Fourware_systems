@@ -222,7 +222,7 @@
             </div>
             <div class="col-md-6 d-flex gap-2">
                 <button class="btn admin-action-btn" type="submit">Consultar</button>
-                <a href="/logistica/metricas" class="btn btn-outline-secondary">Limpiar</a>
+                <button type="button" id="btnLimpiarLogistica" class="btn btn-outline-secondary">Limpiar</button>
             </div>
         </form>
     </div>
@@ -860,3 +860,6 @@
     });
 </script>
 <% } %>
+<script>
+document.getElementById('btnLimpiarLogistica')?.addEventListener('click', () => { location.href = '/logistica/metricas'; });
+</script>

@@ -81,9 +81,9 @@
                     <i class="bi bi-search"></i>
                     Consultar
                 </button>
-                <a href="/admin/auditoria" class="btn btn-outline-secondary audit-secondary-btn">
+                <button type="button" id="btnLimpiarAuditoria" class="btn btn-outline-secondary audit-secondary-btn">
                     Limpiar
-                </a>
+                </button>
             </div>
         </form>
     </div>
@@ -95,16 +95,17 @@
                 <p>Eventos ordenados del más reciente al más antiguo.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="audit-total-pill">Total: <%= totalVista %></span>
-                <% if (registrosVista.length > 0) { %>
-                <a href="/admin/auditoria/exportar?usuario=<%= encodeURIComponent(filtrosVista.correo || '') %>&fecha_inicio=<%= filtrosVista.fechaInicio || '' %>&fecha_fin=<%= filtrosVista.fechaFin || '' %>"
-                   class="btn btn-sm audit-primary-btn">
+                <span class="audit-total-pill" id="auditTotalPill">Total: <%= totalVista %></span>
+                <a id="auditExportLink"
+                   href="/admin/auditoria/exportar?usuario=<%= encodeURIComponent(filtrosVista.correo || '') %>&fecha_inicio=<%= filtrosVista.fechaInicio || '' %>&fecha_fin=<%= filtrosVista.fechaFin || '' %>"
+                   class="btn btn-sm audit-primary-btn"
+                   style="<%= registrosVista.length === 0 ? 'display:none' : '' %>">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
                 </a>
-                <% } %>
             </div>
         </div>
 
+        <div id="auditResultsContent">
         <% if (registrosVista.length > 0) { %>
             <div class="audit-scroll-top" id="auditScrollTop">
                 <div class="audit-scroll-inner" id="auditScrollInner"></div>
@@ -152,46 +153,146 @@
                 </p>
             </div>
         <% } %>
+        </div>
     </div>
 </section>
 
 <script>
-    document.getElementById('formAuditoria').addEventListener('submit', function (e) {
-        const fi = document.getElementById('fecha_inicio').value;
-        const ff = document.getElementById('fecha_fin').value;
-        const campoFf = document.getElementById('fecha_fin');
-        campoFf.classList.remove('is-invalid');
-        if (fi && ff && ff < fi) {
-            campoFf.classList.add('is-invalid');
-            e.preventDefault();
-        }
-    });
+(function () {
+    const form        = document.getElementById('formAuditoria');
+    const campoFf     = document.getElementById('fecha_fin');
+    const btnLimpiar  = document.getElementById('btnLimpiarAuditoria');
+    const totalPill   = document.getElementById('auditTotalPill');
+    const totalHero   = document.querySelector('.audit-total-card strong');
+    const exportLink  = document.getElementById('auditExportLink');
+    const content     = document.getElementById('auditResultsContent');
 
-    (function () {
-        const scrollTop  = document.getElementById('auditScrollTop');
+    function escapeHtml(v) {
+        return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function formatearIp(ip) {
+        if (!ip) return 'N/D';
+        const v = String(ip).trim();
+        return v === '::1' ? '127.0.0.1 (localhost)' : v;
+    }
+
+    function initScrollSync() {
+        const scrollTop   = document.getElementById('auditScrollTop');
         const scrollInner = document.getElementById('auditScrollInner');
-        const tableWrap  = document.getElementById('auditTableWrap');
-        const table      = document.getElementById('auditTable');
+        const tableWrap   = document.getElementById('auditTableWrap');
+        const table       = document.getElementById('auditTable');
         if (!scrollTop || !tableWrap || !table) return;
 
-        function sincronizarAncho() {
-            scrollInner.style.width = table.scrollWidth + 'px';
-        }
+        function sincronizarAncho() { scrollInner.style.width = table.scrollWidth + 'px'; }
         sincronizarAncho();
         new ResizeObserver(sincronizarAncho).observe(table);
 
         let syncingTop = false, syncingWrap = false;
         scrollTop.addEventListener('scroll', () => {
             if (syncingWrap) return;
-            syncingTop = true;
-            tableWrap.scrollLeft = scrollTop.scrollLeft;
-            syncingTop = false;
+            syncingTop = true; tableWrap.scrollLeft = scrollTop.scrollLeft; syncingTop = false;
         });
         tableWrap.addEventListener('scroll', () => {
             if (syncingTop) return;
-            syncingWrap = true;
-            scrollTop.scrollLeft = tableWrap.scrollLeft;
-            syncingWrap = false;
+            syncingWrap = true; scrollTop.scrollLeft = tableWrap.scrollLeft; syncingWrap = false;
         });
-    })();
+    }
+
+    function buildTabla(registros) {
+        const filas = registros.map(r => `
+            <tr>
+                <td><span class="audit-log-id">#${escapeHtml(r.id_log)}</span></td>
+                <td class="audit-date-cell">${escapeHtml(r.fecha)}</td>
+                <td><span class="audit-user-pill">${escapeHtml(r.correo || 'N/D')}</span></td>
+                <td class="audit-action-cell">${escapeHtml(r.accion)}</td>
+                <td><span class="audit-ip-pill">${escapeHtml(formatearIp(r.ip_origen))}</span></td>
+            </tr>`).join('');
+
+        return `
+            <div class="audit-scroll-top" id="auditScrollTop">
+                <div class="audit-scroll-inner" id="auditScrollInner"></div>
+            </div>
+            <div class="audit-table-wrap" id="auditTableWrap">
+                <table class="table audit-table align-middle mb-0" id="auditTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Fecha</th><th>Usuario</th><th>Acción</th><th>IP de origen</th>
+                        </tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>`;
+    }
+
+    function buildVacio() {
+        return `
+            <div class="audit-empty-state">
+                <div class="audit-empty-icon"><i class="bi bi-journal-text"></i></div>
+                <h4>Sin registros para mostrar</h4>
+                <p>No hay registros para los filtros seleccionados. Ajusta los criterios y vuelve a consultar.</p>
+            </div>`;
+    }
+
+    function actualizarResultados(data) {
+        const total = data.totalRegistros || 0;
+        if (totalPill)  totalPill.textContent  = 'Total: ' + total;
+        if (totalHero)  totalHero.textContent  = total;
+
+        if (exportLink) {
+            if (total > 0) {
+                const p = new URLSearchParams({
+                    usuario:       form.usuario.value,
+                    fecha_inicio:  form.fecha_inicio.value,
+                    fecha_fin:     form.fecha_fin.value
+                });
+                exportLink.href = '/admin/auditoria/exportar?' + p.toString();
+                exportLink.style.display = '';
+            } else {
+                exportLink.style.display = 'none';
+            }
+        }
+
+        if (content) {
+            content.innerHTML = total > 0 ? buildTabla(data.registros) : buildVacio();
+            if (total > 0) initScrollSync();
+        }
+    }
+
+    async function ejecutarConsulta(e) {
+        const fi = document.getElementById('fecha_inicio').value;
+        const ff = document.getElementById('fecha_fin').value;
+        campoFf.classList.remove('is-invalid');
+        if (fi && ff && ff < fi) {
+            campoFf.classList.add('is-invalid');
+            if (e) e.preventDefault();
+            return;
+        }
+        if (e) e.preventDefault();
+
+        const params = new URLSearchParams(new FormData(form));
+        try {
+            const r = await fetch('/admin/auditoria?' + params.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await r.json();
+            actualizarResultados(data);
+        } catch {
+            if (content) content.innerHTML = buildVacio();
+        }
+    }
+
+    form.addEventListener('submit', ejecutarConsulta);
+
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', () => {
+            form.usuario.value       = '';
+            form.fecha_inicio.value  = '';
+            form.fecha_fin.value     = '';
+            ejecutarConsulta(null);
+        });
+    }
+
+    initScrollSync();
+})();
 </script>
