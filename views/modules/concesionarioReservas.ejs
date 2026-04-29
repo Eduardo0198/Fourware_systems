@@ -25,7 +25,7 @@
                 <th>Subtotal</th>
                 <th>IVA</th>
                 <th>Total</th>
-                <th>Fecha límite de cancelación</th>
+                <th>Límite de cancelación</th>
                 <th>Acción</th>
             </tr>
         </thead>
@@ -45,7 +45,6 @@
                     <td>
                         <% if (reserva.puedeCancelar && reserva.fechaCancelacionISO) { %>
                             <div class="cancel-countdown" data-deadline="<%= reserva.fechaCancelacionISO %>">
-                                <span class="cancel-countdown-label">Cancela en</span>
                                 <div class="cancel-countdown-digits">
                                     <span class="cd-d">--</span><span class="cd-unit">d</span>
                                     <span class="cd-h">--</span><span class="cd-unit">h</span>
@@ -54,7 +53,7 @@
                                 </div>
                             </div>
                         <% } else if (reserva.estatusNumerico === 0) { %>
-                            <span class="text-muted">Ya cancelada</span>
+                            <span class="text-muted">—</span>
                         <% } else { %>
                             <span class="text-danger small">Venció el <%= reserva.fechaCancelacionTexto %></span>
                         <% } %>
