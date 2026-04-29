@@ -253,7 +253,7 @@ function formatCurrency(value) {
         </section>
     </div>
 
-    <% if (!soloLectura) { %>
+    <% if (!_soloLectura) { %>
     <div class="reviews-composer-card" id="formulario-resena">
         <div class="reviews-composer-copy">
             <span class="reviews-compose-kicker">Comparte tu experiencia</span>
@@ -261,7 +261,9 @@ function formatCurrency(value) {
             <p>Selecciona estrellas y deja un comentario para ayudar a otros concesionarios a tomar una mejor decisión.</p>
         </div>
 
-        <form method="POST" action="/concesionario/producto/calificar" class="reviews-form">
+        <div id="resena-alerta" class="d-none mb-3"></div>
+
+        <form id="formResena" class="reviews-form">
             <input type="hidden" name="sku" value="<%= producto.SKU %>">
             <div class="reviews-star-picker-block">
                 <span class="form-label">Tu calificación</span>
@@ -285,9 +287,55 @@ function formatCurrency(value) {
                 <textarea id="comentario" name="comentario" class="form-control reviews-textarea" rows="4" maxlength="1000" placeholder="¿Qué te gustó del producto, el acabado o su rendimiento?"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-success reviews-submit-btn">Enviar calificación</button>
+            <button type="submit" id="btnEnviarResena" class="btn btn-success reviews-submit-btn">Enviar calificación</button>
         </form>
     </div>
+
+    <script>
+    document.getElementById('formResena').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const btn  = document.getElementById('btnEnviarResena');
+        const alerta = document.getElementById('resena-alerta');
+        const calificacion = form.querySelector('input[name="calificacion"]:checked');
+
+        if (!calificacion) {
+            alerta.className = 'alert alert-warning';
+            alerta.textContent = 'Selecciona una calificación antes de enviar.';
+            alerta.classList.remove('d-none');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+
+        try {
+            const body = new URLSearchParams(new FormData(form));
+            const res  = await fetch('/concesionario/producto/calificar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: body.toString()
+            });
+            const data = await res.json();
+
+            alerta.className = `alert alert-${data.ok ? 'success' : 'danger'}`;
+            alerta.textContent = data.mensaje;
+            alerta.classList.remove('d-none');
+
+            if (data.ok) {
+                form.reset();
+                setTimeout(() => alerta.classList.add('d-none'), 4000);
+            }
+        } catch {
+            alerta.className = 'alert alert-danger';
+            alerta.textContent = 'Error al conectar con el servidor.';
+            alerta.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Enviar calificación';
+        }
+    });
+    </script>
     <% } %>
 
     <section class="reviews-list-section">

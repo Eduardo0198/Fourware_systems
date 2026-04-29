@@ -126,76 +126,56 @@ exports.seleccionarCuentaActiva = (req, res) => {
     const idCuenta = parseInt(req.body.id_cuenta, 10);
     const destino = req.get('referer') || '/concesionario/home';
     const cuentaAnteriorId = usuario?.cuentaActiva?.id_cuenta || null;
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
 
-    if (!usuario || !usuario.correo || Number.isNaN(idCuenta)) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'No fue posible actualizar la cuenta activa.'
-        };
+    const respError = (texto, status = 400) => {
+        if (esAjax) return res.status(status).json({ ok: false, mensaje: texto });
+        req.session.mensaje = { tipo: 'danger', texto };
         return res.redirect(destino);
-    }
+    };
+
+    if (!usuario || !usuario.correo || Number.isNaN(idCuenta)) return respError('No fue posible actualizar la cuenta activa.');
 
     cuentaModel.obtenerCuentaPorCorreoYId(usuario.correo, idCuenta, (err, cuenta) => {
         if (err) {
             logger.error(err);
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'No fue posible actualizar la cuenta activa.'
-            };
-            return res.redirect(destino);
+            return respError('No fue posible actualizar la cuenta activa.', 500);
         }
 
-        if (!cuenta) {
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'La cuenta seleccionada no esta asociada a tu usuario.'
-            };
-            return res.redirect(destino);
-        }
+        if (!cuenta) return respError('La cuenta seleccionada no está asociada a tu usuario.');
 
         if (!cuenta.activo) {
-            registrarEvento(
-                req,
-                `Intento de seleccionar cuenta inactiva ${cuenta.id_cuenta} - ${cuenta.nombre}`,
-                usuario.correo
-            );
-            req.session.mensaje = {
-                tipo: 'warning',
-                texto: 'Esta cuenta está inactiva.'
-            };
+            registrarEvento(req, `Intento de seleccionar cuenta inactiva ${cuenta.id_cuenta} - ${cuenta.nombre}`, usuario.correo);
+            if (esAjax) return res.status(400).json({ ok: false, mensaje: 'Esta cuenta está inactiva.' });
+            req.session.mensaje = { tipo: 'warning', texto: 'Esta cuenta está inactiva.' };
             return res.redirect(destino);
         }
 
         cuentaModel.obtenerCuentasPorCorreo(usuario.correo, (errCuentas, cuentas) => {
             if (errCuentas) {
                 logger.error(errCuentas);
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No fue posible actualizar la cuenta activa.'
-                };
-                return res.redirect(destino);
+                return respError('No fue posible actualizar la cuenta activa.', 500);
             }
 
             req.session.usuario.cuentas = cuentas;
-            req.session.usuario.cuentaActiva =
-                cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
+            req.session.usuario.cuentaActiva = cuentas.find(item => item.id_cuenta === cuenta.id_cuenta) || cuenta;
             req.session.carritoCuentaId = cuenta.id_cuenta;
 
-            if (cuentaAnteriorId && cuentaAnteriorId !== cuenta.id_cuenta) {
-                req.session.carrito = [];
+            const carritoReset = !!(cuentaAnteriorId && cuentaAnteriorId !== cuenta.id_cuenta);
+            if (carritoReset) req.session.carrito = [];
+
+            registrarEvento(req, `Seleccionó la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`, usuario.correo);
+
+            if (esAjax) {
+                return res.json({
+                    ok: true,
+                    mensaje: `Ahora estás operando con la cuenta ${cuenta.nombre}.`,
+                    cuenta: { nombre: cuenta.nombre, codigo: cuenta.codigo, estatus: cuenta.estatus },
+                    carritoReset
+                });
             }
 
-            registrarEvento(
-                req,
-                `Seleccionó la cuenta activa ${cuenta.id_cuenta} - ${cuenta.nombre}`,
-                usuario.correo
-            );
-
-            req.session.mensaje = {
-                tipo: 'success',
-                texto: `Ahora estás operando con la cuenta ${cuenta.nombre}.`
-            };
-
+            req.session.mensaje = { tipo: 'success', texto: `Ahora estás operando con la cuenta ${cuenta.nombre}.` };
             return res.redirect(destino);
         });
     });

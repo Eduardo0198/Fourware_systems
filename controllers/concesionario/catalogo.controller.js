@@ -200,39 +200,29 @@ exports.calificarProducto = (req, res) => {
     const sku = req.params.sku || req.body.sku;
     const { calificacion, comentario } = req.body;
     const correo = req.session.usuario?.correo;
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
 
-    if (!sku) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'No fue posible identificar el producto a calificar.'
-        };
-        return res.redirect('/concesionario/catalogo');
-    }
+    const respError = (texto, status = 400) => {
+        if (esAjax) return res.status(status).json({ ok: false, mensaje: texto });
+        req.session.mensaje = { tipo: 'danger', texto };
+        return res.redirect(sku ? `/concesionario/producto/${sku}` : '/concesionario/catalogo');
+    };
 
-    if (!calificacion || calificacion < 1 || calificacion > 5) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'Calificación inválida. Debe ser entre 1 y 5.'
-        };
-        return res.redirect(`/concesionario/producto/${sku}`);
-    }
+    if (!sku) return respError('No fue posible identificar el producto a calificar.');
+    if (!calificacion || calificacion < 1 || calificacion > 5) return respError('Calificación inválida. Debe ser entre 1 y 5.');
 
     calificacionModel.registrarCalificacion(correo, sku, calificacion, comentario || '', (err) => {
         if (err) {
             logger.error(err);
             registrarEvento(req, 'Error al registrar calificación de producto');
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'Error al registrar la calificación.'
-            };
-        } else {
-            registrarEvento(req, 'Registro de calificación y comentario sobre producto de preventa');
-            req.session.mensaje = {
-                tipo: 'success',
-                texto: 'Calificación registrada exitosamente.'
-            };
+            return respError('Error al registrar la calificación.', 500);
         }
 
+        registrarEvento(req, 'Registro de calificación y comentario sobre producto de preventa');
+
+        if (esAjax) return res.json({ ok: true, mensaje: 'Calificación registrada exitosamente.' });
+
+        req.session.mensaje = { tipo: 'success', texto: 'Calificación registrada exitosamente.' };
         return res.redirect(`/concesionario/producto/${sku}`);
     });
 };

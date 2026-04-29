@@ -82,22 +82,21 @@
                                 </span>
                             </button>
                         <% } else { %>
-                            <form method="POST" action="/concesionario/cuenta-activa" class="dropdown-account-form">
-                                <input type="hidden" name="id_cuenta" value="<%= cuenta.id_cuenta %>">
-                                <button
-                                    type="submit"
-                                    class="dropdown-item account-option <%= !cuenta.activo ? 'inactive-account' : '' %>"
-                                >
-                                    <span class="account-avatar"><%= getInitials(cuenta.nombre) %></span>
-                                    <span class="account-option-copy">
-                                        <span class="account-option-title"><%= cuenta.nombre %></span>
-                                        <small class="account-option-subtitle"><%= cuenta.codigo %> · <%= cuenta.estatus %></small>
-                                    </span>
-                                    <% if (!cuenta.activo) { %>
-                                        <span class="account-inactive-pill">Inactiva</span>
-                                    <% } %>
-                                </button>
-                            </form>
+                            <button
+                                type="button"
+                                class="dropdown-item account-option <%= !cuenta.activo ? 'inactive-account' : '' %> btn-cambiar-cuenta"
+                                data-id="<%= cuenta.id_cuenta %>"
+                                data-nombre="<%= cuenta.nombre %>"
+                            >
+                                <span class="account-avatar"><%= getInitials(cuenta.nombre) %></span>
+                                <span class="account-option-copy">
+                                    <span class="account-option-title"><%= cuenta.nombre %></span>
+                                    <small class="account-option-subtitle"><%= cuenta.codigo %> · <%= cuenta.estatus %></small>
+                                </span>
+                                <% if (!cuenta.activo) { %>
+                                    <span class="account-inactive-pill">Inactiva</span>
+                                <% } %>
+                            </button>
                         <% } %>
                     </li>
                 <% }) %>
@@ -112,6 +111,38 @@
         </div>
     </div>
 </header>
+
+<script>
+document.querySelectorAll('.btn-cambiar-cuenta').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const idCuenta = btn.dataset.id;
+        btn.disabled = true;
+
+        try {
+            const res  = await fetch('/concesionario/cuenta-activa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: new URLSearchParams({ id_cuenta: idCuenta }).toString()
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+                if (data.carritoReset) {
+                    const badge = document.querySelector('#cartHeaderIcon .badge');
+                    if (badge) badge.remove();
+                }
+                location.reload();
+            } else {
+                alert(data.mensaje);
+            }
+        } catch {
+            alert('Error al cambiar de cuenta. Intente nuevamente.');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+});
+</script>
 
 <% if (cuentaActiva) { %>
 <div class="modal fade" id="modalPerfilCuenta" tabindex="-1" aria-labelledby="modalPerfilCuentaLabel" aria-hidden="true">
