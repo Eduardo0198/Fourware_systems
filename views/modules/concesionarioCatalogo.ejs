@@ -81,8 +81,8 @@ function formatCurrency(value) {
             </select>
         </div>
         <div class="col-md-3">
-            <button class="btn btn-primary">Filtrar</button>
-            <a href="/concesionario/catalogo" class="btn btn-secondary">Limpiar</a>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <button type="button" id="btnLimpiarFiltros" class="btn btn-secondary">Limpiar</button>
         </div>
 
     </form>
@@ -416,6 +416,25 @@ document.addEventListener("DOMContentLoaded", () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(ejecutarBusquedaPredictiva, 250);
     });
+
+    const filtersForm = document.getElementById("catalogoFiltersForm");
+    if (filtersForm) {
+        filtersForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            ejecutarBusquedaPredictiva();
+        });
+    }
+
+    const btnLimpiar = document.getElementById("btnLimpiarFiltros");
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener("click", () => {
+            if (precioMin) precioMin.value = 0;
+            if (precioMax) precioMax.value = 10000;
+            if (unidadVenta) unidadVenta.value = "";
+            searchInput.value = "";
+            ejecutarBusquedaPredictiva();
+        });
+    }
 
     aplicarResaltadoProductoAgregado();
 });
