@@ -102,16 +102,17 @@ function renderRankingProductos(res, payload) {
   });
 }
 
+const REGIONES_FIJAS = ['Bajio', 'Centro', 'Centronorte', 'Centrosur', 'Noreste', 'Noroeste', 'Norte', 'Occidente', 'Oriente', 'Sur', 'Suroeste', 'Sureste'];
+
 function procesarGeografico(rows) {
-    if (!rows || rows.length === 0) {
-        return { estados: [], productos: [], matrix: {}, maxVal: 1, totalesPorEstado: {} };
-    }
     const byEstado = {};
     const totalesPorProducto = {};
     const infoProducto = {};
     const totalesPorEstado = {};
 
-    rows.forEach(r => {
+    REGIONES_FIJAS.forEach(r => { byEstado[r] = {}; totalesPorEstado[r] = 0; });
+
+    (rows || []).forEach(r => {
         const region = r.region || 'Sin región';
         const sku = r.SKU;
         const unidades = Number(r.cantidad || 0);
