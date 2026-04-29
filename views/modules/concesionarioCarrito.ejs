@@ -30,16 +30,48 @@ function formatCurrency(value) {
     <div class="row g-4 align-items-start">
         <div class="col-xl-8">
             <div class="d-flex justify-content-end mb-3">
-                <form method="POST"
-                      action="/concesionario/carrito/vaciar"
-                      class="m-0"
-                      onsubmit="return confirm('¿Deseas vaciar por completo el carrito de preventa?');">
-                    <button type="submit"
-                            class="btn btn-outline-danger"
-                            <%= carrito.length === 0 ? 'disabled' : '' %>>
-                        Vaciar carrito
-                    </button>
-                </form>
+                <button type="button"
+                        class="btn btn-outline-danger d-flex align-items-center gap-2"
+                        <%= carrito.length === 0 ? 'disabled' : '' %>
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalVaciarCarrito">
+                    <i class="bi bi-trash3"></i>
+                    Vaciar carrito
+                </button>
+            </div>
+
+            <!-- Modal confirmación vaciar carrito -->
+            <div class="modal fade" id="modalVaciarCarrito" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-header border-0 px-4 pt-4 pb-2" style="background: linear-gradient(135deg, #7f1d1d, #b91c1c);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width:44px;height:44px;background:rgba(255,255,255,0.15);">
+                                    <i class="bi bi-trash3-fill text-white fs-5"></i>
+                                </div>
+                                <h5 class="modal-title text-white fw-bold mb-0">Vaciar carrito</h5>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body px-4 py-4">
+                            <p class="mb-1 fw-semibold text-dark">¿Estás seguro de que deseas vaciar el carrito?</p>
+                            <p class="text-muted mb-0" style="font-size:.93rem;">
+                                Se eliminarán los <strong><%= carrito.length %> producto(s)</strong> que tienes agregados. Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                        <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                                Cancelar
+                            </button>
+                            <form method="POST" action="/concesionario/carrito/vaciar" class="m-0">
+                                <button type="submit" class="btn btn-danger rounded-pill px-4 d-flex align-items-center gap-2">
+                                    <i class="bi bi-trash3-fill"></i> Sí, vaciar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="d-flex flex-column gap-3">
             <% if (carrito.length === 0) { %>
