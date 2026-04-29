@@ -293,14 +293,19 @@ exports.vaciarCarritoCompleto = (req, res, done = null) => {
 exports.actualizarCantidad = (req, res) => {
     const { sku, accion } = req.body;
     const cuentaActivaId = req.session.usuario?.cuentaActiva?.id_cuenta || null;
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
+
+    const respError = (mensaje, status = 400) => {
+        if (esAjax) return res.status(status).json({ ok: false, mensaje });
+        req.session.mensaje = { tipo: 'danger', texto: mensaje };
+        return res.redirect('/concesionario/carrito');
+    };
 
     if (req.session.carritoCuentaId && cuentaActivaId && req.session.carritoCuentaId !== cuentaActivaId) {
         req.session.carrito = [];
         req.session.carritoCuentaId = cuentaActivaId;
-        req.session.mensaje = {
-            tipo: 'warning',
-            texto: 'El carrito fue reiniciado porque cambió la cuenta activa.'
-        };
+        if (esAjax) return res.json({ ok: false, recargar: true });
+        req.session.mensaje = { tipo: 'warning', texto: 'El carrito fue reiniciado porque cambió la cuenta activa.' };
         return res.redirect('/concesionario/carrito');
     }
 
@@ -309,49 +314,29 @@ exports.actualizarCantidad = (req, res) => {
 
     if (index === -1) {
         registrarEvento(req, 'Intento de modificar producto inexistente en carrito');
-        req.session.mensaje = {
-            tipo: 'warning',
-            texto: 'El producto seleccionado no existe en el carrito.'
-        };
-        return res.redirect('/concesionario/carrito');
+        return respError('El producto seleccionado no existe en el carrito.');
     }
 
     campaniaModel.obtenerCampaniaActiva((err, result) => {
         if (err) {
             registrarEvento(req, 'Error al modificar producto del carrito');
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'No fue posible actualizar el producto en el carrito.'
-            };
-            return res.redirect('/concesionario/carrito');
+            return respError('No fue posible actualizar el producto en el carrito.', 500);
         }
 
         if (!result || result.length === 0) {
             registrarEvento(req, 'Intento de modificar carrito sin campaña activa');
-            req.session.mensaje = {
-                tipo: 'warning',
-                texto: 'La campaña de preventa no se encuentra disponible.'
-            };
-            return res.redirect('/concesionario/carrito');
+            return respError('La campaña de preventa no se encuentra disponible.');
         }
 
         concesionarioModel.obtenerProductoPorSku(sku, (productoErr, producto) => {
             if (productoErr) {
                 registrarEvento(req, 'Error técnico al validar producto en carrito');
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No fue posible actualizar el producto en el carrito.'
-                };
-                return res.redirect('/concesionario/carrito');
+                return respError('No fue posible actualizar el producto en el carrito.', 500);
             }
 
             if (!producto) {
                 registrarEvento(req, 'Intento de modificar producto no disponible en carrito');
-                req.session.mensaje = {
-                    tipo: 'warning',
-                    texto: 'El producto seleccionado ya no se encuentra disponible.'
-                };
-                return res.redirect('/concesionario/carrito');
+                return respError('El producto seleccionado ya no se encuentra disponible.');
             }
 
             let nuevaCantidad;
@@ -362,12 +347,8 @@ exports.actualizarCantidad = (req, res) => {
                 nuevaCantidad = carrito[index].cantidad + cambio;
             }
 
-            if (nuevaCantidad <= 0) {
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'La cantidad ingresada no es válida. Ingrese un valor mayor a cero.'
-                };
-                return res.redirect('/concesionario/carrito');
+            if (!nuevaCantidad || nuevaCantidad <= 0) {
+                return respError('La cantidad ingresada no es válida. Ingrese un valor mayor a cero.');
             }
 
             carrito[index] = sincronizarCarritoConProducto(carrito[index], producto);
@@ -380,6 +361,16 @@ exports.actualizarCantidad = (req, res) => {
             }
 
             registrarEvento(req, 'Modificación de productos en carrito');
+
+            if (esAjax) {
+                const resumen = calcularResumenCarrito(carrito);
+                return res.json({
+                    ok: true,
+                    nuevaCantidad,
+                    itemTotal: carrito[index].precio * nuevaCantidad,
+                    resumen
+                });
+            }
 
             return res.redirect('/concesionario/carrito');
         });

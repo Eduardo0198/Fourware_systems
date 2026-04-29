@@ -76,41 +76,31 @@ function formatCurrency(value) {
                                         <div class="text-lg-end">
                                             <div class="fs-2 fw-bold text-dark">$<%= formatCurrency(p.precio) %></div>
                                             <div class="text-secondary fw-semibold">
-                                                Total: $<%= formatCurrency(p.precio * p.cantidad) %>
+                                                Total: <span id="item-total-<%= p.sku %>">$<%= formatCurrency(p.precio * p.cantidad) %></span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pt-3 border-top">
-                                        <form method="POST"
-                                              action="/concesionario/carrito/actualizar-cantidad"
-                                              class="cart-quantity-form">
-                                            <input type="hidden" name="sku" value="<%= p.sku %>">
-
-                                            <button type="submit"
-                                                    name="accion"
-                                                    value="decrementar"
-                                                    class="cart-qty-btn"
+                                        <div class="cart-quantity-form" data-sku="<%= p.sku %>">
+                                            <button type="button"
+                                                    class="cart-qty-btn cart-btn-dec"
                                                     <%= p.cantidad <= 1 ? 'disabled' : '' %>>
                                                 -
                                             </button>
 
                                             <input type="number"
-                                                   name="cantidad"
                                                    value="<%= p.cantidad %>"
                                                    min="1"
                                                    class="cart-qty-input"
                                                    data-sku="<%= p.sku %>"
                                                    data-original="<%= p.cantidad %>">
-                                            <input type="hidden" value="establecer" class="cart-accion-hidden">
 
-                                            <button type="submit"
-                                                    name="accion"
-                                                    value="incrementar"
-                                                    class="cart-qty-btn">
+                                            <button type="button"
+                                                    class="cart-qty-btn cart-btn-inc">
                                                 +
                                             </button>
-                                        </form>
+                                        </div>
                                         <form method="POST"
                                               action="/concesionario/carrito/eliminar"
                                               class="m-0">
@@ -140,23 +130,23 @@ function formatCurrency(value) {
             <div class="d-flex flex-column gap-3 border-top border-bottom py-3 my-4">
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Subtotal</span>
-                    <strong>$<%= formatCurrency(subtotal) %></strong>
+                    <strong id="sum-subtotal">$<%= formatCurrency(subtotal) %></strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Peso total</span>
-                    <strong><%= totalPeso.toFixed(2) %> kg</strong>
+                    <strong id="sum-peso"><%= totalPeso.toFixed(2) %> kg</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>Volumen total</span>
-                    <strong><%= totalVolumen.toFixed(2) %> m³</strong>
+                    <strong id="sum-volumen"><%= totalVolumen.toFixed(2) %> m³</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 text-secondary">
                     <span>IVA (16%)</span>
-                    <strong>$<%= formatCurrency(iva) %></strong>
+                    <strong id="sum-iva">$<%= formatCurrency(iva) %></strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center gap-3 fs-5 fw-bold text-dark">
                     <span>Total</span>
-                    <strong>$<%= formatCurrency(total) %></strong>
+                    <strong id="sum-total">$<%= formatCurrency(total) %></strong>
                 </div>
             </div>
 
@@ -202,35 +192,93 @@ function formatCurrency(value) {
 
 <script>
 (function () {
-    document.querySelectorAll('.cart-qty-input').forEach(input => {
-        const original = parseInt(input.dataset.original, 10);
+    function fmt(value) {
+        return Number(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
-        function submitDirect() {
-            const val = parseInt(input.value, 10);
-            if (isNaN(val) || val < 1) { input.value = original; return; }
-            if (val === original) return;
-            const hidden = input.closest('form').querySelector('.cart-accion-hidden');
-            hidden.name  = 'accion';
-            hidden.value = 'establecer';
-            input.closest('form').submit();
+    async function pedirActualizacion(sku, accion, cantidad) {
+        const body = new URLSearchParams({ sku, accion });
+        if (accion === 'establecer') body.set('cantidad', String(cantidad));
+        const res = await fetch('/concesionario/carrito/actualizar-cantidad', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body.toString()
+        });
+        return res.json();
+    }
+
+    function aplicarRespuesta(sku, data) {
+        if (data.recargar) { location.reload(); return; }
+        if (!data.ok) return;
+
+        const { nuevaCantidad, itemTotal, resumen } = data;
+        const wrapper = document.querySelector(`.cart-quantity-form[data-sku="${sku}"]`);
+        if (!wrapper) return;
+
+        const input  = wrapper.querySelector('.cart-qty-input');
+        const btnDec = wrapper.querySelector('.cart-btn-dec');
+
+        input.value = nuevaCantidad;
+        input.dataset.original = nuevaCantidad;
+        btnDec.disabled = nuevaCantidad <= 1;
+
+        const totalEl = document.getElementById(`item-total-${sku}`);
+        if (totalEl) totalEl.textContent = '$' + fmt(itemTotal);
+
+        document.getElementById('sum-subtotal').textContent = '$' + fmt(resumen.subtotal);
+        document.getElementById('sum-peso').textContent     = resumen.totalPeso.toFixed(2) + ' kg';
+        document.getElementById('sum-volumen').textContent  = resumen.totalVolumen.toFixed(2) + ' m³';
+        document.getElementById('sum-iva').textContent      = '$' + fmt(resumen.iva);
+        document.getElementById('sum-total').textContent    = '$' + fmt(resumen.total);
+    }
+
+    document.querySelectorAll('.cart-quantity-form').forEach(wrapper => {
+        const sku   = wrapper.dataset.sku;
+        const input = wrapper.querySelector('.cart-qty-input');
+        const btnDec = wrapper.querySelector('.cart-btn-dec');
+        const btnInc = wrapper.querySelector('.cart-btn-inc');
+
+        async function ejecutar(accion, cantidad) {
+            btnDec.disabled = true;
+            btnInc.disabled = true;
+            try {
+                const data = await pedirActualizacion(sku, accion, cantidad);
+                aplicarRespuesta(sku, data);
+            } catch (e) {
+                input.value = input.dataset.original;
+            } finally {
+                const actual = parseInt(input.value, 10);
+                btnDec.disabled = actual <= 1;
+                btnInc.disabled = false;
+            }
         }
 
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitDirect(); } });
-        input.addEventListener('blur', submitDirect);
+        btnDec.addEventListener('click', () => ejecutar('decrementar'));
+        btnInc.addEventListener('click', () => ejecutar('incrementar'));
+
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+        input.addEventListener('blur', () => {
+            const val      = parseInt(input.value, 10);
+            const original = parseInt(input.dataset.original, 10);
+            if (isNaN(val) || val < 1) { input.value = original; return; }
+            if (val === original) return;
+            ejecutar('establecer', val);
+        });
     });
 })();
 
 (function () {
-    const form = document.getElementById('formConfirmar');
-    const select = document.getElementById('sucursal');
-    const btn = document.getElementById('btnConfirmar');
+    const form     = document.getElementById('formConfirmar');
+    const select   = document.getElementById('sucursal');
+    const btn      = document.getElementById('btnConfirmar');
     const errorMsg = document.getElementById('sucursalError');
 
     if (!form || !select || !btn) return;
 
-    select.addEventListener('change', () => {
-        errorMsg.classList.add('d-none');
-    });
+    select.addEventListener('change', () => { errorMsg.classList.add('d-none'); });
 
     form.addEventListener('submit', (e) => {
         if (!select.value) {
