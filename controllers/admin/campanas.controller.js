@@ -405,42 +405,29 @@ exports.estadoCampana = (req, res) => {
 
 exports.activarCampana = (req, res) => {
     const idCampania = parseInt(req.params.id, 10);
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
 
-    if (Number.isNaN(idCampania)) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'La campana seleccionada no es valida.'
-        };
-        return res.redirect('/admin/campanas/editar');
-    }
+    const respError = (texto, status = 400) => {
+        if (esAjax) return res.status(status).json({ ok: false, mensaje: texto });
+        req.session.mensaje = { tipo: 'danger', texto };
+        return res.redirect(Number.isNaN(idCampania) ? '/admin/campanas/editar' : `/admin/campanas/editar?id=${idCampania}`);
+    };
+
+    if (Number.isNaN(idCampania)) return respError('La campaña seleccionada no es válida.');
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
         if (errCampania || !campania) {
             logger.error(errCampania);
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'La campana seleccionada no existe.'
-            };
-            return res.redirect('/admin/campanas/editar');
+            return respError('La campaña seleccionada no existe.', 404);
         }
 
         campaniaModel.existeOtraCampaniaActiva(idCampania, (errActiva, existeOtraActiva) => {
             if (errActiva) {
                 logger.error(errActiva);
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No fue posible validar el estatus de las campanas.'
-                };
-                return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+                return respError('No fue posible validar el estatus de las campañas.', 500);
             }
 
-            if (existeOtraActiva) {
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No puedes activar dos campanas a la vez. Si quieres activar otra, primero desactiva la que ya esta activa.'
-                };
-                return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
-            }
+            if (existeOtraActiva) return respError('No puedes activar dos campañas a la vez. Primero desactiva la que ya está activa.');
 
             campaniaModel.actualizar(
                 idCampania,
@@ -454,21 +441,15 @@ exports.activarCampana = (req, res) => {
                 (errActualizar) => {
                     if (errActualizar) {
                         logger.error(errActualizar);
-                        req.session.mensaje = {
-                            tipo: 'danger',
-                            texto: 'No fue posible activar la campana. Intente nuevamente.'
-                        };
-                        return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+                        return respError('No fue posible activar la campaña. Intente nuevamente.', 500);
                     }
 
                     registrarBitacora(req, `Activacion de campana ${campania.nombre}`);
 
-                    req.session.mensaje = {
-                        tipo: 'success',
-                        texto: 'Campana activada correctamente.'
-                    };
+                    if (esAjax) return res.json({ ok: true, nuevoEstatus: true });
 
-                    res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+                    req.session.mensaje = { tipo: 'success', texto: 'Campaña activada correctamente.' };
+                    return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
                 }
             );
         });
@@ -477,44 +458,35 @@ exports.activarCampana = (req, res) => {
 
 exports.desactivarCampana = (req, res) => {
     const idCampania = parseInt(req.params.id, 10);
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
 
-    if (Number.isNaN(idCampania)) {
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'La campana seleccionada no es valida.'
-        };
-        return res.redirect('/admin/campanas/editar');
-    }
+    const respError = (texto, status = 400) => {
+        if (esAjax) return res.status(status).json({ ok: false, mensaje: texto });
+        req.session.mensaje = { tipo: 'danger', texto };
+        return res.redirect(Number.isNaN(idCampania) ? '/admin/campanas/editar' : `/admin/campanas/editar?id=${idCampania}`);
+    };
+
+    if (Number.isNaN(idCampania)) return respError('La campaña seleccionada no es válida.');
 
     campaniaModel.obtenerPorId(idCampania, (errCampania, campania) => {
         if (errCampania || !campania) {
             logger.error(errCampania);
-            req.session.mensaje = {
-                tipo: 'danger',
-                texto: 'La campana seleccionada no existe.'
-            };
-            return res.redirect('/admin/campanas/editar');
+            return respError('La campaña seleccionada no existe.', 404);
         }
 
         campaniaModel.desactivar(idCampania, (errDesactivar) => {
             if (errDesactivar) {
                 logger.error(errDesactivar);
                 registrarBitacora(req, `Error al desactivar la campana ${idCampania}`);
-                req.session.mensaje = {
-                    tipo: 'danger',
-                    texto: 'No fue posible desactivar la campana. Intente nuevamente.'
-                };
-                return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+                return respError('No fue posible desactivar la campaña. Intente nuevamente.', 500);
             }
 
             registrarBitacora(req, `Desactivacion de campana ${campania.nombre}`);
 
-            req.session.mensaje = {
-                tipo: 'success',
-                texto: 'Campana desactivada correctamente.'
-            };
+            if (esAjax) return res.json({ ok: true, nuevoEstatus: false });
 
-            res.redirect(`/admin/campanas/editar?id=${idCampania}`);
+            req.session.mensaje = { tipo: 'success', texto: 'Campaña desactivada correctamente.' };
+            return res.redirect(`/admin/campanas/editar?id=${idCampania}`);
         });
     });
 };

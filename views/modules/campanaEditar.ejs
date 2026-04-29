@@ -46,21 +46,17 @@
                         <td><%= campania.fecha_inicio_texto %></td>
                         <td><%= campania.fecha_fin_texto %></td>
                         <td>
-                            <% if (campania.estatus) { %>
-                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/desactivar" class="m-0 d-flex align-items-center gap-2">
-                                    <div class="form-check form-switch m-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" checked onchange="this.form.submit()">
-                                    </div>
-                                    <span class="badge bg-success">Activa</span>
-                                </form>
-                            <% } else { %>
-                                <form method="post" action="/admin/campanas/estado/<%= campania.id_campania %>/activar" class="m-0 d-flex align-items-center gap-2 form-activar-campana" data-hay-activa="<%= hayUnaActiva %>">
-                                    <div class="form-check form-switch m-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" onchange="intentarActivar(this)">
-                                    </div>
-                                    <span class="badge bg-secondary">Inactiva</span>
-                                </form>
-                            <% } %>
+                            <div class="d-flex align-items-center gap-2 campana-toggle-wrap"
+                                 data-id="<%= campania.id_campania %>"
+                                 data-activa="<%= campania.estatus ? 'true' : 'false' %>"
+                                 data-hay-activa="<%= hayUnaActiva %>">
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input campana-toggle-input" type="checkbox" role="switch" <%= campania.estatus ? 'checked' : '' %>>
+                                </div>
+                                <span class="badge campana-toggle-badge <%= campania.estatus ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= campania.estatus ? 'Activa' : 'Inactiva' %>
+                                </span>
+                            </div>
                         </td>
                     </tr>
                 <% }) %>
@@ -193,18 +189,51 @@
 <% } %>
 
 <script>
-function intentarActivar(checkbox) {
-    const form = checkbox.closest('.form-activar-campana');
-    const hayActiva = form.dataset.hayActiva === 'true';
-    if (hayActiva) {
-        checkbox.checked = false;
-        const aviso = document.getElementById('avisoActivar');
-        aviso.classList.remove('d-none');
-        setTimeout(() => aviso.classList.add('d-none'), 2500);
-        return;
-    }
-    form.submit();
-}
+document.querySelectorAll('.campana-toggle-wrap').forEach(wrap => {
+    const checkbox = wrap.querySelector('.campana-toggle-input');
+    const badge    = wrap.querySelector('.campana-toggle-badge');
+    const id       = wrap.dataset.id;
+
+    checkbox.addEventListener('change', async () => {
+        const activar   = checkbox.checked;
+        const hayActiva = wrap.dataset.hayActiva === 'true';
+
+        if (activar && hayActiva) {
+            checkbox.checked = false;
+            const aviso = document.getElementById('avisoActivar');
+            if (aviso) { aviso.classList.remove('d-none'); setTimeout(() => aviso.classList.add('d-none'), 2500); }
+            return;
+        }
+
+        checkbox.disabled = true;
+        const accion = activar ? 'activar' : 'desactivar';
+
+        try {
+            const res  = await fetch(`/admin/campanas/estado/${id}/${accion}`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+                badge.textContent = data.nuevoEstatus ? 'Activa' : 'Inactiva';
+                badge.className   = `badge campana-toggle-badge ${data.nuevoEstatus ? 'bg-success' : 'bg-secondary'}`;
+                wrap.dataset.activa = String(data.nuevoEstatus);
+                document.querySelectorAll('.campana-toggle-wrap').forEach(w => {
+                    if (w !== wrap) w.dataset.hayActiva = String(data.nuevoEstatus);
+                });
+            } else {
+                checkbox.checked = !activar;
+                const aviso = document.getElementById('avisoActivar');
+                if (aviso) { aviso.textContent = data.mensaje; aviso.classList.remove('d-none'); setTimeout(() => aviso.classList.add('d-none'), 3000); }
+            }
+        } catch {
+            checkbox.checked = !activar;
+        } finally {
+            checkbox.disabled = false;
+        }
+    });
+});
 
 <% if (campaniaSeleccionada) { %>
 document.getElementById('formEditarCampana')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
