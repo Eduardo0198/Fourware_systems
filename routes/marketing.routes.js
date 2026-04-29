@@ -39,4 +39,16 @@ router.post('/exportar-metricas',
     marketingController.exportarMetricas
 );
 
+router.get('/catalogo',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    marketingController.catalogo
+);
+
+router.get('/catalogo/:sku',
+    protegerRuta,
+    tieneRol(['Marketing']),
+    marketingController.detalleProducto
+);
+
 module.exports = router;

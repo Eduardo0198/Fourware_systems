@@ -7,6 +7,7 @@ const ExcelJS = require('exceljs');
 const { registrarEvento } = require('../utils/auditoria.helper');
 const logger = require('../utils/logger');
 const calificacionModel = require('../models/calificacion.model');
+const { obtenerDatosCatalogo } = require('./concesionario/shared');
 
 const obtenerCampaniaActivaAsync = util.promisify(campaniaModel.obtenerCampaniaActiva);
 
@@ -476,4 +477,74 @@ exports.exportarMetricas = async (req, res) => {
         registrarEvento(req, 'Error al exportar métricas');
         return res.status(500).json({ ok: false, mensaje: 'Error al exportar los datos.' });
     }
+};
+
+
+exports.catalogo = (req, res) => {
+    obtenerDatosCatalogo(req, concesionarioModel, (err, data) => {
+        if (err) {
+            logger.error(err);
+            registrarEvento(req, 'Error al consultar catálogo desde marketing');
+            return res.status(500).send('Error al obtener catálogo');
+        }
+
+        registrarEvento(req, 'Consulta de catálogo de productos desde marketing');
+        return res.render('modules/concesionarioCatalogo', {
+            ...data,
+            mostrarBanner: false,
+            soloLectura: true,
+            pageMessage: null
+        });
+    });
+};
+
+exports.detalleProducto = (req, res) => {
+    const sku = String(req.params.sku || '').trim().toUpperCase();
+
+    concesionarioModel.obtenerProductoPorSku(sku, (err, producto) => {
+        if (err) {
+            logger.error(err);
+            registrarEvento(req, 'Error al consultar detalle de producto desde marketing');
+            return res.redirect('/marketing/catalogo');
+        }
+
+        if (!producto) {
+            registrarEvento(req, `Intento de consulta de producto no disponible desde marketing: ${sku}`);
+            return res.redirect('/marketing/catalogo');
+        }
+
+        calificacionModel.obtenerResumenCalificacionesPorSku(sku, (errResumen, resumenCalificaciones) => {
+            if (errResumen) {
+                logger.error(errResumen);
+                return res.redirect('/marketing/catalogo');
+            }
+
+            calificacionModel.obtenerResenasPorSku(sku, (errResenas, resenas) => {
+                if (errResenas) {
+                    logger.error(errResenas);
+                    return res.redirect('/marketing/catalogo');
+                }
+
+                const totalResenas = resumenCalificaciones.total_resenas || 0;
+                const distribucionConPorcentaje = [5, 4, 3, 2, 1].map((estrella) => {
+                    const total = resumenCalificaciones.distribucion[estrella] || 0;
+                    return {
+                        estrella,
+                        total,
+                        porcentaje: totalResenas > 0 ? Math.round((total / totalResenas) * 100) : 0
+                    };
+                });
+
+                registrarEvento(req, `Consulta de detalle de producto desde marketing: ${sku}`);
+                return res.render('modules/concesionarioProducto', {
+                    producto,
+                    returnTo: '/marketing/catalogo',
+                    soloLectura: true,
+                    resumenCalificaciones,
+                    distribucionConPorcentaje,
+                    resenas: Array.isArray(resenas) ? resenas : []
+                });
+            });
+        });
+    });
 };

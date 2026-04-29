@@ -15,6 +15,7 @@ function formatCurrency(value) {
 }
 %>
 
+<% const _soloLectura = typeof soloLectura !== 'undefined' ? soloLectura : false; %>
 <h2 class="mb-3">Catálogo de Productos</h2>
 <% const alertMessage = pageMessage || mensaje || null; %>
 <% if (alertMessage) { %>
@@ -115,6 +116,7 @@ function formatCurrency(value) {
                             <small>(<%= Number(p.total_resenas || 0) %>)</small>
                         </div>
                         <div class="mt-auto">
+                            <% if (!_soloLectura) { %>
                             <form method="POST" action="/concesionario/carrito/agregar" class="mb-2">
                                 <input type="hidden" name="sku" value="<%= p.SKU %>">
                                 <input type="hidden" name="cantidad" value="1">
@@ -123,7 +125,8 @@ function formatCurrency(value) {
                                     <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
                                 </button>
                             </form>
-                            <a href="/concesionario/producto/<%= p.SKU %>?return_to=<%= encodeURIComponent(buildQuery(paginacion.paginaActual)) %>"
+                            <% } %>
+                            <a href="<%= _soloLectura ? '/marketing/catalogo/' : '/concesionario/producto/' %><%= p.SKU %><%= _soloLectura ? '' : '?return_to=' + encodeURIComponent(buildQuery(paginacion.paginaActual)) %>"
                                class="btn btn-outline-secondary w-100">
                                 <i class="bi bi-eye me-1"></i>Ver detalle
                             </a>
@@ -173,6 +176,7 @@ function buildQuery(page) {
 </nav>
 
 <script>
+const soloLectura = <%- JSON.stringify(typeof soloLectura !== 'undefined' ? soloLectura === true : false) %>;
 document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("toggleFiltersBtn");
     const filters = document.getElementById("filtersContainer");
@@ -271,6 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <small>(${escapeHtml(Number(p.total_resenas || 0))})</small>
                         </div>
                         <div class="mt-auto">
+                            ${soloLectura ? '' : `
                             <form method="POST" action="/concesionario/carrito/agregar" class="mb-2">
                                 <input type="hidden" name="sku" value="${escapeHtml(p.SKU)}">
                                 <input type="hidden" name="cantidad" value="1">
@@ -278,8 +283,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <button type="submit" class="btn btn-primary w-100">
                                     <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
                                 </button>
-                            </form>
-                            <a href="/concesionario/producto/${encodeURIComponent(p.SKU)}?return_to=${encodeURIComponent(buildQuery(1))}"
+                            </form>`}
+                            <a href="${soloLectura ? '/marketing/catalogo/' : '/concesionario/producto/'}${encodeURIComponent(p.SKU)}${soloLectura ? '' : '?return_to=' + encodeURIComponent(buildQuery(1))}"
                                class="btn btn-outline-secondary w-100">
                                 <i class="bi bi-eye me-1"></i>Ver detalle
                             </a>

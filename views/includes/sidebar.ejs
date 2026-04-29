@@ -89,6 +89,11 @@
                     <span>Ranking</span>
                 </a>
 
+                <a href="/marketing/catalogo" class="menu <%= req.path.startsWith('/marketing/catalogo') ? 'active' : '' %>">
+                    <i class="bi bi-grid"></i>
+                    <span>Catálogo</span>
+                </a>
+
             <% } %>
 
             <% if (usuario.roles.includes('Concesionario')) { %>

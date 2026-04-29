@@ -1,3 +1,4 @@
+<% const _soloLectura = typeof soloLectura !== 'undefined' ? soloLectura : false; %>
 <% function getImgUrl(url) {
     if (!url || url === 'producto.png') {
         return '/img/ppg-logo.png';
@@ -97,6 +98,7 @@ function formatCurrency(value) {
                     </div>
                 </div>
 
+        <% if (!_soloLectura) { %>
         <div id="alertaCarrito" class="d-none" role="alert"></div>
 
         <div class="mt-2">
@@ -189,6 +191,7 @@ function formatCurrency(value) {
             alerta.innerHTML = `${mensaje} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
         }
         </script>
+        <% } %>
             </div>
         </div>
     </div>
@@ -250,6 +253,7 @@ function formatCurrency(value) {
         </section>
     </div>
 
+    <% if (!soloLectura) { %>
     <div class="reviews-composer-card" id="formulario-resena">
         <div class="reviews-composer-copy">
             <span class="reviews-compose-kicker">Comparte tu experiencia</span>
@@ -284,6 +288,7 @@ function formatCurrency(value) {
             <button type="submit" class="btn btn-success reviews-submit-btn">Enviar calificación</button>
         </form>
     </div>
+    <% } %>
 
     <section class="reviews-list-section">
         <div class="reviews-list-head">
