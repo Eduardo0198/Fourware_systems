@@ -334,6 +334,8 @@ body.sidebar-hidden .footer-ppg {
 .user-menu{
     display:none;
     color:#ffffff;
+    margin-top:12px;
+    text-align:center;
 }
 
 .user-menu.active{
@@ -342,6 +344,31 @@ body.sidebar-hidden .footer-ppg {
 
 .user-name{
     color:#ffffff;
+}
+
+.logout-sidebar-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:8px 12px;
+    border:1px solid #3b82f6;
+    border-radius:10px;
+    background:#1e3a5f;
+    color:#ffffff;
+    font-size:0.9rem;
+    font-weight:600;
+    line-height:1;
+    text-decoration:none;
+    transition:background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-sidebar-btn:hover,
+.logout-sidebar-btn:focus{
+    background:#2563eb;
+    border-color:#60a5fa;
+    color:#ffffff;
+    text-decoration:none;
 }
 
 /* ================= BANNER (ver sección PROMO BAR más abajo) ================= */
@@ -567,4 +594,3 @@ body.sidebar-hidden .footer-ppg {
     .time-value { font-size: 16px; }
     .time-sep { font-size: 14px; margin-bottom: 10px; }
 }
-
