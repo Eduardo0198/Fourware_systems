@@ -130,8 +130,6 @@
                                 </td>
                                 <td><%= reserva.fecha %></td>
                                 <td><span class="badge text-bg-success">Confirmada</span></td>
-                                // usamos FORMATDECIMAL para mostrar los formatos de dinero y vol
-                                // peso con comas de miles y decimales
                                 <td>$<%= formatDecimal(reserva.subtotal) %></td>
                                 <td>$<%= formatDecimal(reserva.iva) %></td>
                                 <td>$<%= formatDecimal(reserva.total) %></td>
@@ -152,4 +150,3 @@
         </div>
     </div>
 </section>
-
