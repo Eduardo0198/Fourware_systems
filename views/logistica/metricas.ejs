@@ -1,4 +1,18 @@
 <%
+    function formatDecimal(value) {
+        return Number(value || 0).toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function formatInteger(value) {
+        return Number(value || 0).toLocaleString('es-MX', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+
     const safeFiltros = (typeof filtros !== 'undefined' && filtros) ? filtros : {};
     const safeMetricas = (typeof metricas !== 'undefined' && Array.isArray(metricas)) ? metricas : [];
     const safeSerieTiempo = (typeof serieTiempo !== 'undefined' && Array.isArray(serieTiempo)) ? serieTiempo : [];
@@ -61,8 +75,8 @@
     // si hay campania seleccionada, muestro su nombre
     // si no, dejo una leyenda general
     const etiquetaContextoCampania = campaniaSeleccionada
-        ? `Campania: ${campaniaSeleccionada.nombre}`
-        : 'Vista general de campanias';
+        ? `Campaña: ${campaniaSeleccionada.nombre}`
+        : 'Vista general de campañas';
 
     // aqui preparo los primeros 10 productos para la grafica de confirmaciones
     // los ordeno de mayor a menor segun cuantas preventas confirmadas tienen
@@ -115,15 +129,15 @@
 <section class="admin-shell">
     <div class="admin-hero admin-hero-campaigns">
         <div>
-            <span class="admin-eyebrow">Logistica</span>
-            <h2 class="admin-title">Metricas Consolidadas</h2>
+            <span class="admin-eyebrow">Logística</span>
+            <h2 class="admin-title">Métricas Consolidadas</h2>
             <p class="admin-subtitle">
-                Consulta el peso y volumen consolidado de reservas confirmadas por campania o cuenta.
+                Consulta el peso y volumen consolidado de reservas confirmadas por campaña o cuenta.
             </p>
         </div>
         <div class="admin-hero-note">
             <span><%= etiquetaContextoCampania %></span>
-            <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
+            <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campaña' %></strong>
             <small>Periodo del <%= filtroFechaInicio %> al <%= filtroFechaFin %>.</small>
         </div>
     </div>
@@ -132,14 +146,14 @@
         <div class="admin-table-head">
             <div>
                 <h4>Contexto de consulta</h4>
-                <p>Esta vista toma el periodo actual y el criterio de agrupacion para interpretar el rendimiento logistico.</p>
+                <p>Esta vista toma el periodo actual y el criterio de agrupación para interpretar el rendimiento logístico.</p>
             </div>
             <span class="admin-table-pill">Resumen</span>
         </div>
 
         <div class="row g-3">
             <div class="col-md-4">
-                <div class="small text-muted mb-1">Campania visible</div>
+                <div class="small text-muted mb-1">Campaña visible</div>
                 <strong><%= etiquetaContextoCampania %></strong>
             </div>
             <div class="col-md-4">
@@ -147,8 +161,8 @@
                 <strong><%= filtroFechaInicio %> al <%= filtroFechaFin %></strong>
             </div>
             <div class="col-md-4">
-                <div class="small text-muted mb-1">Agrupacion activa</div>
-                <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></strong>
+                <div class="small text-muted mb-1">Agrupación activa</div>
+                <strong><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campaña' %></strong>
             </div>
         </div>
     </div>
@@ -163,7 +177,7 @@
         <div class="admin-table-head">
             <div>
                 <h4>Filtros de consulta</h4>
-                <p>Selecciona periodo, agrupacion y filtros opcionales para consolidar metricas logisticas.</p>
+                <p>Selecciona periodo, agrupación y filtros opcionales para consolidar métricas logísticas.</p>
             </div>
             <span class="admin-table-pill">Estatus: Confirmadas</span>
         </div>
@@ -190,12 +204,12 @@
             <div class="col-md-3">
                 <label class="form-label">Agrupar por</label>
                 <select name="agrupar_por" class="form-select">
-                    <option value="campania" <%= filtroAgruparPor === 'campania' ? 'selected' : '' %>>Campania</option>
+                    <option value="campania" <%= filtroAgruparPor === 'campania' ? 'selected' : '' %>>Campaña</option>
                     <option value="cuenta" <%= filtroAgruparPor === 'cuenta' ? 'selected' : '' %>>Cuenta</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Campania</label>
+                <label class="form-label">Campaña</label>
                 <select name="id_campania" class="form-select">
                     <option value="">Todas</option>
                     <% safeCampanias.forEach((campania) => { %>
@@ -230,22 +244,22 @@
     <div class="admin-stats-grid">
         <article class="admin-stat-card admin-stat-accent">
             <span class="admin-stat-label">Peso total</span>
-            <strong><%= Number(safeResumen.totalPeso || 0).toFixed(2) %> kg</strong>
+            <strong><%= formatDecimal(safeResumen.totalPeso) %> kg</strong>
             <p>Peso consolidado de productos reservados.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Volumen total</span>
-            <strong><%= Number(safeResumen.totalVolumen || 0).toFixed(2) %> m3</strong>
-            <p>Volumen consolidado para planeacion logistica.</p>
+            <strong><%= formatDecimal(safeResumen.totalVolumen) %> m³</strong>
+            <p>Volumen consolidado para planeación logística.</p>
         </article>
         <article class="admin-stat-card admin-stat-accent">
             <span class="admin-stat-label">Reservas confirmadas</span>
-            <strong><%= Number(safeResumen.totalReservas || 0) %></strong>
-            <p>Reservas unicas incluidas en la consulta.</p>
+            <strong><%= formatInteger(safeResumen.totalReservas) %></strong>
+            <p>Reservas únicas incluidas en la consulta.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Importe productos</span>
-            <strong>$<%= Number(safeResumen.totalImporte || 0).toFixed(2) %></strong>
+            <strong>$<%= formatDecimal(safeResumen.totalImporte) %></strong>
             <p>Suma del subtotal de productos reservados.</p>
         </article>
     </div>
@@ -255,8 +269,8 @@
             <div class="admin-table-card h-100">
                 <div class="admin-table-head">
                     <div>
-                        <h4>Producto mas confirmado</h4>
-                        <p>Producto con mayor numero de preventas confirmadas en el periodo.</p>
+                        <h4>Producto más confirmado</h4>
+                        <p>Producto con mayor número de preventas confirmadas en el periodo.</p>
                     </div>
                     <span class="admin-table-pill">Confirmaciones</span>
                 </div>
@@ -265,9 +279,9 @@
                     <div class="d-flex flex-column gap-2">
                         <strong><%= topProductoConfirmaciones.producto %></strong>
                         <span class="text-muted">SKU: <%= topProductoConfirmaciones.sku %></span>
-                        <span><strong><%= Number(topProductoConfirmaciones.preventas_confirmadas || 0) %></strong> preventas confirmadas</span>
-                        <span><%= Number(topProductoConfirmaciones.unidades_confirmadas || 0) %> unidades</span>
-                        <span><%= Number(topProductoConfirmaciones.cuentas_con_movimiento || 0) %> cuentas con movimiento</span>
+                        <span><strong><%= formatInteger(topProductoConfirmaciones.preventas_confirmadas) %></strong> preventas confirmadas</span>
+                        <span><%= formatInteger(topProductoConfirmaciones.unidades_confirmadas) %> unidades</span>
+                        <span><%= formatInteger(topProductoConfirmaciones.cuentas_con_movimiento) %> cuentas con movimiento</span>
                     </div>
                 <% } else { %>
                     <p class="text-center text-muted mt-3 mb-0">No hay datos de productos para este periodo.</p>
@@ -289,9 +303,9 @@
                     <div class="d-flex flex-column gap-2">
                         <strong><%= topProductoPeso.producto %></strong>
                         <span class="text-muted">SKU: <%= topProductoPeso.sku %></span>
-                        <span><strong><%= Number(topProductoPeso.peso_total || 0).toFixed(2) %> kg</strong></span>
-                        <span><%= Number(topProductoPeso.preventas_confirmadas || 0) %> preventas confirmadas</span>
-                        <span><%= Number(topProductoPeso.unidades_confirmadas || 0) %> unidades</span>
+                        <span><strong><%= formatDecimal(topProductoPeso.peso_total) %> kg</strong></span>
+                        <span><%= formatInteger(topProductoPeso.preventas_confirmadas) %> preventas confirmadas</span>
+                        <span><%= formatInteger(topProductoPeso.unidades_confirmadas) %> unidades</span>
                     </div>
                 <% } else { %>
                     <p class="text-center text-muted mt-3 mb-0">No hay datos de peso por producto.</p>
@@ -313,9 +327,9 @@
                     <div class="d-flex flex-column gap-2">
                         <strong><%= topProductoVolumen.producto %></strong>
                         <span class="text-muted">SKU: <%= topProductoVolumen.sku %></span>
-                        <span><strong><%= Number(topProductoVolumen.volumen_total || 0).toFixed(2) %> m3</strong></span>
-                        <span><%= Number(topProductoVolumen.preventas_confirmadas || 0) %> preventas confirmadas</span>
-                        <span><%= Number(topProductoVolumen.unidades_confirmadas || 0) %> unidades</span>
+                        <span><strong><%= formatDecimal(topProductoVolumen.volumen_total) %> m³</strong></span>
+                        <span><%= formatInteger(topProductoVolumen.preventas_confirmadas) %> preventas confirmadas</span>
+                        <span><%= formatInteger(topProductoVolumen.unidades_confirmadas) %> unidades</span>
                     </div>
                 <% } else { %>
                     <p class="text-center text-muted mt-3 mb-0">No hay datos de volumen por producto.</p>
@@ -328,9 +342,9 @@
         <div class="admin-table-head">
             <div>
                 <h4>Rendimiento por producto</h4>
-                <p>Resumen rapido de productos de la campania activa o seleccionada.</p>
+                <p>Resumen rápido de productos de la campaña activa o seleccionada.</p>
             </div>
-            <span class="admin-table-pill"><%= safeRendimientoProductos.length %> productos</span>
+            <span class="admin-table-pill"><%= formatInteger(safeRendimientoProductos.length) %> productos</span>
         </div>
 
         <div class="admin-table-wrap">
@@ -352,11 +366,11 @@
                             <tr>
                                 <td><strong><%= item.producto %></strong></td>
                                 <td><%= item.sku %></td>
-                                <td><%= Number(item.preventas_confirmadas || 0) %></td>
-                                <td><%= Number(item.unidades_confirmadas || 0) %></td>
-                                <td><%= Number(item.peso_total || 0).toFixed(2) %> kg</td>
-                                <td><%= Number(item.volumen_total || 0).toFixed(2) %> m3</td>
-                                <td><%= Number(item.cuentas_con_movimiento || 0) %></td>
+                                <td><%= formatInteger(item.preventas_confirmadas) %></td>
+                                <td><%= formatInteger(item.unidades_confirmadas) %></td>
+                                <td><%= formatDecimal(item.peso_total) %> kg</td>
+                                <td><%= formatDecimal(item.volumen_total) %> m³</td>
+                                <td><%= formatInteger(item.cuentas_con_movimiento) %></td>
                             </tr>
                         <% }); %>
                     <% } else { %>
@@ -376,10 +390,10 @@
             <div class="admin-table-card h-100">
                 <div class="admin-table-head">
                     <div>
-                        <h4>Comparativo logistico</h4>
-                        <p>Peso y volumen por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campania' %>.</p>
+                        <h4>Comparativo logístico</h4>
+                        <p>Peso y volumen por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campaña' %>.</p>
                     </div>
-                    <span class="admin-table-pill">Lectura rapida</span>
+                    <span class="admin-table-pill">Lectura rápida</span>
                 </div>
 
                 <% if (safeMetricas.length > 0) { %>
@@ -392,14 +406,14 @@
                         %>
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong><%= item.agrupacion || 'Sin agrupacion' %></strong>
-                                    <small class="text-muted">Res: <%= Number(item.total_reservas || 0) %></small>
+                                    <strong><%= item.agrupacion || 'Sin agrupación' %></strong>
+                                    <small class="text-muted">Res: <%= formatInteger(item.total_reservas) %></small>
                                 </div>
-                                <div class="small text-muted mb-1">Peso: <%= peso.toFixed(2) %> kg</div>
+                                <div class="small text-muted mb-1">Peso: <%= formatDecimal(peso) %> kg</div>
                                 <div class="progress mb-2" role="progressbar" aria-label="Peso total">
                                     <div class="progress-bar bg-primary" style="width: <%= pesoPct.toFixed(2) %>%"></div>
                                 </div>
-                                <div class="small text-muted mb-1">Volumen: <%= volumen.toFixed(2) %> m3</div>
+                                <div class="small text-muted mb-1">Volumen: <%= formatDecimal(volumen) %> m³</div>
                                 <div class="progress" role="progressbar" aria-label="Volumen total">
                                     <div class="progress-bar bg-warning text-dark" style="width: <%= volumenPct.toFixed(2) %>%"></div>
                                 </div>
@@ -427,7 +441,7 @@
                         <canvas id="chartTendenciaLogistica"></canvas>
                     </div>
                 <% } else { %>
-                    <p class="text-center text-muted mt-3 mb-0">Sin datos historicos para graficar.</p>
+                    <p class="text-center text-muted mt-3 mb-0">Sin datos históricos para graficar.</p>
                 <% } %>
             </div>
         </div>
@@ -439,7 +453,7 @@
                 <div class="admin-table-head">
                     <div>
                         <h4>Top 5 por peso</h4>
-                        <p>Participacion de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campanias' %> con mayor peso.</p>
+                        <p>Participación de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campañas' %> con mayor peso.</p>
                     </div>
                     <span class="admin-table-pill">Ranking</span>
                 </div>
@@ -452,11 +466,11 @@
                         %>
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupacion' %></strong>
-                                    <small class="text-muted"><%= participacion.toFixed(2) %>%</small>
+                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupación' %></strong>
+                                    <small class="text-muted"><%= formatDecimal(participacion) %>%</small>
                                 </div>
-                                <div class="small text-muted mb-1"><%= peso.toFixed(2) %> kg</div>
-                                <div class="progress" role="progressbar" aria-label="Participacion de peso">
+                                <div class="small text-muted mb-1"><%= formatDecimal(peso) %> kg</div>
+                                <div class="progress" role="progressbar" aria-label="Participación de peso">
                                     <div class="progress-bar bg-primary" style="width: <%= Math.max(0, Math.min(100, participacion)).toFixed(2) %>%"></div>
                                 </div>
                             </div>
@@ -473,7 +487,7 @@
                 <div class="admin-table-head">
                     <div>
                         <h4>Top 5 por volumen</h4>
-                        <p>Participacion de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campanias' %> con mayor volumen.</p>
+                        <p>Participación de las <%= filtroAgruparPor === 'cuenta' ? 'cuentas' : 'campañas' %> con mayor volumen.</p>
                     </div>
                     <span class="admin-table-pill">Ranking</span>
                 </div>
@@ -486,11 +500,11 @@
                         %>
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupacion' %></strong>
-                                    <small class="text-muted"><%= participacion.toFixed(2) %>%</small>
+                                    <strong><%= index + 1 %>. <%= item.agrupacion || 'Sin agrupación' %></strong>
+                                    <small class="text-muted"><%= formatDecimal(participacion) %>%</small>
                                 </div>
-                                <div class="small text-muted mb-1"><%= volumen.toFixed(2) %> m3</div>
-                                <div class="progress" role="progressbar" aria-label="Participacion de volumen">
+                                <div class="small text-muted mb-1"><%= formatDecimal(volumen) %> m³</div>
+                                <div class="progress" role="progressbar" aria-label="Participación de volumen">
                                     <div class="progress-bar bg-warning text-dark" style="width: <%= Math.max(0, Math.min(100, participacion)).toFixed(2) %>%"></div>
                                 </div>
                             </div>
@@ -507,9 +521,9 @@
         <div class="admin-table-head">
             <div>
                 <h4>Preventas confirmadas por producto</h4>
-                <p>Top 10 productos con mayor numero de confirmaciones dentro del periodo consultado.</p>
+                <p>Top 10 productos con mayor número de confirmaciones dentro del periodo consultado.</p>
             </div>
-            <span class="admin-table-pill">Grafica principal</span>
+            <span class="admin-table-pill">Gráfica principal</span>
         </div>
 
         <% if (top10ProductosGrafica.length > 0) { %>
@@ -517,7 +531,7 @@
                 <canvas id="chartConfirmacionesProducto"></canvas>
             </div>
         <% } else { %>
-            <p class="text-center text-muted mt-3 mb-0">No hay productos suficientes para generar la grafica.</p>
+            <p class="text-center text-muted mt-3 mb-0">No hay productos suficientes para generar la gráfica.</p>
         <% } %>
     </div>
 
@@ -537,7 +551,7 @@
                         <canvas id="chartPesoProducto"></canvas>
                     </div>
                 <% } else { %>
-                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la grafica de peso.</p>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la gráfica de peso.</p>
                 <% } %>
             </div>
         </div>
@@ -557,7 +571,7 @@
                         <canvas id="chartVolumenProducto"></canvas>
                     </div>
                 <% } else { %>
-                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la grafica de volumen.</p>
+                    <p class="text-center text-muted mt-3 mb-0">No hay datos suficientes para la gráfica de volumen.</p>
                 <% } %>
             </div>
         </div>
@@ -567,15 +581,15 @@
         <div class="admin-table-head">
             <div>
                 <h4>Detalle consolidado</h4>
-                <p>Resultados agrupados por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campania' %>.</p>
+                <p>Resultados agrupados por <%= filtroAgruparPor === 'cuenta' ? 'cuenta' : 'campaña' %>.</p>
             </div>
-            <span class="admin-table-pill"><%= safeMetricas.length %> registros</span>
+            <span class="admin-table-pill"><%= formatInteger(safeMetricas.length) %> registros</span>
         </div>
         <div class="admin-table-wrap">
             <table class="table admin-table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campania' %></th>
+                        <th><%= filtroAgruparPor === 'cuenta' ? 'Cuenta' : 'Campaña' %></th>
                         <th>Reservas</th>
                         <th>Productos</th>
                         <th>Peso total</th>
@@ -588,19 +602,19 @@
                         <% safeMetricas.forEach((item) => { %>
                             <tr>
                                 <td>
-                                    <strong><%= item.agrupacion || 'Sin agrupacion' %></strong>
+                                    <strong><%= item.agrupacion || 'Sin agrupación' %></strong>
                                 </td>
-                                <td><%= Number(item.total_reservas || 0) %></td>
-                                <td><%= Number(item.total_productos || 0) %></td>
-                                <td><%= Number(item.peso_total || 0).toFixed(2) %> kg</td>
-                                <td><%= Number(item.volumen_total || 0).toFixed(2) %> m3</td>
-                                <td>$<%= Number(item.importe_productos || 0).toFixed(2) %></td>
+                                <td><%= formatInteger(item.total_reservas) %></td>
+                                <td><%= formatInteger(item.total_productos) %></td>
+                                <td><%= formatDecimal(item.peso_total) %> kg</td>
+                                <td><%= formatDecimal(item.volumen_total) %> m³</td>
+                                <td>$<%= formatDecimal(item.importe_productos) %></td>
                             </tr>
                         <% }); %>
                     <% } else { %>
                         <tr>
                             <td colspan="6" class="text-center">
-                                No existen metricas logisticas para los filtros seleccionados.
+                                No existen métricas logísticas para los filtros seleccionados.
                             </td>
                         </tr>
                     <% } %>
@@ -758,7 +772,7 @@
                     datasets: [
                         {
                             // aqui defino la serie para el volumen total acumulado
-                            label: 'Volumen total (m3)',
+                            label: 'Volumen total (m³)',
 
                             // aqui van los valores numericos del volumen por producto
                             data: <%- JSON.stringify(dataGraficaVolumen) %>,
@@ -781,7 +795,11 @@
                         },
                         tooltip: {
                             callbacks: {
+<<<<<<< HEAD
                                 label: (ctx) => ` ${formatChartNumber(ctx.parsed.x, 2)} m3`
+=======
+                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} m³`
+>>>>>>> 74344f35ebec20fcd133b3fab7ef0b4d5364e661
                             }
                         }
                     },
@@ -827,7 +845,7 @@
                         },
                         {
                             // aqui dibujo la linea de volumen total por fecha
-                            label: 'Volumen total (m3)',
+                            label: 'Volumen total (m³)',
                             data: <%- JSON.stringify(dataTendenciaVolumen) %>,
                             borderColor: 'rgba(255, 193, 7, 1)',
                             backgroundColor: 'rgba(255, 193, 7, 0.15)',
