@@ -420,7 +420,7 @@ exports.crearReservaConProductos = async (data, productos, callback) => {
         await client.query(
             `INSERT INTO "Reserva"
              (folio, estatus, fecha, subtotal, iva, total, fecha_cancelacion_reserva, correo, id_cuenta, id_sucursal)
-             VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9)`,
+             VALUES ($1, $2, CLOCK_TIMESTAMP(), $3, $4, $5, $6, $7, $8, $9)`,
             [
                 data.folio,
                 data.estatus,
