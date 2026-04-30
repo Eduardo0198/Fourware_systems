@@ -184,10 +184,12 @@
 .audit-primary-btn{
     background:linear-gradient(135deg, #0f172a, #2563eb);
     border:none;
+    color:#ffffff;
 }
 
 .audit-primary-btn:hover{
     background:linear-gradient(135deg, #111827, #1d4ed8);
+    color:#ffffff;
 }
 
 .audit-scroll-top{
