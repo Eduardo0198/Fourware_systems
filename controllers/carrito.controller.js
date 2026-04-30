@@ -181,25 +181,22 @@ exports.verCarrito = (req, res) => {
 
 exports.eliminarProducto = (req, res) => {
     const sku = String(req.body.sku || '').trim();
+    const esAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
 
     try {
         const carrito = obtenerCarritoActivo(req);
 
         if (!Array.isArray(carrito) || carrito.length === 0) {
-            req.session.mensaje = {
-                tipo: 'warning',
-                texto: 'El producto seleccionado no existe en el carrito actual.'
-            };
+            if (esAjax) return res.json({ ok: false, mensaje: 'El producto no existe en el carrito.' });
+            req.session.mensaje = { tipo: 'warning', texto: 'El producto seleccionado no existe en el carrito actual.' };
             return res.redirect('/concesionario/carrito');
         }
 
         const index = carrito.findIndex((producto) => producto.sku === sku);
 
         if (index === -1) {
-            req.session.mensaje = {
-                tipo: 'warning',
-                texto: 'El producto seleccionado no existe en el carrito actual.'
-            };
+            if (esAjax) return res.json({ ok: false, mensaje: 'El producto no existe en el carrito.' });
+            req.session.mensaje = { tipo: 'warning', texto: 'El producto seleccionado no existe en el carrito actual.' };
             return res.redirect('/concesionario/carrito');
         }
 
@@ -211,37 +208,31 @@ exports.eliminarProducto = (req, res) => {
             carritoModel.eliminarItem(correoEliminado, sku).catch(e => logger.error(e));
         }
 
-        registrarEvento(
-            req,
-            `Eliminó producto ${productoEliminado?.sku || sku} del carrito`
-        );
+        registrarEvento(req, `Eliminó producto ${productoEliminado?.sku || sku} del carrito`);
 
-        req.session.mensaje = {
-            tipo: 'success',
-            texto: 'Producto eliminado correctamente del carrito.'
-        };
+        if (esAjax) {
+            const resumen = calcularResumenCarrito(carrito);
+            return res.json({ ok: true, carritoCount: carrito.length, resumen });
+        }
+
+        req.session.mensaje = { tipo: 'success', texto: 'Producto eliminado correctamente del carrito.' };
         return res.redirect('/concesionario/carrito');
     } catch (error) {
         logger.error(error);
         registrarEvento(req, `Error al eliminar producto ${sku || 'desconocido'} del carrito`);
-        req.session.mensaje = {
-            tipo: 'danger',
-            texto: 'No fue posible eliminar el producto del carrito. Intente nuevamente.'
-        };
+        if (esAjax) return res.status(500).json({ ok: false, mensaje: 'No fue posible eliminar el producto del carrito.' });
+        req.session.mensaje = { tipo: 'danger', texto: 'No fue posible eliminar el producto del carrito. Intente nuevamente.' };
         return res.redirect('/concesionario/carrito');
     }
 };
 
 exports.vaciarCarritoCompleto = (req, res, done = null) => {
-    const responder = (payload) => {
-        if (typeof done === 'function') {
-            return done(payload);
-        }
+    const esAjax = !done && req.headers['x-requested-with'] === 'XMLHttpRequest';
 
-        req.session.mensaje = {
-            tipo: payload.tipo,
-            texto: payload.texto
-        };
+    const responder = (payload) => {
+        if (typeof done === 'function') return done(payload);
+        if (esAjax) return res.json({ ok: payload.tipo !== 'danger', mensaje: payload.texto });
+        req.session.mensaje = { tipo: payload.tipo, texto: payload.texto };
         return res.redirect(payload.redirectTo);
     };
 

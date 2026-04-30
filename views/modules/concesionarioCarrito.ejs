@@ -322,4 +322,101 @@ function formatCurrency(value) {
         }
     });
 })();
+
+(function () {
+    function fmt(v) {
+        return Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function actualizarResumen(resumen) {
+        const s = document.getElementById('sum-subtotal');
+        const p = document.getElementById('sum-peso');
+        const v = document.getElementById('sum-volumen');
+        const i = document.getElementById('sum-iva');
+        const t = document.getElementById('sum-total');
+        if (s) s.textContent = '$' + fmt(resumen.subtotal);
+        if (p) p.textContent = Number(resumen.totalPeso || 0).toFixed(2) + ' kg';
+        if (v) v.textContent = Number(resumen.totalVolumen || 0).toFixed(2) + ' m³';
+        if (i) i.textContent = '$' + fmt(resumen.iva);
+        if (t) t.textContent = '$' + fmt(resumen.total);
+    }
+
+    function mostrarVacio() {
+        const lista = document.querySelector('.d-flex.flex-column.gap-3');
+        if (!lista) return;
+        lista.innerHTML = `
+            <div class="cart-empty-state card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h4 class="fw-bold">Tu carrito está vacío</h4>
+                    <p class="text-muted">Agrega productos desde el catálogo para ver el resumen aquí.</p>
+                    <a href="/concesionario/catalogo" class="btn btn-primary">Ir al catálogo</a>
+                </div>
+            </div>`;
+    }
+
+    function actualizarPill(count) {
+        const pill = document.querySelector('.badge.rounded-pill.text-bg-primary');
+        if (pill) pill.textContent = count + ' producto(s)';
+        const btnVaciar = document.querySelector('[data-bs-target="#modalVaciarCarrito"]');
+        const btnConfirmar = document.getElementById('btnConfirmar');
+        const selectSucursal = document.getElementById('sucursal');
+        if (count === 0) {
+            if (btnVaciar) btnVaciar.disabled = true;
+            if (btnConfirmar) btnConfirmar.disabled = true;
+            if (selectSucursal) selectSucursal.disabled = true;
+        }
+    }
+
+    document.addEventListener('submit', async function (e) {
+        const form = e.target;
+
+        if (form.matches("form[action*='carrito/eliminar']")) {
+            e.preventDefault();
+            const sku = form.querySelector('input[name="sku"]')?.value;
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            try {
+                const resp = await fetch('/concesionario/carrito/eliminar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new URLSearchParams({ sku }).toString()
+                });
+                const data = await resp.json();
+                if (!data.ok) { if (btn) btn.disabled = false; return; }
+                const article = form.closest('article.cart-item-card');
+                if (article) {
+                    article.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                    article.style.opacity = '0';
+                    article.style.transform = 'scale(0.97)';
+                    setTimeout(() => article.remove(), 260);
+                }
+                actualizarResumen(data.resumen);
+                actualizarPill(data.carritoCount);
+                if (data.carritoCount === 0) setTimeout(mostrarVacio, 280);
+            } catch (_) { form.submit(); }
+            return;
+        }
+
+        if (form.matches("form[action*='carrito/vaciar']")) {
+            e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            try {
+                const resp = await fetch('/concesionario/carrito/vaciar', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await resp.json();
+                if (!data.ok) { if (btn) btn.disabled = false; return; }
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalVaciarCarrito'));
+                if (modal) modal.hide();
+                document.querySelectorAll('article.cart-item-card').forEach(a => a.remove());
+                const cero = { subtotal: 0, iva: 0, total: 0, totalPeso: 0, totalVolumen: 0 };
+                actualizarResumen(cero);
+                actualizarPill(0);
+                mostrarVacio();
+            } catch (_) { form.submit(); }
+        }
+    });
+})();
 </script>
