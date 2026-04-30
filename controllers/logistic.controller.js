@@ -104,42 +104,19 @@ function obtenerFiltrosReporte(query) {  // aqui uso la funcion de obtener rango
 }
 
 function construirResumenReporte(detalle) {
-  // aqui creo el resumen y todo empieza en 0
-  const resumen = {
-    totalReservas: 0,
-    totalProductos: 0,
-    totalPeso: 0,
-    totalVolumen: 0
-  };
-
-  // aqui guardo los folios para no repetir reservas
-  const folios = [];
-
-  // si detalle viene vacio, uso un arreglo vacio
   detalle = detalle || [];
 
-  // aqui recorro uno por uno los datos del detalle
-  detalle.forEach((item) => {
-    // si el folio no existe todavia, lo agrego
-    if (!folios.includes(item.folio)) {
-      folios.push(item.folio);
-    }
+  const folios = new Set();
 
-    // aqui cuento cuantas reservas diferentes hay
-    resumen.totalReservas = folios.length;
-
-    // aqui sumo la cantidad total de productos
-    resumen.totalProductos += Number(item.cantidad || 0);
-
-    // aqui sumo el peso total
-    resumen.totalPeso += Number(item.peso_total_linea || 0);
-
-    // aqui sumo el volumen total
-    resumen.totalVolumen += Number(item.volumen_total_linea || 0);
-  });
-
-  // aqui regreso el resumen final
-  return resumen;
+  return detalle.reduce((acc, item) => {
+    folios.add(item.folio);
+    acc.totalReservas = folios.size;
+    acc.totalLineas   = detalle.length;
+    acc.totalProductos += Number(item.cantidad || 0);
+    acc.totalPeso      += Number(item.peso_total_linea || 0);
+    acc.totalVolumen   += Number(item.volumen_total_linea || 0);
+    return acc;
+  }, { totalReservas: 0, totalLineas: 0, totalProductos: 0, totalPeso: 0, totalVolumen: 0 });
 }
 
 function escaparValorCsv(valor) { // aqui convierto cualquier valor a texto

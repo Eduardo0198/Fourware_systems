@@ -8,9 +8,9 @@
             </p>
         </div>
         <div class="admin-hero-note">
-            <span>Total reservas</span>
-            <strong><%= resumen.totalReservas || 0 %></strong>
-            <small>Según los filtros aplicados.</small>
+            <span>Total registros</span>
+            <strong><%= resumen.totalLineas || 0 %></strong>
+            <small><%= resumen.totalReservas || 0 %> reserva(s) únicas.</small>
         </div>
     </div>
 
@@ -68,9 +68,9 @@
 
     <div class="admin-stats-grid">
         <article class="admin-stat-card">
-            <span class="admin-stat-label">Total reservas</span>
-            <strong><%= resumen.totalReservas || 0 %></strong>
-            <p>Reservas encontradas con los filtros aplicados.</p>
+            <span class="admin-stat-label">Total registros</span>
+            <strong><%= resumen.totalLineas || 0 %></strong>
+            <p><%= resumen.totalReservas || 0 %> reserva(s) única(s) con los filtros aplicados.</p>
         </article>
     </div>
 
