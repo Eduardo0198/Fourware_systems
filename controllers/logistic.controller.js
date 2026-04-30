@@ -1,4 +1,4 @@
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const reservaModel = require('../models/reserva.model');
 const campaniaModel = require('../models/campania.model');
 const cuentaModel = require('../models/cuenta.model');
@@ -183,38 +183,109 @@ function convertirReporteACsv(detalle) { // aqui pongo los titulos del archivo c
   // aqui uno todas las lineas para formar el csv final
   return lineas.join('\n');
 }
-// -- lau y eduardo ------21
-function convertirReporteAExcel(detalle) {
-  // aqui preparo las filas que van a ir en el excel
-  const filas = [];
+async function convertirReporteAExcel(detalle, filtros) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'PPG Preventa';
+  wb.created = new Date();
 
-  detalle = detalle || [];
-
-  // aqui recorro cada dato para dejarlo en un formato mas simple
-  detalle.forEach((item) => {
-    filas.push({
-      Folio: item.folio,
-      Fecha: item.fecha,
-      Cuenta: item.cuenta,
-      Distribuidor: item.distribuidor,
-      Campania: item.campania,
-      Producto: item.producto,
-      Cantidad: item.cantidad,
-      Direccion: item.direccion_entrega
-    });
+  const ws = wb.addWorksheet('Reporte Operativo', {
+    views: [{ state: 'frozen', ySplit: 5 }]
   });
 
-  // aqui creo el libro y la hoja de excel
-  const libro = XLSX.utils.book_new();
-  const hoja = XLSX.utils.json_to_sheet(filas);
+  const AZUL_OSCURO = 'FF1E3A5F';
+  const AZUL_ACENTO = 'FF2563EB';
+  const FONDO_META  = 'FFE8EFF8';
+  const LAST_COL    = 'H';
 
-  // aqui agrego la hoja al libro
-  XLSX.utils.book_append_sheet(libro, hoja, 'Reporte');
+  const claves      = ['folio', 'fecha', 'cuenta', 'distribuidor', 'campania', 'producto', 'cantidad', 'direccion_entrega'];
+  const encabezados = ['Folio', 'Fecha', 'Cuenta', 'Distribuidor', 'Campaña', 'Producto', 'Cantidad', 'Dirección de entrega'];
 
-  // aqui regreso el archivo listo para descargar
-  return XLSX.write(libro, { type: 'buffer', bookType: 'xlsx' });
+  const anchos = encabezados.map(h => h.length + 2);
+  (detalle || []).forEach(r => {
+    claves.forEach((k, i) => {
+      const len = String(r[k] ?? '').length;
+      if (len > anchos[i]) anchos[i] = len;
+    });
+  });
+  ws.columns = claves.map((key, i) => ({
+    key,
+    width: Math.min(Math.max(anchos[i] + 4, 12), 52)
+  }));
+
+  // Fila 1: Título
+  const fila1 = ws.addRow(['Reporte Operativo Logístico  ·  PPG']);
+  ws.mergeCells(`A1:${LAST_COL}1`);
+  Object.assign(fila1.getCell(1), {
+    font:      { bold: true, size: 15, color: { argb: 'FFFFFFFF' } },
+    fill:      { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } },
+    alignment: { vertical: 'middle', horizontal: 'left', indent: 2 }
+  });
+  fila1.height = 34;
+
+  // Filas 2-3: Metadatos
+  [
+    `Período:   ${filtros?.fechaInicio || ''}  →  ${filtros?.fechaFin || ''}`,
+    `Generado:  ${new Date().toLocaleString('es-MX')}`
+  ].forEach((texto, idx) => {
+    const num  = idx + 2;
+    const fila = ws.addRow([texto]);
+    ws.mergeCells(`A${num}:${LAST_COL}${num}`);
+    Object.assign(fila.getCell(1), {
+      fill:      { type: 'pattern', pattern: 'solid', fgColor: { argb: FONDO_META } },
+      font:      { size: 10, color: { argb: AZUL_OSCURO }, italic: idx === 1 },
+      alignment: { vertical: 'middle', horizontal: 'left', indent: 2 }
+    });
+    fila.height = 17;
+  });
+
+  // Fila 4: Separador
+  const filaSep = ws.addRow(['']);
+  ws.mergeCells(`A4:${LAST_COL}4`);
+  filaSep.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_ACENTO } };
+  filaSep.height = 5;
+
+  // Fila 5: Encabezados
+  const filaEnc = ws.addRow(encabezados);
+  filaEnc.height = 22;
+  filaEnc.eachCell({ includeEmpty: true }, cell => {
+    cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.border    = { bottom: { style: 'medium', color: { argb: AZUL_ACENTO } } };
+  });
+
+  // Filas de datos
+  (detalle || []).forEach((item, idx) => {
+    const fila = ws.addRow([
+      item.folio, item.fecha, item.cuenta, item.distribuidor,
+      item.campania, item.producto, Number(item.cantidad), item.direccion_entrega
+    ]);
+    const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF1F5F9';
+    fila.eachCell({ includeEmpty: true }, cell => {
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+      cell.alignment = { vertical: 'middle' };
+    });
+    fila.getCell(7).numFmt = '#,##0';
+  });
+
+  // Fila de totales
+  const primerDato = 6;
+  const ultimoDato = 5 + (detalle || []).length;
+  const filaTot = ws.addRow([
+    'TOTALES', '', '', '', '', `${(detalle || []).length} fila(s)`,
+    (detalle || []).length > 0 ? { formula: `SUM(G${primerDato}:G${ultimoDato})` } : 0,
+    ''
+  ]);
+  filaTot.height = 20;
+  filaTot.eachCell({ includeEmpty: true }, cell => {
+    cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
+    cell.alignment = { vertical: 'middle' };
+  });
+  filaTot.getCell(7).numFmt = '#,##0';
+
+  return wb.xlsx.writeBuffer();
 }
-// lau y eduardo final helpers reporte operativo -- 21
 
 
 function construirContextoMetricas(query, campaniaActiva) {
@@ -622,21 +693,19 @@ exports.exportarReporteOperativo = (req, res) => {
 
     // aqui reviso si el usuario pidio excel
     if (filtros.formato === 'xlsx') {
-      // aqui convierto el detalle a excel
-      const archivoExcel = convertirReporteAExcel(detalle);
-      // aqui guardo un nombre sencillo para el archivo
       const nombreArchivo = `reporte_operativo_${filtros.fechaInicio}_${filtros.fechaFin}.xlsx`;
-
-      // aqui registro que si se genero la exportacion
-      registrarEvento(req, 'Exportacion de reporte operativo logístico en excel');
-
-      // aqui mando el excel para que se descargue
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
-      return res.send(archivoExcel);
+      convertirReporteAExcel(detalle, filtros)
+        .then(buffer => {
+          registrarEvento(req, 'Exportacion de reporte operativo logístico en excel');
+          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+          return res.send(Buffer.from(buffer));
+        })
+        .catch(err => {
+          logger.error(err);
+          return renderError(res, 500, 'Error al generar el archivo Excel.', '/logistica/reporte-operativo');
+        });
+      return;
     }
 
     // aqui convierto el detalle a formato csv

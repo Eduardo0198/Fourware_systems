@@ -19,9 +19,9 @@ function escribirFilaEtiquetaValor(doc, etiqueta, valor, y) {
         .font('Helvetica-Bold')
         .fontSize(11)
         .fillColor('#111827')
-        .text(etiqueta, 50, y)
+        .text(etiqueta, 50, y, { width: 160 })
         .font('Helvetica')
-        .text(valor, 220, y, { width: 320 });
+        .text(valor, 215, y, { width: 135, lineBreak: false });
 }
 
 function escribirTotales(doc, reserva, y) {

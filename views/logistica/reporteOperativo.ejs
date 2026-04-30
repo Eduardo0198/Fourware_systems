@@ -55,10 +55,16 @@
             </div>
             <div class="col-12 d-flex gap-2">
                 <button class="btn admin-action-btn" type="submit">Generar reporte</button>
-                <a href="/logistica/reporte-operativo" class="btn btn-outline-secondary">Limpiar</a>
+                <button type="button" id="btnLimpiarReporte" class="btn btn-outline-secondary">Limpiar</button>
             </div>
         </form>
     </div>
+
+    <script>
+        document.getElementById('btnLimpiarReporte')?.addEventListener('click', () => {
+            location.href = '/logistica/reporte-operativo';
+        });
+    </script>
 
     <div class="admin-stats-grid">
         <article class="admin-stat-card">
