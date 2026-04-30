@@ -9,7 +9,10 @@ const renderError = require('../utils/renderError');
 const FORMATOS_REPORTE_OPERATIVO = new Set(['csv', 'xlsx']);
 
 function formatearFechaInput(fecha) {
-  return fecha.toISOString().slice(0, 10);
+    const y = fecha.getFullYear();
+    const m = String(fecha.getMonth() + 1).padStart(2, '0');
+    const d = String(fecha.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 function obtenerRangoFechas(query) {
