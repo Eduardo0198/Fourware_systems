@@ -39,7 +39,7 @@ exports.obtenerReservasRecientesPorCorreoYCuenta = (correo, idCuenta, limite, ca
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE r.correo = ?
           AND r.id_cuenta = ?
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
+        ORDER BY r.fecha DESC
         LIMIT ?
     `;
 
@@ -64,7 +64,7 @@ exports.obtenerReservasPorCorreoYCuenta = (correo, idCuenta, callback) => {
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE r.correo = ?
           AND r.id_cuenta = ?
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
+        ORDER BY r.fecha DESC
     `;
 
     db.query(query, [correo, idCuenta], callback);
@@ -179,7 +179,7 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
             c.nombre,
             u.nombre,
             u.correo
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
+        ORDER BY r.fecha DESC
     `;
 
     db.query(query, [fechaInicio, fechaFin], callback);
@@ -332,7 +332,7 @@ exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
             c.nombre,
             u.nombre,
             u.correo
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
+        ORDER BY r.fecha DESC
     `;
 
     db.query(query, params, callback);
@@ -395,7 +395,7 @@ exports.obtenerReporteOperativoLogistico = (filtros, callback) => {
         LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE ${condiciones.join('\n          AND ')}
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC, rp."SKU" ASC
+        ORDER BY r.fecha DESC, rp."SKU" ASC
     `;
 
     // aqui ejecuto la consulta ya con los filtros armados
@@ -403,29 +403,25 @@ exports.obtenerReporteOperativoLogistico = (filtros, callback) => {
 };
 // lau final modelo reporte operativo
 
-exports.crearReservaConProductos = (data, productos, callback) => {
-    db.connect((connectErr, client, done) => {
-        if (connectErr) {
-            return callback(connectErr);
-        }
-
-        const rollback = (err) => {
-            client.query('ROLLBACK', () => {
-                done();
-                callback(err);
+exports.crearReservaConProductos = async (data, productos, callback) => {
+    let client, done;
+    try {
+        await new Promise((resolve, reject) => {
+            db.connect((err, c, d) => {
+                if (err) return reject(err);
+                client = c;
+                done = d;
+                resolve();
             });
-        };
+        });
 
-        client.query('BEGIN', (beginErr) => {
-            if (beginErr) return rollback(beginErr);
+        await client.query('BEGIN');
 
-            const reservaQuery = `
-                INSERT INTO "Reserva"
-                (folio, estatus, fecha, subtotal, iva, total, fecha_cancelacion_reserva, correo, id_cuenta, id_sucursal)
-                VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9)
-            `;
-
-            client.query(reservaQuery, [
+        await client.query(
+            `INSERT INTO "Reserva"
+             (folio, estatus, fecha, subtotal, iva, total, fecha_cancelacion_reserva, correo, id_cuenta, id_sucursal)
+             VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9)`,
+            [
                 data.folio,
                 data.estatus,
                 data.subtotal,
@@ -435,55 +431,38 @@ exports.crearReservaConProductos = (data, productos, callback) => {
                 data.correo,
                 data.id_cuenta,
                 data.id_sucursal
-            ], (reservaErr) => {
-                if (reservaErr) {
-                    return rollback(reservaErr);
-                }
+            ]
+        );
 
-                if (!Array.isArray(productos) || productos.length === 0) {
-                    return rollback(new Error('No hay productos para registrar en la reserva.'));
-                }
+        if (!Array.isArray(productos) || productos.length === 0) {
+            throw new Error('No hay productos para registrar en la reserva.');
+        }
 
-                const productoQuery = `
-                    INSERT INTO "Reserva_Producto"
-                    (folio, "SKU", cantidad, precio_aplicado, subtotal_linea)
-                    VALUES ($1, $2, $3, $4, $5)
-                `;
+        for (const producto of productos) {
+            await client.query(
+                `INSERT INTO "Reserva_Producto"
+                 (folio, "SKU", cantidad, precio_aplicado, subtotal_linea)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [
+                    data.folio,
+                    producto.sku,
+                    producto.cantidad,
+                    producto.precio,
+                    producto.precio * producto.cantidad
+                ]
+            );
+        }
 
-                let pendientes = productos.length;
-                let fallo = false;
-
-                productos.forEach((producto) => {
-                    if (fallo) return;
-
-                    client.query(productoQuery, [
-                        data.folio,
-                        producto.sku,
-                        producto.cantidad,
-                        producto.precio,
-                        producto.precio * producto.cantidad
-                    ], (productoErr) => {
-                        if (fallo) return;
-
-                        if (productoErr) {
-                            fallo = true;
-                            return rollback(productoErr);
-                        }
-
-                        pendientes -= 1;
-
-                        if (pendientes === 0) {
-                            client.query('COMMIT', (commitErr) => {
-                                if (commitErr) return rollback(commitErr);
-                                done();
-                                callback(null);
-                            });
-                        }
-                    });
-                });
-            });
-        });
-    });
+        await client.query('COMMIT');
+        done();
+        callback(null);
+    } catch (err) {
+        if (client) {
+            try { await client.query('ROLLBACK'); } catch (_) {}
+        }
+        if (done) done();
+        callback(err);
+    }
 };
 
 exports.obtenerResumenAdministrativo = (callback) => {
@@ -509,7 +488,7 @@ exports.obtenerReservasRecientesAdmin = (limite, callback) => {
         FROM "Reserva" r
         JOIN "Usuario" u ON u.correo = r.correo
         JOIN "Cuenta"  c ON c.id_cuenta = r.id_cuenta
-        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
+        ORDER BY r.fecha DESC
         LIMIT ?
     `;
     db.query(query, [limite], callback);
