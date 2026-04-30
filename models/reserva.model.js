@@ -39,7 +39,7 @@ exports.obtenerReservasRecientesPorCorreoYCuenta = (correo, idCuenta, limite, ca
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE r.correo = ?
           AND r.id_cuenta = ?
-        ORDER BY r.fecha DESC, r.folio DESC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
         LIMIT ?
     `;
 
@@ -64,7 +64,7 @@ exports.obtenerReservasPorCorreoYCuenta = (correo, idCuenta, callback) => {
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE r.correo = ?
           AND r.id_cuenta = ?
-        ORDER BY r.fecha DESC, r.folio DESC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
     `;
 
     db.query(query, [correo, idCuenta], callback);
@@ -179,7 +179,7 @@ exports.obtenerReservasConfirmadasPorPeriodo = (fechaInicio, fechaFin, callback)
             c.nombre,
             u.nombre,
             u.correo
-        ORDER BY r.fecha DESC, r.folio DESC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
     `;
 
     db.query(query, [fechaInicio, fechaFin], callback);
@@ -332,7 +332,7 @@ exports.obtenerReservasConfirmadasConFiltros = (filtros, callback) => {
             c.nombre,
             u.nombre,
             u.correo
-        ORDER BY r.fecha DESC, r.folio DESC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
     `;
 
     db.query(query, params, callback);
@@ -395,7 +395,7 @@ exports.obtenerReporteOperativoLogistico = (filtros, callback) => {
         LEFT JOIN "Campania" ca ON ca.id_campania = p.id_campania
         LEFT JOIN "Sucursal" s ON s.id_sucursal = r.id_sucursal
         WHERE ${condiciones.join('\n          AND ')}
-        ORDER BY r.fecha DESC, r.folio DESC, rp."SKU" ASC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC, rp."SKU" ASC
     `;
 
     // aqui ejecuto la consulta ya con los filtros armados
@@ -509,7 +509,7 @@ exports.obtenerReservasRecientesAdmin = (limite, callback) => {
         FROM "Reserva" r
         JOIN "Usuario" u ON u.correo = r.correo
         JOIN "Cuenta"  c ON c.id_cuenta = r.id_cuenta
-        ORDER BY r.fecha DESC, r.folio DESC
+        ORDER BY r.fecha DESC, r.fecha_cancelacion_reserva DESC
         LIMIT ?
     `;
     db.query(query, [limite], callback);
