@@ -267,7 +267,12 @@ exports.metricasRanking = async (req, res) => {
             });
         }
 
-        const activas = await obtenerCampaniaActivaAsync();
+        const activas = await new Promise((resolve, reject) => {
+            campaniaModel.obtenerCampaniaActiva((err, rows) => {
+                if (err) return reject(err);
+                resolve(rows || []);
+            });
+        });
         const campaniaActiva = Array.isArray(activas) && activas.length > 0 ? activas[0] : null;
         const campaniaActivaId = campaniaActiva ? campaniaActiva.id_campania : null;
 
