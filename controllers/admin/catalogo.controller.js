@@ -1,5 +1,6 @@
 const path = require('path');
 const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const logger = require('../../utils/logger');
 const renderError = require('../../utils/renderError');
 const { subirImagenProducto } = require('../../services/storage.service');
@@ -748,18 +749,43 @@ exports.cargaMasiva = (req, res) => {
     renderCatalogoCargaMasiva(res);
 };
 
-exports.descargarPlantillaCargaMasiva = (req, res) => {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([COLUMNAS_CARGA_MASIVA]);
-    ws['!cols'] = COLUMNAS_CARGA_MASIVA.map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+exports.descargarPlantillaCargaMasiva = async (req, res) => {
+    try {
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'PPG Preventa';
 
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        const ws = wb.addWorksheet('Plantilla');
 
-    registrarEvento(req, 'Descarga de plantilla de carga masiva');
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="plantilla_carga_masiva.xlsx"');
-    res.send(buffer);
+        ws.mergeCells(1, 1, 1, COLUMNAS_CARGA_MASIVA.length);
+        const titulo = ws.getCell('A1');
+        titulo.value     = 'Plantilla de Carga Masiva — PPG Preventa';
+        titulo.font      = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+        titulo.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
+        titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(1).height = 28;
+
+        ws.columns = COLUMNAS_CARGA_MASIVA.map((col) => ({ header: '', key: col, width: 22 }));
+
+        const headerRow = ws.addRow(COLUMNAS_CARGA_MASIVA);
+        headerRow.height = 20;
+        headerRow.eachCell((cell) => {
+            cell.font      = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border    = { bottom: { style: 'medium', color: { argb: 'FF1E3A5F' } } };
+        });
+
+        ws.views = [{ state: 'frozen', ySplit: 2 }];
+
+        registrarEvento(req, 'Descarga de plantilla de carga masiva');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="plantilla_carga_masiva.xlsx"');
+        await wb.xlsx.write(res);
+        res.end();
+    } catch (err) {
+        logger.error(err);
+        res.status(500).send('No fue posible generar la plantilla.');
+    }
 };
 
 exports.cargaMasivaPost = (req, res) => {
