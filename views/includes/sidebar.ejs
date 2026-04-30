@@ -10,39 +10,39 @@
 
                 <p class="section-title">Administrador</p>
 
-                <a href="/admin/inicio" class="menu <%= req.path === '/admin/inicio' ? 'active' : '' %>">
+                <a href="/admin/inicio" data-tooltip="Inicio" class="menu <%= req.path === '/admin/inicio' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/admin/catalogo" class="menu <%= req.path.startsWith('/admin/catalogo') ? 'active' : '' %>">
+                <a href="/admin/catalogo" data-tooltip="Catálogo" class="menu <%= req.path.startsWith('/admin/catalogo') ? 'active' : '' %>">
                     <i class="bi bi-box"></i>
                     <span>Catálogo</span>
                 </a>
 
-                <a href="/admin/campanas" class="menu <%= req.path.startsWith('/admin/campanas') ? 'active' : '' %>">
+                <a href="/admin/campanas" data-tooltip="Campañas" class="menu <%= req.path.startsWith('/admin/campanas') ? 'active' : '' %>">
                     <i class="bi bi-megaphone"></i>
                     <span>Campañas</span>
                 </a>
 
-                <a href="/admin/reportes" class="menu <%= req.path.startsWith('/admin/reportes') ? 'active' : '' %>">
+                <a href="/admin/reportes" data-tooltip="Reportes" class="menu <%= req.path.startsWith('/admin/reportes') ? 'active' : '' %>">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
                 </a>
 
-                <a href="/admin/auditoria" class="menu <%= req.path.startsWith('/admin/auditoria') ? 'active' : '' %>">
+                <a href="/admin/auditoria" data-tooltip="Bitácora" class="menu <%= req.path.startsWith('/admin/auditoria') ? 'active' : '' %>">
                     <i class="bi bi-journal-text"></i>
                     <span>Bitácora</span>
                 </a>
 
                 <p class="section-title">Vista concesionario</p>
 
-                <a href="/concesionario/home" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
+                <a href="/concesionario/home" data-tooltip="Inicio" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
                     <i class="bi bi-eye"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/concesionario/catalogo" class="menu <%= req.path === '/concesionario/catalogo' ? 'active' : '' %>">
+                <a href="/concesionario/catalogo" data-tooltip="Catálogo" class="menu <%= req.path === '/concesionario/catalogo' ? 'active' : '' %>">
                     <i class="bi bi-grid"></i>
                     <span>Catálogo</span>
                 </a>
@@ -53,17 +53,17 @@
 
                 <p class="section-title">Logística</p>
 
-                <a href="/logistica/reservas-confirmadas" class="menu <%= req.path.startsWith('/logistica/reservas') ? 'active' : '' %>">
+                <a href="/logistica/reservas-confirmadas" data-tooltip="Reservas" class="menu <%= req.path.startsWith('/logistica/reservas') ? 'active' : '' %>">
                     <i class="bi bi-truck"></i>
                     <span>Reservas</span>
                 </a>
 
-                <a href="/logistica/metricas" class="menu <%= req.path.startsWith('/logistica/metricas') ? 'active' : '' %>">
+                <a href="/logistica/metricas" data-tooltip="Métricas" class="menu <%= req.path.startsWith('/logistica/metricas') ? 'active' : '' %>">
                     <i class="bi bi-speedometer"></i>
                     <span>Métricas</span>
                 </a>
 
-                <a href="/logistica/reporte-operativo" class="menu <%= req.path.startsWith('/logistica/reporte-operativo') ? 'active' : '' %>">
+                <a href="/logistica/reporte-operativo" data-tooltip="Reporte operativo" class="menu <%= req.path.startsWith('/logistica/reporte-operativo') ? 'active' : '' %>">
                     <i class="bi bi-file-earmark-bar-graph"></i>
                     <span>Reporte operativo</span>
                 </a>
@@ -74,24 +74,24 @@
 
                 <p class="section-title">Marketing</p>
 
-                <a href="/marketing/inicio" class="menu <%= req.path === '/marketing/inicio' ? 'active' : '' %>">
+                <a href="/marketing/inicio" data-tooltip="Inicio" class="menu <%= req.path === '/marketing/inicio' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/marketing/ranking-productos" class="menu <%= req.path.startsWith('/marketing/ranking') ? 'active' : '' %>">
+                <a href="/marketing/ranking-productos" data-tooltip="Calificaciones" class="menu <%= req.path.startsWith('/marketing/ranking') ? 'active' : '' %>">
                     <i class="bi bi-star"></i>
                     <span>Calificaciones</span>
                 </a>
 
-                <a href="/marketing/metricas-ranking" class="menu <%= req.path.startsWith('/marketing/metricas') ? 'active' : '' %>">
+                <a href="/marketing/metricas-ranking" data-tooltip="Ranking" class="menu <%= req.path.startsWith('/marketing/metricas') ? 'active' : '' %>">
                     <i class="bi bi-trophy"></i>
                     <span>Ranking</span>
                 </a>
 
                 <p class="section-title">Vista de concesionario</p>
 
-                <a href="/marketing/catalogo" class="menu <%= req.path.startsWith('/marketing/catalogo') ? 'active' : '' %>">
+                <a href="/marketing/catalogo" data-tooltip="Catálogo" class="menu <%= req.path.startsWith('/marketing/catalogo') ? 'active' : '' %>">
                     <i class="bi bi-grid"></i>
                     <span>Catálogo</span>
                 </a>
@@ -102,22 +102,22 @@
 
                 <p class="section-title">Concesionario</p>
 
-                <a href="/concesionario/home" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
+                <a href="/concesionario/home" data-tooltip="Inicio" class="menu <%= req.path === '/concesionario/home' ? 'active' : '' %>">
                     <i class="bi bi-house"></i>
                     <span>Inicio</span>
                 </a>
 
-                <a href="/concesionario/catalogo" class="menu <%= req.path.startsWith('/concesionario/catalogo') ? 'active' : '' %>">
+                <a href="/concesionario/catalogo" data-tooltip="Catálogo" class="menu <%= req.path.startsWith('/concesionario/catalogo') ? 'active' : '' %>">
                     <i class="bi bi-grid"></i>
                     <span>Catálogo</span>
                 </a>
 
-                <a href="/concesionario/carrito" class="menu <%= req.path.startsWith('/concesionario/carrito') ? 'active' : '' %>">
+                <a href="/concesionario/carrito" data-tooltip="Carrito" class="menu <%= req.path.startsWith('/concesionario/carrito') ? 'active' : '' %>">
                     <i class="bi bi-cart"></i>
                     <span>Carrito</span>
                 </a>
 
-                <a href="/concesionario/reservas" class="menu <%= req.path.startsWith('/concesionario/reservas') ? 'active' : '' %>">
+                <a href="/concesionario/reservas" data-tooltip="Mis Reservas" class="menu <%= req.path.startsWith('/concesionario/reservas') ? 'active' : '' %>">
                     <i class="bi bi-person-check"></i>
                     <span>Mis Reservas</span>
                 </a>
