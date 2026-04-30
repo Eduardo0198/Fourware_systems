@@ -21,22 +21,25 @@ function registrarBitacora(req, accion, correo) {
     );
 }
 
+function parseFechaLocal(fechaStr) {
+    const [y, m, d] = String(fechaStr || '').split('-').map(Number);
+    if (!y || !m || !d) return new Date(NaN);
+    return new Date(y, m - 1, d);
+}
+
 function normalizarCampania(campania) {
     if (!campania) {
         return null;
     }
 
-    const inicio = new Date(campania.fecha_inicio);
-    const fin = new Date(campania.fecha_fin);
-
     return {
         ...campania,
         estatus: Number(campania.estatus) === 1 ? 1 : 0,
         estatusTexto: Number(campania.estatus) === 1 ? 'Activa' : 'Inactiva',
-        fecha_inicio_input: inicio.toISOString().slice(0, 10),
-        fecha_fin_input: fin.toISOString().slice(0, 10),
-        fecha_inicio_texto: inicio.toLocaleDateString('es-MX'),
-        fecha_fin_texto: fin.toLocaleDateString('es-MX')
+        fecha_inicio_input: String(campania.fecha_inicio || '').slice(0, 10),
+        fecha_fin_input:    String(campania.fecha_fin    || '').slice(0, 10),
+        fecha_inicio_texto: parseFechaLocal(campania.fecha_inicio).toLocaleDateString('es-MX'),
+        fecha_fin_texto:    parseFechaLocal(campania.fecha_fin).toLocaleDateString('es-MX')
     };
 }
 
