@@ -5,8 +5,9 @@ function generarFolioReserva() {
     const dd = String(ahora.getDate()).padStart(2, '0');
     const hh = String(ahora.getHours()).padStart(2, '0');
     const mi = String(ahora.getMinutes()).padStart(2, '0');
+    const ss = String(ahora.getSeconds()).padStart(2, '0');
 
-    return `PPG-${yy}${mm}${dd}-${hh}${mi}`;
+    return `PPG-${yy}${mm}${dd}-${hh}${mi}${ss}`;
 }
 
 function calcularFechaLimiteCancelacion(minutos = 15) {
