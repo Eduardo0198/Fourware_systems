@@ -419,7 +419,9 @@ body.sidebar-hidden .footer-ppg {
     overflow-x: hidden;
 }
 
-.sidebar.collapsed ~ .main-wrapper .content{
+.sidebar.collapsed ~ .main-wrapper .promo-bar,
+.sidebar.collapsed ~ .main-wrapper .content,
+.sidebar.collapsed ~ .main-wrapper .footer-ppg {
     margin-left: 64px;
     width: calc(100% - 64px);
 }
@@ -434,11 +436,6 @@ body.sidebar-hidden .footer-ppg {
     transition:all 0.3s ease;
     margin-top: auto;
     width: calc(100% - 250px);
-}
-
-.sidebar.collapsed ~ .main-wrapper .footer-ppg{
-    margin-left: 64px;
-    width: calc(100% - 64px);
 }
 
 body.sidebar-hidden .footer-ppg {
