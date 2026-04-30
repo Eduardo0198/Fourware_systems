@@ -614,6 +614,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const formatChartNumber = (value, decimals = 0) => {
+            const safeValue = Number(value || 0);
+            if (!Number.isFinite(safeValue)) {
+                return decimals > 0 ? (0).toFixed(decimals) : '0';
+            }
+
+            return decimals > 0 ? safeValue.toFixed(decimals) : String(Math.round(safeValue));
+        };
+
         // aqui busco el canvas de confirmaciones
         const canvas = document.getElementById('chartConfirmacionesProducto');
 
@@ -671,7 +680,7 @@
                         // aqui personalizo el tooltip para que el texto se vea mas natural
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} confirmaciones`
+                                label: (ctx) => ` ${formatChartNumber(ctx.parsed.x)} confirmaciones`
                             }
                         }
                     },
@@ -681,7 +690,8 @@
                         x: {
                             beginAtZero: true,
                             ticks: {
-                                precision: 0
+                                precision: 0,
+                                callback: (value) => formatChartNumber(value)
                             }
                         }
                     }
@@ -722,13 +732,16 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} kg`
+                                label: (ctx) => ` ${formatChartNumber(ctx.parsed.x, 2)} kg`
                             }
                         }
                     },
                     scales: {
                         x: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => formatChartNumber(value, 2)
+                            }
                         }
                     }
                 }
@@ -768,13 +781,16 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => ` ${ctx.parsed.x.toLocaleString('es-MX')} m3`
+                                label: (ctx) => ` ${formatChartNumber(ctx.parsed.x, 2)} m3`
                             }
                         }
                     },
                     scales: {
                         x: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => formatChartNumber(value, 2)
+                            }
                         }
                     }
                 }
@@ -835,7 +851,10 @@
                             type: 'linear',
                             position: 'left',
                             beginAtZero: true,
-                            ticks: { precision: 0 },
+                            ticks: {
+                                precision: 0,
+                                callback: (value) => formatChartNumber(value)
+                            },
                             title: {
                                 display: true,
                                 text: 'Confirmaciones'
@@ -847,6 +866,9 @@
                             beginAtZero: true,
                             grid: {
                                 drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: (value) => formatChartNumber(value, 2)
                             },
                             title: {
                                 display: true,

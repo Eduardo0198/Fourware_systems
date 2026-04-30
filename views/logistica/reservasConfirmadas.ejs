@@ -4,11 +4,8 @@
     // si viene vacio o undefined, uso 0
     const safeValue = Number(value || 0);
 
-    // aqui regreso el numero con comas de miles y dos decimales
-    return safeValue.toLocaleString('es-MX', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+    // aqui regreso el numero sin separadores de miles y con dos decimales
+    return safeValue.toFixed(2);
 } %>
 
 
@@ -130,8 +127,6 @@
                                 </td>
                                 <td><%= reserva.fecha %></td>
                                 <td><span class="badge text-bg-success">Confirmada</span></td>
-                                // usamos FORMATDECIMAL para mostrar los formatos de dinero y vol
-                                // peso con comas de miles y decimales
                                 <td>$<%= formatDecimal(reserva.subtotal) %></td>
                                 <td>$<%= formatDecimal(reserva.iva) %></td>
                                 <td>$<%= formatDecimal(reserva.total) %></td>

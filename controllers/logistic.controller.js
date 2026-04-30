@@ -265,7 +265,7 @@ async function convertirReporteAExcel(detalle, filtros) {
       cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
       cell.alignment = { vertical: 'middle' };
     });
-    fila.getCell(7).numFmt = '#,##0';
+    fila.getCell(7).numFmt = '0';
   });
 
   // Fila de totales
@@ -282,7 +282,7 @@ async function convertirReporteAExcel(detalle, filtros) {
     cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL_OSCURO } };
     cell.alignment = { vertical: 'middle' };
   });
-  filaTot.getCell(7).numFmt = '#,##0';
+  filaTot.getCell(7).numFmt = '0';
 
   return wb.xlsx.writeBuffer();
 }
