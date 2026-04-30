@@ -748,6 +748,20 @@ exports.cargaMasiva = (req, res) => {
     renderCatalogoCargaMasiva(res);
 };
 
+exports.descargarPlantillaCargaMasiva = (req, res) => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([COLUMNAS_CARGA_MASIVA]);
+    ws['!cols'] = COLUMNAS_CARGA_MASIVA.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    registrarEvento(req, 'Descarga de plantilla de carga masiva');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="plantilla_carga_masiva.xlsx"');
+    res.send(buffer);
+};
+
 exports.cargaMasivaPost = (req, res) => {
     const formData = {
         id_campania: String(req.body.id_campania || '').trim()

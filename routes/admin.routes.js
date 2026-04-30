@@ -78,8 +78,15 @@ router.post('/catalogo/eliminar/:sku',
 router.get('/catalogo/carga-masiva',
     protegerRuta,
     tieneRol(['Administrador']),
-    tienePrivilegio(['carga_masiva_productos']), 
+    tienePrivilegio(['carga_masiva_productos']),
     adminController.cargaMasiva
+);
+
+router.get('/catalogo/carga-masiva/plantilla',
+    protegerRuta,
+    tieneRol(['Administrador']),
+    tienePrivilegio(['carga_masiva_productos']),
+    adminController.descargarPlantillaCargaMasiva
 );
 
 router.post('/catalogo/carga-masiva',
