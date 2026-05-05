@@ -1,3 +1,12 @@
+<%
+    function formatInteger(value) {
+        return Number(value || 0).toLocaleString('es-MX', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+%>
+
 <section class="admin-shell">
     <div class="admin-hero admin-hero-campaigns">
         <div>
@@ -9,8 +18,8 @@
         </div>
         <div class="admin-hero-note">
             <span>Total registros</span>
-            <strong><%= resumen.totalLineas || 0 %></strong>
-            <small><%= resumen.totalReservas || 0 %> reserva(s) únicas.</small>
+            <strong><%= formatInteger(resumen.totalLineas) %></strong>
+            <small><%= formatInteger(resumen.totalReservas) %> reserva(s) únicas.</small>
         </div>
     </div>
 
@@ -69,8 +78,8 @@
     <div class="admin-stats-grid">
         <article class="admin-stat-card">
             <span class="admin-stat-label">Total registros</span>
-            <strong><%= resumen.totalLineas || 0 %></strong>
-            <p><%= resumen.totalReservas || 0 %> reserva(s) única(s) con los filtros aplicados.</p>
+            <strong><%= formatInteger(resumen.totalLineas) %></strong>
+            <p><%= formatInteger(resumen.totalReservas) %> reserva(s) única(s) con los filtros aplicados.</p>
         </article>
     </div>
 
@@ -112,7 +121,7 @@
                                 <td><%= item.distribuidor %></td>
                                 <td><%= item.campania %></td>
                                 <td><%= item.producto %></td>
-                                <td><%= item.cantidad %></td>
+                                <td><%= formatInteger(item.cantidad) %></td>
                                 <td><%= item.direccion_entrega %></td>
                                 <td><%= item.fecha %></td>
                             </tr>

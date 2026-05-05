@@ -1,11 +1,16 @@
 
 <% function formatDecimal(value) {
-    // aqui convierto el valor a numero
-    // si viene vacio o undefined, uso 0
-    const safeValue = Number(value || 0);
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
-    // aqui regreso el numero sin separadores de miles y con dos decimales
-    return safeValue.toFixed(2);
+function formatInteger(value) {
+    return Number(value || 0).toLocaleString('es-MX', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
 } %>
 
 
@@ -20,7 +25,7 @@
         </div>
         <div class="admin-hero-note">
             <span>Reservas encontradas</span>
-            <strong><%= resumen.totalReservas || 0 %></strong>
+            <strong><%= formatInteger(resumen.totalReservas) %></strong>
             <small>Periodo del <%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %>.</small>
         </div>
     </div>
@@ -84,7 +89,7 @@
         </article>
         <article class="admin-stat-card admin-stat-accent">
             <span class="admin-stat-label">Total reservas</span>
-            <strong><%= resumen.totalReservas || 0 %></strong>
+            <strong><%= formatInteger(resumen.totalReservas) %></strong>
             <p>Cantidad de reservas confirmadas filtradas por el rango indicado.</p>
         </article>
     </div>
